@@ -34,5 +34,5 @@ To set up the repository, see [INSTALL.md](INSTALL.md).
 [pokefirered]: https://github.com/pret/pokefirered
 [Discord]: https://discord.gg/cJxDDVP
 [irc]: https://kiwiirc.com/client/irc.freenode.net/?#pret
-[travis]: https://travis-ci.org/pret/pokeemerald
-[travis-badge]: https://travis-ci.org/pret/pokeemerald.svg?branch=master
+[travis]: https://travis-ci.org/aplumafreak500/pokeemerald
+[travis-badge]: https://travis-ci.org/aplumafreak500/pokeemerald.svg?branch=master
