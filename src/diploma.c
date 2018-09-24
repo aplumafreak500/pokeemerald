@@ -17,7 +17,7 @@ extern int decompress_and_copy_tile_data_to_vram(u8 bg_id, void *src, int size, 
 extern bool8 free_temp_tile_data_buffers_if_possible(void);
 extern void sub_80861E8(void); // rom4
 extern bool16 sub_80C0944(void);
-extern void AddTextPrinterParameterized2(u8 windowId, u8 fontId, u8 x, u8 y, u8 letterSpacing, u8 lineSpacing, u8 *color, s8 speed, u8 *str);
+extern void AddTextPrinterParameterized4(u8 windowId, u8 fontId, u8 x, u8 y, u8 letterSpacing, u8 lineSpacing, u8 *color, s8 speed, u8 *str);
 
 extern u16 gUnknown_0860F074[];
 
@@ -89,7 +89,7 @@ void CB2_ShowDiploma(void)
     CopyBgTilemapBufferToVram(1);
     DisplayDiplomaText();
     BlendPalettes(-1, 16, 0);
-    BeginNormalPaletteFade(-1, 0, 16, 0, 0);
+    BeginNormalPaletteFade(0xFFFFFFFF, 0, 16, 0, 0);
     EnableInterrupts(1);
     SetVBlankCallback(VBlankCB);
     SetMainCallback2(MainCB2);
@@ -114,7 +114,7 @@ static void Task_DiplomaWaitForKeyPress(u8 taskId)
 {
     if (gMain.newKeys & (A_BUTTON | B_BUTTON))
     {
-        BeginNormalPaletteFade(-1, 0, 0, 16, 0);
+        BeginNormalPaletteFade(0xFFFFFFFF, 0, 0, 16, 0);
         gTasks[taskId].func = Task_DiplomaFadeOut;
     }
 }
@@ -210,5 +210,5 @@ static void PrintDiplomaText(u8 *text, u8 var1, u8 var2)
 {
     u8 color[3] = {0, 2, 3};
 
-    AddTextPrinterParameterized2(0, 1, var1, var2, 0, 0, color, -1, text);
+    AddTextPrinterParameterized4(0, 1, var1, var2, 0, 0, color, -1, text);
 }

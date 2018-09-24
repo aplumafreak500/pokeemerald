@@ -3,6 +3,7 @@
 #include "bg.h"
 #include "strings.h"
 #include "text.h"
+#include "text_window.h"
 #include "menu.h"
 #include "task.h"
 #include "menu_helpers.h"
@@ -24,11 +25,11 @@
 #include "constants/songs.h"
 #include "sound.h"
 #include "berry.h"
-#include "menu_indicators.h"
 #include "event_data.h"
 #include "battle_message.h"
 #include "safari_zone.h"
 #include "lilycove_lady.h"
+#include "overworld.h"
 
 #define POKEBLOCK_MAX_FEEL 99
 #define FIELD_E75_COUNT 7
@@ -70,14 +71,11 @@ enum
 };
 
 extern u16 gSpecialVar_ItemId;
-extern void (*gFieldCallback)(void);
 
 extern const u16 gUnknown_0860F074[];
 
 extern void CB2_ReturnToField(void);
 extern bool8 sub_81221EC(void);
-extern void sub_809882C(u8, u16, u8);
-extern void copy_textbox_border_tile_patterns_to_vram(u8, u16, u8);
 extern void sub_80AF168(void);
 
 // this file's functions
@@ -296,39 +294,136 @@ static const struct Pokeblock sFavoritePokeblocksTable[] =
 
 static const struct WindowTemplate sWindowTemplatesForPokeblockMenu[] =
 {
-    {0, 2, 1, 9, 2, 0xF, 0x1E},
-    {0, 0xF, 1, 0xE, 0x12, 0xF, 0x30},
-    {0, 2, 0xD, 5, 2, 0xF, 0x12C},
-    {0, 2, 0xF, 5, 2, 0xF, 0x136},
-    {0, 2, 0x11, 5, 2, 0xF, 0x140},
-    {0, 8, 0xD, 5, 2, 0xF, 0x14A},
-    {0, 8, 0xF, 5, 2, 0xF, 0x154},
-    {0, 0xB, 0x11, 2, 2, 0xF, 0x15E},
-    {1, 7, 5, 6, 6, 0xF, 0x162},
-    {1, 7, 7, 6, 4, 0xF, 0x186},
-    {1, 2, 0xF, 0x1B, 4, 0xF, 0x19E},
+    {
+        .priority = 0,
+        .tilemapLeft = 2,
+        .tilemapTop = 1,
+        .width = 9,
+        .height = 2,
+        .paletteNum = 15,
+        .baseBlock = 0x1E
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 15,
+        .tilemapTop = 1,
+        .width = 14,
+        .height = 18,
+        .paletteNum = 15,
+        .baseBlock = 0x30
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 2,
+        .tilemapTop = 13,
+        .width = 5,
+        .height = 2,
+        .paletteNum = 15,
+        .baseBlock = 0x12C
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 2,
+        .tilemapTop = 15,
+        .width = 5,
+        .height = 2,
+        .paletteNum = 15,
+        .baseBlock = 0x136
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 2,
+        .tilemapTop = 17,
+        .width = 5,
+        .height = 2,
+        .paletteNum = 15,
+        .baseBlock = 0x140
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 8,
+        .tilemapTop = 13,
+        .width = 5,
+        .height = 2,
+        .paletteNum = 15,
+        .baseBlock = 0x14A
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 8,
+        .tilemapTop = 15,
+        .width = 5,
+        .height = 2,
+        .paletteNum = 15,
+        .baseBlock = 0x154
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 11,
+        .tilemapTop = 17,
+        .width = 2,
+        .height = 2,
+        .paletteNum = 15,
+        .baseBlock = 0x15E
+    },
+    {
+        .priority = 1,
+        .tilemapLeft = 7,
+        .tilemapTop = 5,
+        .width = 6,
+        .height = 6,
+        .paletteNum = 15,
+        .baseBlock = 0x162
+    },
+    {
+        .priority = 1,
+        .tilemapLeft = 7,
+        .tilemapTop = 7,
+        .width = 6,
+        .height = 4,
+        .paletteNum = 15,
+        .baseBlock = 0x186
+    },
+    {
+        .priority = 1,
+        .tilemapLeft = 2,
+        .tilemapTop = 15,
+        .width = 27,
+        .height = 4,
+        .paletteNum = 15,
+        .baseBlock = 0x19E
+    },
     DUMMY_WIN_TEMPLATE
 };
 
-static const struct WindowTemplate sTossPkblockWindowTemplate = {1, 0x15, 9, 5, 4, 0xF, 0x20A};
+static const struct WindowTemplate sTossPkblockWindowTemplate =
+{
+    .priority = 1,
+    .tilemapLeft = 21,
+    .tilemapTop = 9,
+    .width = 5,
+    .height = 4,
+    .paletteNum = 15,
+    .baseBlock = 0x20A
+};
 
 static const struct ListMenuTemplate sPokeblockListMenuTemplate =
 {
     .items = NULL,
     .moveCursorFunc = MovePokeblockMenuCursor,
-    .unk_08 = NULL,
+    .itemPrintFunc = NULL,
     .totalItems = 0,
     .maxShowed = 0,
     .windowId = 1,
-    .unk_11 = 0,
-    .unk_12 = 1,
+    .header_X = 0,
+    .item_X = 1,
     .cursor_X = 0,
     .upText_Y = 1,
     .cursorPal = 2,
     .fillValue = 0,
     .cursorShadowPal = 3,
     .lettersSpacing = 0,
-    .unk_16_3 = 0,
+    .itemVerticalPadding = 0,
     .scrollMultiple = LIST_MULTIPLE_SCROLL_DPAD,
     .fontId = 1,
     .cursorKind = 1
@@ -493,7 +588,7 @@ static bool8 InitPokeblockMenu(void)
         gMain.state++;
         break;
     case 18:
-        BeginNormalPaletteFade(-1, 0, 0x10, 0, 0);
+        BeginNormalPaletteFade(0xFFFFFFFF, 0, 0x10, 0, 0);
         gPaletteFade.bufferTransferDisabled = 0;
         gMain.state++;
         break;
@@ -567,8 +662,8 @@ static void HandleInitWindows(void)
 
     InitWindows(sWindowTemplatesForPokeblockMenu);
     DeactivateAllTextPrinters();
-    sub_809882C(0, 1, 0xE0);
-    copy_textbox_border_tile_patterns_to_vram(0, 0xA, 0xD0);
+    LoadUserWindowBorderGfx(0, 1, 0xE0);
+    LoadMessageBoxGfx(0, 0xA, 0xD0);
     LoadPalette(gUnknown_0860F074, 0xF0, 0x20);
 
     for (i = 0; i < ARRAY_COUNT(sWindowTemplatesForPokeblockMenu) - 1; i++)
@@ -582,14 +677,14 @@ static void HandleInitWindows(void)
 
 static void PrintOnPokeblockWindow(u8 windowId, const u8 *string, s32 x)
 {
-    AddTextPrinterParameterized2(windowId, 1, x, 1, 0, 0, sTextColorInPokeblockMenu, 0, string);
+    AddTextPrinterParameterized4(windowId, 1, x, 1, 0, 0, sTextColorInPokeblockMenu, 0, string);
 }
 
 static void PutPokeblockInfoText(void)
 {
     u8 i;
 
-    const u8 *itemName = ItemId_GetItem(ITEM_POKEBLOCK_CASE)->name;
+    const u8 *itemName = ItemId_GetName(ITEM_POKEBLOCK_CASE);
     PrintOnPokeblockWindow(0, itemName, GetStringCenterAlignXOffset(1, itemName, 0x48));
 
     PrintOnPokeblockWindow(2, gText_Spicy, 0);
@@ -808,7 +903,7 @@ static void sub_81363BC(void)
 {
     if (sPokeblockMenu->unkTaskId == 0xFF)
     {
-        sPokeblockMenu->unkTaskId = AddScrollIndicatorArrowPairParametrized(2, 0xB0, 8, 0x98, sPokeblockMenu->itemsNo - sPokeblockMenu->maxShowed,
+        sPokeblockMenu->unkTaskId = AddScrollIndicatorArrowPairParameterized(SCROLL_ARROW_UP, 0xB0, 8, 0x98, sPokeblockMenu->itemsNo - sPokeblockMenu->maxShowed,
                                                                             0x456, 0x456, &sSavedPokeblockData.lastItemPage);
     }
 }
@@ -856,7 +951,7 @@ static void sub_8136470(struct Sprite *sprite)
 
 static void FadePaletteAndSetTaskToClosePokeblockCase(u8 taskId)
 {
-    BeginNormalPaletteFade(-1, 0, 0, 0x10, 0);
+    BeginNormalPaletteFade(0xFFFFFFFF, 0, 0, 0x10, 0);
     gTasks[taskId].func = Task_FreeDataAndExitPokeblockCase;
 }
 
@@ -1044,7 +1139,7 @@ static void Task_HandlePokeblockOptionsInput(u8 taskId)
     if (sub_81221EC() == TRUE)
         return;
 
-    itemId = ProcessMenuInputNoWrapAround();
+    itemId = Menu_ProcessInputNoWrapAround();
     if (itemId == MENU_NOTHING_CHOSEN)
     {
         return;

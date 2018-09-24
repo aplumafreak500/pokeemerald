@@ -2740,7 +2740,7 @@ sub_81B1708: @ 81B1708
 	push {r4,lr}
 	lsls r0, 24
 	lsrs r4, r0, 24
-	bl ProcessMenuInputNoWrap_
+	bl Menu_ProcessInputNoWrap_
 	lsls r0, 24
 	asrs r1, r0, 24
 	cmp r1, 0
@@ -4196,7 +4196,7 @@ sub_81B227C: @ 81B227C
 	push {r4,lr}
 	lsls r0, 24
 	lsrs r4, r0, 24
-	bl ProcessMenuInputNoWrap_
+	bl Menu_ProcessInputNoWrap_
 	lsls r0, 24
 	asrs r1, r0, 24
 	cmp r1, 0
@@ -4396,7 +4396,7 @@ _081B23E8:
 	movs r0, 0
 	movs r1, 0x4F
 	movs r2, 0xD0
-	bl sub_809882C
+	bl LoadUserWindowBorderGfx
 	bl GetOverworldTextboxPalettePtr
 	movs r1, 0xE0
 	movs r2, 0x20
@@ -4454,7 +4454,7 @@ _081B243E:
 	adds r0, r4, 0
 	movs r1, 0
 	movs r3, 0x1
-	bl AddTextPrinterParameterized2
+	bl AddTextPrinterParameterized4
 	adds r0, r4, 0
 	bl PutWindowTilemap
 	adds r0, r4, 0
@@ -4502,7 +4502,7 @@ _081B24C0:
 	adds r0, r5, 0
 	movs r1, 0
 	movs r3, 0x1
-	bl box_print
+	bl AddTextPrinterParameterized3
 	b _081B2540
 	.pool
 _081B2514:
@@ -4525,7 +4525,7 @@ _081B2514:
 	adds r0, r5, 0
 	movs r1, 0
 	movs r3, 0x1
-	bl box_print
+	bl AddTextPrinterParameterized3
 _081B2540:
 	adds r0, r5, 0
 	bl PutWindowTilemap
@@ -5108,7 +5108,7 @@ sub_81B2A3C: @ 81B2A3C
 	str r1, [sp, 0x8]
 	movs r1, 0
 	adds r2, r5, 0
-	bl box_print
+	bl AddTextPrinterParameterized3
 	add sp, 0xC
 	pop {r4,r5}
 	pop {r0}
@@ -5804,7 +5804,7 @@ _081B2FF2:
 	ldr r1, [r1]
 	str r1, [sp, 0x8]
 	movs r1, 0x1
-	bl box_print
+	bl AddTextPrinterParameterized3
 _081B3018:
 	add sp, 0xC
 	pop {r3}
@@ -5938,7 +5938,7 @@ _081B3104:
 	movs r1, 0x1
 	adds r2, r4, 0
 	movs r3, 0
-	bl PrintTextOnWindow
+	bl AddTextPrinterParameterized
 	movs r0, 0x2
 	bl schedule_bg_copy_tilemap_to_vram
 _081B313C:
@@ -6132,7 +6132,7 @@ _081B328C:
 	str r1, [sp, 0x10]
 	movs r1, 0x1
 	mov r2, r9
-	bl AddTextPrinterParameterized2
+	bl AddTextPrinterParameterized4
 	adds r0, r5, 0x1
 	lsls r0, 24
 	lsrs r5, r0, 24
@@ -6193,7 +6193,7 @@ sub_81B3300: @ 81B3300
 	movs r0, 0x6
 	movs r1, 0x1
 	adds r2, r4, 0
-	bl AddTextPrinterParameterized
+	bl AddTextPrinterParameterized2
 	add sp, 0x10
 	pop {r4}
 	pop {r0}
@@ -6692,7 +6692,7 @@ sub_81B3730: @ 81B3730
 	ldrb r0, [r0, 0x17]
 	cmp r0, 0x3
 	bhi _081B3774
-	bl ProcessMenuInputNoWrapAround_other
+	bl Menu_ProcessInputNoWrapAround_other
 	b _081B3778
 	.pool
 _081B3774:
@@ -6796,7 +6796,7 @@ sub_81B3828: @ 81B3828
 	ldr r0, =sub_81B3894
 	str r0, [sp]
 	movs r0, 0x1
-	bl sub_81BF8EC
+	bl ShowPokemonSummaryScreen
 	b _081B3880
 	.pool
 _081B3868:
@@ -6810,7 +6810,7 @@ _081B3868:
 	ldr r0, =sub_81B3894
 	str r0, [sp]
 	movs r0, 0
-	bl sub_81BF8EC
+	bl ShowPokemonSummaryScreen
 _081B3880:
 	add sp, 0x4
 	pop {r4}
@@ -8138,7 +8138,7 @@ sub_81B43DC: @ 81B43DC
 	push {r4-r6,lr}
 	lsls r0, 24
 	lsrs r4, r0, 24
-	bl ProcessMenuInputNoWrap_
+	bl Menu_ProcessInputNoWrap_
 	lsls r0, 24
 	asrs r1, r0, 24
 	cmp r1, 0
@@ -8671,7 +8671,7 @@ sub_81B48DC: @ 81B48DC
 	muls r1, r0
 	ldr r0, =gPlayerParty
 	adds r4, r1, r0
-	bl ProcessMenuInputNoWrap_
+	bl Menu_ProcessInputNoWrap_
 	lsls r0, 24
 	asrs r1, r0, 24
 	cmp r1, 0
@@ -8963,7 +8963,7 @@ sub_81B4BA0: @ 81B4BA0
 	push {r4,lr}
 	lsls r0, 24
 	lsrs r4, r0, 24
-	bl ProcessMenuInputNoWrap_
+	bl Menu_ProcessInputNoWrap_
 	lsls r0, 24
 	asrs r1, r0, 24
 	cmp r1, 0
@@ -9069,7 +9069,7 @@ sub_81B4C94: @ 81B4C94
 	push {r7}
 	lsls r0, 24
 	lsrs r5, r0, 24
-	bl ProcessMenuInputNoWrap_
+	bl Menu_ProcessInputNoWrap_
 	lsls r0, 24
 	asrs r1, r0, 24
 	cmp r1, 0
@@ -9877,7 +9877,7 @@ sub_81B5430: @ 81B5430
 	push {r4,lr}
 	lsls r0, 24
 	lsrs r4, r0, 24
-	bl ProcessMenuInputNoWrap_
+	bl Menu_ProcessInputNoWrap_
 	lsls r0, 24
 	asrs r1, r0, 24
 	cmp r1, 0
@@ -10171,7 +10171,7 @@ sub_81B56D8: @ 81B56D8
 	push {r4,lr}
 	lsls r0, 24
 	lsrs r4, r0, 24
-	bl ProcessMenuInputNoWrap_
+	bl Menu_ProcessInputNoWrap_
 	lsls r0, 24
 	asrs r1, r0, 24
 	cmp r1, 0
@@ -10199,10 +10199,10 @@ _081B5714:
 	movs r0, 0x5
 	bl PlaySE
 _081B571A:
-	ldr r0, =gUnknown_03005DB0
+	ldr r0, =gFieldCallback2
 	movs r1, 0
 	str r1, [r0]
-	ldr r0, =gUnknown_0203CEEC
+	ldr r0, =gPostMenuFieldCallback
 	str r1, [r0]
 	adds r0, r4, 0
 	bl sub_81B1C1C
@@ -10213,8 +10213,8 @@ _081B572A:
 	.pool
 	thumb_func_end sub_81B56D8
 
-	thumb_func_start FieldCallback_Teleport
-FieldCallback_Teleport: @ 81B5738
+	thumb_func_start FieldCallback_PrepareFadeInFromMenu
+FieldCallback_PrepareFadeInFromMenu: @ 81B5738
 	push {lr}
 	bl pal_fill_black
 	ldr r0, =task_launch_hm_phase_2
@@ -10224,14 +10224,14 @@ FieldCallback_Teleport: @ 81B5738
 	pop {r1}
 	bx r1
 	.pool
-	thumb_func_end FieldCallback_Teleport
+	thumb_func_end FieldCallback_PrepareFadeInFromMenu
 
 	thumb_func_start task_launch_hm_phase_2
 task_launch_hm_phase_2: @ 81B5750
 	push {r4,lr}
 	lsls r0, 24
 	lsrs r4, r0, 24
-	bl sub_80ABDFC
+	bl IsWeatherNotFadingIn
 	lsls r0, 24
 	lsrs r0, 24
 	cmp r0, 0x1
@@ -10241,7 +10241,7 @@ task_launch_hm_phase_2: @ 81B5750
 	lsls r0, 16
 	lsrs r0, 16
 	str r0, [r1]
-	ldr r0, =gUnknown_0203CEEC
+	ldr r0, =gPostMenuFieldCallback
 	ldr r0, [r0]
 	bl _call_via_r0
 	adds r0, r4, 0
@@ -10345,10 +10345,10 @@ sub_81B5820: @ 81B5820
 	lsrs r0, 24
 	cmp r0, 0x1
 	bne _081B585C
-	ldr r1, =gUnknown_03005DB0
-	ldr r0, =FieldCallback_Teleport
+	ldr r1, =gFieldCallback2
+	ldr r0, =FieldCallback_PrepareFadeInFromMenu
 	str r0, [r1]
-	ldr r1, =gUnknown_0203CEEC
+	ldr r1, =gPostMenuFieldCallback
 	ldr r0, =hm_surf_run_dp02scr
 	str r0, [r1]
 	movs r0, 0x1
@@ -10463,10 +10463,10 @@ hm_prepare_waterfall: @ 81B58F0
 	lsrs r0, 24
 	cmp r0, 0x1
 	bne _081B594C
-	ldr r1, =gUnknown_03005DB0
-	ldr r0, =FieldCallback_Teleport
+	ldr r1, =gFieldCallback2
+	ldr r0, =FieldCallback_PrepareFadeInFromMenu
 	str r0, [r1]
-	ldr r1, =gUnknown_0203CEEC
+	ldr r1, =gPostMenuFieldCallback
 	ldr r0, =hm2_waterfall
 	str r0, [r1]
 	movs r0, 0x1
@@ -10510,10 +10510,10 @@ sub_81B5974: @ 81B5974
 	b _081B599E
 	.pool
 _081B5990:
-	ldr r1, =gUnknown_03005DB0
-	ldr r0, =FieldCallback_Teleport
+	ldr r1, =gFieldCallback2
+	ldr r0, =FieldCallback_PrepareFadeInFromMenu
 	str r0, [r1]
-	ldr r1, =gUnknown_0203CEEC
+	ldr r1, =gPostMenuFieldCallback
 	ldr r0, =sub_81B5958
 	str r0, [r1]
 	movs r0, 0x1
@@ -11626,7 +11626,7 @@ c2_815ABFC: @ 81B6254
 	bl GoToBagMenu
 	b _081B6276
 _081B626C:
-	ldr r0, =gUnknown_0203CF30
+	ldr r0, =gPyramidBagCursorData
 	ldr r1, [r0]
 	movs r0, 0x4
 	bl sub_81C4F98
@@ -12158,7 +12158,7 @@ sub_81B672C: @ 81B672C
 	bl sub_81B1B5C
 	movs r0, 0x2
 	bl schedule_bg_copy_tilemap_to_vram
-	bl sub_805EAE8
+	bl HandleBattleLowHpMusicChange
 	ldr r1, =gTasks
 	lsls r0, r5, 2
 	adds r0, r5
@@ -12508,7 +12508,7 @@ _081B6A40:
 	adds r0, r6, 0
 	mov r1, r10
 	movs r3, 0x8
-	bl PrintTextOnWindow
+	bl AddTextPrinterParameterized
 	cmp r4, 0
 	beq _081B6A82
 	adds r0, r7, 0x1
@@ -13156,7 +13156,7 @@ sub_81B7028: @ 81B7028
 	push {r4,lr}
 	lsls r0, 24
 	lsrs r4, r0, 24
-	bl ProcessMenuInputNoWrap_
+	bl Menu_ProcessInputNoWrap_
 	lsls r0, 24
 	asrs r1, r0, 24
 	cmp r1, 0
@@ -13235,7 +13235,7 @@ sub_81B70B8: @ 81B70B8
 	ldr r3, =sub_81B70F0
 	ldrh r4, [r4, 0xE]
 	str r4, [sp]
-	bl sub_81BFA38
+	bl ShowSelectMovePokemonSummaryScreen
 	add sp, 0x4
 	pop {r4}
 	pop {r0}
@@ -13458,7 +13458,7 @@ sub_81B72C8: @ 81B72C8
 	muls r1, r0
 	ldr r0, =gPlayerParty
 	adds r4, r1, r0
-	bl ProcessMenuInputNoWrap_
+	bl Menu_ProcessInputNoWrap_
 	lsls r0, 24
 	asrs r5, r0, 24
 	cmp r5, 0
@@ -15240,7 +15240,7 @@ sub_81B82D4: @ 81B82D4
 	push {r4-r7,lr}
 	lsls r0, 24
 	lsrs r5, r0, 24
-	bl ProcessMenuInputNoWrap_
+	bl Menu_ProcessInputNoWrap_
 	lsls r0, 24
 	asrs r1, r0, 24
 	cmp r1, 0
@@ -15368,7 +15368,7 @@ sub_81B83F0: @ 81B83F0
 	lsls r0, r1, 24
 	lsrs r0, 24
 	movs r1, 0x1
-	bl sub_80D6E48
+	bl RemovePCItem
 	b _081B8418
 	.pool
 _081B8410:
@@ -16021,7 +16021,7 @@ sub_81B892C: @ 81B892C
 	str r0, [sp]
 	ldr r0, =sub_81B1370
 	str r0, [sp, 0x4]
-	ldr r0, =CB2_ReturnToFieldContinueScript
+	ldr r0, =CB2_ReturnToFieldContinueScriptPlayMapMusic
 	str r0, [sp, 0x8]
 	movs r0, 0
 	movs r1, 0
@@ -16042,7 +16042,7 @@ sub_81B8958: @ 81B8958
 	str r0, [sp]
 	ldr r0, =sub_81B1370
 	str r0, [sp, 0x4]
-	ldr r0, =CB2_ReturnToFieldContinueScript
+	ldr r0, =CB2_ReturnToFieldContinueScriptPlayMapMusic
 	str r0, [sp, 0x8]
 	movs r0, 0xB
 	movs r1, 0
@@ -16079,8 +16079,8 @@ _081B89A6:
 	bx r1
 	thumb_func_end sub_81B8984
 
-	thumb_func_start sub_81B89AC
-sub_81B89AC: @ 81B89AC
+	thumb_func_start OpenPartyMenuInBattle
+OpenPartyMenuInBattle: @ 81B89AC
 	push {r4,lr}
 	sub sp, 0xC
 	adds r4, r0, 0
@@ -16107,7 +16107,7 @@ sub_81B89AC: @ 81B89AC
 	pop {r0}
 	bx r0
 	.pool
-	thumb_func_end sub_81B89AC
+	thumb_func_end OpenPartyMenuInBattle
 
 	thumb_func_start sub_81B89F0
 sub_81B89F0: @ 81B89F0
@@ -16288,7 +16288,7 @@ _081B8B94:
 	ldrb r0, [r0, 0xB]
 	cmp r0, 0x4
 	bne _081B8BA8
-	bl sub_806E994
+	bl SetMonPreventsSwitchingString
 	b _081B8C46
 	.pool
 _081B8BA8:
@@ -17276,7 +17276,7 @@ sub_81B9354: @ 81B9354
 	sub sp, 0xC
 	lsls r0, 24
 	lsrs r0, 24
-	ldr r2, =gUnknown_03005DB0
+	ldr r2, =gFieldCallback2
 	ldr r1, =hm_add_c3_without_phase_2
 	str r1, [r2]
 	movs r1, 0
@@ -17308,7 +17308,7 @@ sub_81B9390: @ 81B9390
 	movs r0, 0xFF
 	strh r0, [r4]
 _081B93A6:
-	ldr r0, =gUnknown_03005DB0
+	ldr r0, =gFieldCallback2
 	ldr r1, =hm_add_c3_without_phase_2
 	str r1, [r0]
 	ldr r0, =CB2_ReturnToField
@@ -17337,7 +17337,7 @@ task_hm_without_phase_2: @ 81B93E0
 	push {r4,lr}
 	lsls r0, 24
 	lsrs r4, r0, 24
-	bl sub_80ABDFC
+	bl IsWeatherNotFadingIn
 	lsls r0, 24
 	cmp r0, 0
 	beq _081B93FE
@@ -17417,7 +17417,7 @@ _081B9486:
 	ldr r1, =gSpecialVar_0x8004
 	ldrb r0, [r2]
 	strh r0, [r1]
-	ldr r1, =gUnknown_03005DB0
+	ldr r1, =gFieldCallback2
 	ldr r0, =hm_add_c3_without_phase_2
 	str r0, [r1]
 	ldr r0, =CB2_ReturnToField
@@ -17553,7 +17553,7 @@ _081B95A4:
 	lsrs r0, 24
 	strh r0, [r4]
 _081B95BA:
-	ldr r0, =gUnknown_03005DB0
+	ldr r0, =gFieldCallback2
 	ldr r1, =hm_add_c3_without_phase_2
 	str r1, [r0]
 	ldr r0, =CB2_ReturnToField
@@ -17663,7 +17663,7 @@ sub_81B968C: @ 81B968C
 	ldr r0, =CB2_ReturnToField
 	str r0, [sp]
 	movs r0, 0x3
-	bl sub_81BF8EC
+	bl ShowPokemonSummaryScreen
 	ldr r1, =gFieldCallback
 	ldr r0, =sub_80AF168
 	str r0, [r1]

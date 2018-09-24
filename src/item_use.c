@@ -1,97 +1,68 @@
 #include "global.h"
 #include "item_use.h"
 #include "battle.h"
-#include "main.h"
+#include "battle_pyramid_bag.h"
 #include "berry.h"
 #include "bike.h"
 #include "coins.h"
-#include "constants/flags.h"
-#include "constants/items.h"
-#include "constants/songs.h"
-#include "constants/vars.h"
 #include "data2.h"
 #include "event_data.h"
 #include "fieldmap.h"
-#include "field_map_obj.h"
+#include "event_object_movement.h"
 #include "field_player_avatar.h"
 #include "field_screen.h"
 #include "field_weather.h"
 #include "item.h"
-#include "field_map_obj_helpers.h"
+#include "item_menu.h"
 #include "mail.h"
+#include "main.h"
+#include "menu.h"
+#include "menu_helpers.h"
 #include "metatile_behavior.h"
 #include "overworld.h"
 #include "palette.h"
+#include "party_menu.h"
+#include "pokeblock.h"
 #include "pokemon.h"
 #include "rom_818CFC8.h"
 #include "script.h"
 #include "sound.h"
+#include "strings.h"
 #include "string_util.h"
 #include "task.h"
 #include "text.h"
+#include "constants/bg_event_constants.h"
+#include "constants/flags.h"
+#include "constants/items.h"
+#include "constants/songs.h"
+#include "constants/vars.h"
 
-extern void(**gUnknown_0203CE54)(void);
-extern void(**gUnknown_0203CF2C)(void);
 extern void(*gUnknown_0203A0F4)(u8 taskId);
-extern void(*gUnknown_085920D8[])(void);
 extern void (*gUnknown_03006328)(u8, u16, TaskFunc);
 extern void unknown_ItemMenu_Confirm(u8 taskId);
 extern void sub_81C5B14(u8 taskId);
-extern u8 gText_DadsAdvice[];
-extern u8 gText_CantDismountBike[];
-extern void sub_8197434(u8 a, u8 b);
-extern void sub_80984F4(void);
+extern void ScriptUnfreezeEventObjects(void);
 extern void ItemUseOutOfBattle_TMHM(u8 a);
 extern void ItemUseOutOfBattle_EvolutionStone(u8 b);
-extern void bag_menu_mail_related(void);
-extern void OpenPokeblockCase(u8 a, void(*b)(void));
-extern void overworld_free_bg_tilemaps(void);
-extern bool32 Overworld_IsBikingAllowed(void);
 extern bool8 IsPlayerFacingSurfableFishableWater(void);
 extern bool8 sub_81221AC(void);
-extern u8 gText_ItemFinderNothing[];
-extern u8 gText_ItemFinderNearby[];
-extern u8 gText_ItemFinderOnTop[];
-extern u8 gText_CoinCase[];
-extern u8 gText_PowderQty[];
-extern u8 gUnknown_085920E4[];
 extern u8 Route102_EventScript_274482[];
 extern u8 Route102_EventScript_2744C0[];
 extern u8 BattleFrontier_OutsideEast_EventScript_242CFC[];
-extern u8 gText_BootedUpHM[];
-extern u8 gText_BootedUpTM[];
-extern u8 gText_TMHMContainedVar1[];
-extern u8 gText_PlayerUsedVar2[];
-extern u8 gText_RepelEffectsLingered[];
-extern u8 gText_UsedVar2WildLured[];
-extern u8 gText_UsedVar2WildRepelled[];
-extern u8 gText_BoxFull[];
-extern u8 gText_WontHaveEffect[];
 extern int sub_80247BC(void);
 extern struct MapHeader* mapconnection_get_mapheader(struct MapConnection *connection);
 extern void SetUpItemUseCallback(u8 taskId);
 extern void ItemUseCB_Medicine(u8, u16, TaskFunc);
-extern void sub_81B67C8(u8, u16, TaskFunc);
-extern void sub_81B79E8(u8, u16, TaskFunc);
-extern void dp05_ether(u8, u16, TaskFunc);
-extern void dp05_pp_up(u8, u16, TaskFunc);
-extern void dp05_rare_candy(u8, u16, TaskFunc);
-extern void sub_81B6DC4(u8, u16, TaskFunc);
-extern void sub_81B7C74(u8, u16, TaskFunc);
-extern u16 ItemIdToBattleMoveId(u16);
-extern void bag_menu_yes_no(u8, u8, void(**)(u8 taskId));
-extern void (*gUnknown_085920E8[])(u8 taskId);
+extern void bag_menu_yes_no(u8, u8, const struct YesNoFuncTable*);
 extern void sub_81C5924(void);
 extern void sub_81C59BC(void);
 extern void sub_81AB9A8(u8);
 extern void sub_81ABA88(u8);
 extern void sub_80B7CC8(void);
-extern void Overworld_ResetStateAfterDigEscRope(void);
 extern u8* sub_806CF78(u16);
 extern void sub_81B89F0(void);
 extern u8 GetItemEffectType(u16);
 extern struct MapConnection *sub_8088A8C(s16, s16);
-extern void (*gFieldCallback)(void);
 
 void MapPostLoadHook_UseItem(void);
 void sub_80AF6D4(void);
@@ -112,12 +83,12 @@ void sub_80FDE7C(u8 taskId);
 void sub_80FDF90(u8 taskId);
 void task08_0809AD8C(u8 taskId);
 void sub_80FE024(u8 taskId);
+void sub_80FE03C(u8 taskId);
 void sub_80FE124(u8 taskId);
 void sub_80FE164(u8 taskId);
 
 void DisplayItemMessage(u8 taskId, u8 a, const u8* str, void(*callback)(u8 taskId));
-void DisplayItemMessageInBattlePyramid(u8 taskId, u8* str, void(*callback)(u8 taskId));
-void DisplayItemMessageOnField(u8 taskId, u8* str, void(*callback)(u8 taskId));
+void DisplayItemMessageOnField(u8 taskId, const u8* str, void(*callback)(u8 taskId));
 void sub_81C6714(u8 taskId);
 void CleanUpAfterFailingToUseRegisteredKeyItemOnField(u8 taskId);
 void StartFishing(u8 a);
@@ -129,6 +100,25 @@ void sub_80FDBEC(void);
 bool8 sub_80FDE2C(void);
 void ItemUseOutOfBattle_CannotUse(u8 taskId);
 
+// .rodata
+
+static const MainCallback gUnknown_085920D8[] =
+{
+    sub_81B617C,
+    CB2_ReturnToField,
+    NULL,
+};
+
+static const u8 gUnknown_085920E4[] = {DIR_NORTH, DIR_EAST, DIR_SOUTH, DIR_WEST};
+
+static const struct YesNoFuncTable gUnknown_085920E8 =
+{
+    .yesFunc = sub_80FE03C,
+    .noFunc = bag_menu_inits_lists_menu,
+};
+
+// .text
+
 void SetUpItemUseCallback(u8 taskId)
 {
     u8 type;
@@ -138,12 +128,12 @@ void SetUpItemUseCallback(u8 taskId)
         type = ItemId_GetType(gSpecialVar_ItemId) - 1;
     if (!InBattlePyramid())
     {
-        *gUnknown_0203CE54 = gUnknown_085920D8[type];
+        gUnknown_0203CE54->unk0 = gUnknown_085920D8[type];
         unknown_ItemMenu_Confirm(taskId);
     }
     else
     {
-        *gUnknown_0203CF2C = gUnknown_085920D8[type];
+        gPyramidBagResources->callback2 = gUnknown_085920D8[type];
         sub_81C5B14(taskId);
     }
 }
@@ -167,7 +157,7 @@ void MapPostLoadHook_UseItem(void)
 
 void Task_CallItemUseOnFieldCallback(u8 taskId)
 {
-    if (sub_80ABDFC() == 1)
+    if (IsWeatherNotFadingIn() == 1)
         gUnknown_0203A0F4(taskId);
 }
 
@@ -199,7 +189,7 @@ void CleanUpAfterFailingToUseRegisteredKeyItemOnField(u8 taskId)
 {
     sub_8197434(0, 1);
     DestroyTask(taskId);
-    sub_80984F4();
+    ScriptUnfreezeEventObjects();
     ScriptContext2_Disable();
 }
 
@@ -222,7 +212,7 @@ void sub_80FD254()
 
 void ItemUseOutOfBattle_Mail(u8 taskId)
 {
-    *gUnknown_0203CE54 = sub_80FD254;
+    gUnknown_0203CE54->unk0 = sub_80FD254;
     unknown_ItemMenu_Confirm(taskId);
 }
 
@@ -254,7 +244,7 @@ void ItemUseOnFieldCB_Bike(u8 taskId)
         GetOnOffBike(2);
     else
         GetOnOffBike(4);
-    sub_80984F4();
+    ScriptUnfreezeEventObjects();
     ScriptContext2_Disable();
     DestroyTask(taskId);
 }
@@ -339,7 +329,7 @@ void sub_80FD504(u8 taskId)
             }
             else
             {
-                playerDir = player_get_direction_lower_nybble();
+                playerDir = GetPlayerFacingDirection();
                 for (i = 0; i < 4; i++)
                 {
                     if (playerDir == gUnknown_085920E4[i])
@@ -360,7 +350,7 @@ void sub_80FD504(u8 taskId)
 void sub_80FD5CC(u8 taskId)
 {
     sub_8197434(0, 1);
-    sub_80984F4();
+    ScriptUnfreezeEventObjects();
     ScriptContext2_Disable();
     DestroyTask(taskId);
 }
@@ -373,7 +363,7 @@ bool8 ItemfinderCheckForHiddenItems(const struct MapEvents *events, u8 taskId)
     gTasks[taskId].data[2] = FALSE;
     for (i = 0; i < events->bgEventCount; i++)
     {
-        if (events->bgEvents[i].kind == 7 && !FlagGet(events->bgEvents[i].bgUnion.hiddenItem.hiddenItemId + 0x1F4))
+        if (events->bgEvents[i].kind == BG_EVENT_HIDDEN_ITEM && !FlagGet(events->bgEvents[i].bgUnion.hiddenItem.hiddenItemId + 0x1F4))
         {
             distanceX = (u16)events->bgEvents[i].x + 7;
             newDistanceX = distanceX - x;
@@ -400,7 +390,7 @@ bool8 sub_80FD6D4(const struct MapEvents *events, s16 x, s16 y)
 
     for (i = 0; i < bgEventCount; i++)
     {
-        if (bgEvent[i].kind == 7 && x == (u16)bgEvent[i].x && y == (u16)bgEvent[i].y) // hidden item and coordinates matches x and y passed?
+        if (bgEvent[i].kind == BG_EVENT_HIDDEN_ITEM && x == (u16)bgEvent[i].x && y == (u16)bgEvent[i].y) // hidden item and coordinates matches x and y passed?
         {
             if (!FlagGet(bgEvent[i].bgUnion.hiddenItem.hiddenItemId + 0x1F4))
                 return TRUE;
@@ -426,23 +416,23 @@ bool8 sub_80FD730(struct MapConnection *connection, int x, int y)
     case 2:
         localOffset = connection->offset + 7;
         localX = x - localOffset;
-        localLength = mapHeader->mapData->height - 7;
+        localLength = mapHeader->mapLayout->height - 7;
         localY = localLength + y; // additions are reversed for some reason
         break;
     case 1:
         localOffset = connection->offset + 7;
         localX = x - localOffset;
-        localLength = gMapHeader.mapData->height + 7;
+        localLength = gMapHeader.mapLayout->height + 7;
         localY = y - localLength;
         break;
     case 3:
-        localLength = mapHeader->mapData->width - 7;
+        localLength = mapHeader->mapLayout->width - 7;
         localX = localLength + x; // additions are reversed for some reason
         localOffset = connection->offset + 7;
         localY = y - localOffset;
         break;
     case 4:
-        localLength = gMapHeader.mapData->width + 7;
+        localLength = gMapHeader.mapLayout->width + 7;
         localX = x - localLength;
         localOffset = connection->offset + 7;
         localY = y - localOffset;
@@ -457,8 +447,8 @@ void sub_80FD7C8(u8 taskId)
 {
     s16 x, y;
     s16 curX, curY;
-    s16 width = gMapHeader.mapData->width + 7;
-    s16 height = gMapHeader.mapData->height + 7;
+    s16 width = gMapHeader.mapLayout->width + 7;
+    s16 height = gMapHeader.mapLayout->height + 7;
 
     s16 var1 = 7;
     s16 var2 = 7;
@@ -581,15 +571,15 @@ u8 sub_80FD9B0(s16 itemX, s16 itemY)
 
 void sub_80FDA24(u8 direction)
 {
-    FieldObjectClearAnimIfSpecialAnimFinished(&gMapObjects[GetFieldObjectIdByLocalIdAndMap(0xFF, 0, 0)]);
-    FieldObjectClearAnim(&gMapObjects[GetFieldObjectIdByLocalIdAndMap(0xFF, 0, 0)]);
-    npc_sync_anim_pause_bits(&gMapObjects[GetFieldObjectIdByLocalIdAndMap(0xFF, 0, 0)]);
+    EventObjectClearHeldMovementIfFinished(&gEventObjects[GetEventObjectIdByLocalIdAndMap(0xFF, 0, 0)]);
+    EventObjectClearHeldMovement(&gEventObjects[GetEventObjectIdByLocalIdAndMap(0xFF, 0, 0)]);
+    UnfreezeEventObject(&gEventObjects[GetEventObjectIdByLocalIdAndMap(0xFF, 0, 0)]);
     PlayerTurnInPlace(direction);
 }
 
 void sub_80FDA94(u8 taskId)
 {
-    if (FieldObjectCheckIfSpecialAnimFinishedOrInactive(&gMapObjects[GetFieldObjectIdByLocalIdAndMap(0xFF, 0, 0)]) == TRUE)
+    if (EventObjectCheckHeldMovementStatus(&gEventObjects[GetEventObjectIdByLocalIdAndMap(0xFF, 0, 0)]) == TRUE)
         DisplayItemMessageOnField(taskId, gText_ItemFinderNearby, sub_80FD5CC);
 }
 
@@ -597,7 +587,7 @@ void sub_80FDADC(u8 taskId)
 {
     s16 *data = gTasks[taskId].data;
 
-    if (FieldObjectCheckIfSpecialAnimFinishedOrInactive(&gMapObjects[GetFieldObjectIdByLocalIdAndMap(0xFF, 0, 0)]) == TRUE
+    if (EventObjectCheckHeldMovementStatus(&gEventObjects[GetEventObjectIdByLocalIdAndMap(0xFF, 0, 0)]) == TRUE
     || data[2] == FALSE)
     {
         sub_80FDA24(gUnknown_085920E4[data[5]]);
@@ -618,7 +608,7 @@ void ItemUseOutOfBattle_PokeblockCase(u8 taskId)
     }
     else if (gTasks[taskId].data[3] != TRUE)
     {
-        *gUnknown_0203CE54 = sub_80FDBEC;
+        gUnknown_0203CE54->unk0 = sub_80FDBEC;
         unknown_ItemMenu_Confirm(taskId);
     }
     else
@@ -680,7 +670,7 @@ void sub_80FDD10(u8 taskId)
     {
         gUnknown_0203A0F4 = sub_80FDD74;
         gFieldCallback = MapPostLoadHook_UseItem;
-        *gUnknown_0203CE54 = CB2_ReturnToField;
+        gUnknown_0203CE54->unk0 = CB2_ReturnToField;
         unknown_ItemMenu_Confirm(taskId);
     }
     else
@@ -729,8 +719,8 @@ bool8 sub_80FDE2C(void)
     u8 objId;
     GetXYCoordsOneStepInFrontOfPlayer(&x, &y);
     z = PlayerGetZCoord();
-    objId = GetFieldObjectIdByXYZ(x, y, z);
-    if (objId == 16 || gMapObjects[objId].graphicsId != 0xE4)
+    objId = GetEventObjectIdByXYZ(x, y, z);
+    if (objId == 16 || gEventObjects[objId].graphicsId != 0xE4)
         return FALSE;
     else
         return TRUE;
@@ -805,7 +795,7 @@ void task08_0809AD8C(u8 taskId)
 
 void sub_80FE024(u8 taskId)
 {
-    bag_menu_yes_no(taskId, 6, gUnknown_085920E8);
+    bag_menu_yes_no(taskId, 6, &gUnknown_085920E8);
 }
 
 void sub_80FE03C(u8 taskId)
@@ -899,7 +889,7 @@ void ItemUseOutOfBattle_BlackWhiteFlute(u8 taskId)
 
 void task08_080A1C44(u8 taskId)
 {
-    player_avatar_init_params_reset();
+    ResetInitialPlayerAvatarState();
     sub_80B7CC8();
     DestroyTask(taskId);
 }
@@ -1003,12 +993,12 @@ void sub_80FE54C(u8 taskId)
 {
     if (!InBattlePyramid())
     {
-        *gUnknown_0203CE54 = sub_81B89F0;
+        gUnknown_0203CE54->unk0 = sub_81B89F0;
         unknown_ItemMenu_Confirm(taskId);
     }
     else
     {
-        *gUnknown_0203CF2C = sub_81B89F0;
+        gPyramidBagResources->callback2 = sub_81B89F0;
         sub_81C5B14(taskId);
     }
 }

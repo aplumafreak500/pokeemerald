@@ -6,6 +6,7 @@
 #include "text.h"
 #include "string_util.h"
 #include "constants/items.h"
+#include "constants/trainers.h"
 #include "event_data.h"
 #include "link.h"
 #include "item.h"
@@ -16,12 +17,25 @@
 #include "menu.h"
 #include "recorded_battle.h"
 #include "international_string_util.h"
+#include "battle_frontier_2.h"
 
-extern u8 gBattlerAbilities[MAX_BATTLERS_COUNT];
+struct BattleWindowText
+{
+    u8 fillValue;
+    u8 fontId;
+    u8 x;
+    u8 y;
+    u8 letterSpacing;
+    u8 lineSpacing;
+    u8 speed;
+    u8 fgColor;
+    u8 bgColor;
+    u8 shadowColor;
+};
+
 extern u8 gUnknown_0203C7B4;
-extern struct StringInfoBattle *gStringInfo;
 
-extern const u8 gMoveNames[LAST_MOVE_INDEX + 1][13];
+extern const u8 gMoveNames[MOVES_COUNT][13];
 extern const u8 gTrainerClassNames[][13];
 extern const u16 gUnknown_08D85620[];
 
@@ -31,28 +45,24 @@ extern const u8 gText_PkmnBoxLanettesPCFull[];
 extern const u8 gText_PkmnTransferredSomeonesPC[];
 extern const u8 gText_PkmnTransferredLanettesPC[];
 
-extern u16 sub_8068BB0(void); // pokemon_1
-extern u8 sub_81A4D00(void); // battle_frontier_2
+extern u8 GetFrontierBrainTrainerClass(void); // battle_frontier_2
 extern u8 GetFrontierOpponentClass(u16 trainerId); // battle_tower
-extern u8 sub_81D5530(u16 trainerId); // pokenav
+extern u8 GetTrainerHillOpponentClass(u16 trainerId); // pokenav
 extern u8 GetEreaderTrainerClassId(void); // battle_tower
-extern void sub_81A4D50(u8 *txtPtr); // battle_frontier_2
-extern void sub_81D5554(u8 *txtPtr, u16 trainerId); // pokenav
+extern void CopyFrontierBrainTrainerName(u8 *txtPtr); // battle_frontier_2
+extern void GetTrainerHillTrainerName(u8 *txtPtr, u16 trainerId); // pokenav
 extern void GetEreaderTrainerName(u8 *txtPtr);
-extern void sub_81A36D0(u8 arg0, u16 trainerId); // battle_frontier_2
-extern void sub_81D572C(u8 arg0, u16 trainerId); // pokenav
+extern void CopyTrainerHillTrainerText(u8 arg0, u16 trainerId); // pokenav
 extern void GetFrontierTrainerName(u8 *dst, u16 trainerId);
 
 // this file's functions
-static void sub_814F8F8(u8 *textPtr);
-static void sub_814F950(u8 *dst);
+static void ChooseMoveUsedParticle(u8 *textPtr);
+static void ChooseTypeOfMoveUsedString(u8 *dst);
 static void ExpandBattleTextBuffPlaceholders(const u8 *src, u8 *dst);
 
-// ewram variables
-EWRAM_DATA u8 gDisplayedStringBattle[300] = {0};
-EWRAM_DATA u8 gBattleTextBuff1[TEXT_BUFF_ARRAY_COUNT] = {0};
-EWRAM_DATA u8 gBattleTextBuff2[TEXT_BUFF_ARRAY_COUNT] = {0};
-EWRAM_DATA u8 gBattleTextBuff3[TEXT_BUFF_ARRAY_COUNT] = {0};
+// EWRAM vars
+static EWRAM_DATA u8 sBattlerAbilities[MAX_BATTLERS_COUNT] = {0};
+EWRAM_DATA struct BattleMsgData *gBattleMsgDataPtr = NULL;
 
 // const rom data
 // todo: make some of those names less vague: attacker/target vs pkmn, etc.
@@ -324,14 +334,14 @@ static const u8 sText_GotAwaySafely[] = _("{PLAY_SE 0x0011}Got away safely!\p");
 static const u8 sText_PkmnFledUsingIts[] = _("{PLAY_SE 0x0011}{B_ATK_NAME_WITH_PREFIX} fled\nusing its {B_LAST_ITEM}!\p");
 static const u8 sText_PkmnFledUsing[] = _("{PLAY_SE 0x0011}{B_ATK_NAME_WITH_PREFIX} fled\nusing {B_ATK_ABILITY}!\p");
 static const u8 sText_WildPkmnFled[] = _("{PLAY_SE 0x0011}Wild {B_BUFF1} fled!");
-static const u8 sText_PlayerDefeatedLinkTrainer[] = _("Player defeated\n{B_20}!");
-static const u8 sText_TwoLinkTrainersDefeated[] = _("Player beat {B_20}\nand {B_21}!");
-static const u8 sText_PlayerLostAgainstLinkTrainer[] = _("Player lost against\n{B_20}!");
-static const u8 sText_PlayerLostToTwo[] = _("Player lost to {B_20}\nand {B_21}!");
-static const u8 sText_PlayerBattledToDrawLinkTrainer[] = _("Player battled to a draw against\n{B_20}!");
-static const u8 sText_PlayerBattledToDrawVsTwo[] = _("Player battled to a draw against\n{B_20} and {B_21}!");
-static const u8 sText_WildFled[] = _("{PLAY_SE 0x0011}{B_20} fled!");
-static const u8 sText_TwoWildFled[] = _("{PLAY_SE 0x0011}{B_20} and\n{B_21} fled!");
+static const u8 sText_PlayerDefeatedLinkTrainer[] = _("Player defeated\n{B_LINK_OPPONENT1_NAME}!");
+static const u8 sText_TwoLinkTrainersDefeated[] = _("Player beat {B_LINK_OPPONENT1_NAME}\nand {B_LINK_OPPONENT2_NAME}!");
+static const u8 sText_PlayerLostAgainstLinkTrainer[] = _("Player lost against\n{B_LINK_OPPONENT1_NAME}!");
+static const u8 sText_PlayerLostToTwo[] = _("Player lost to {B_LINK_OPPONENT1_NAME}\nand {B_LINK_OPPONENT2_NAME}!");
+static const u8 sText_PlayerBattledToDrawLinkTrainer[] = _("Player battled to a draw against\n{B_LINK_OPPONENT1_NAME}!");
+static const u8 sText_PlayerBattledToDrawVsTwo[] = _("Player battled to a draw against\n{B_LINK_OPPONENT1_NAME} and {B_LINK_OPPONENT2_NAME}!");
+static const u8 sText_WildFled[] = _("{PLAY_SE 0x0011}{B_LINK_OPPONENT1_NAME} fled!");
+static const u8 sText_TwoWildFled[] = _("{PLAY_SE 0x0011}{B_LINK_OPPONENT1_NAME} and\n{B_LINK_OPPONENT2_NAME} fled!");
 static const u8 sText_NoRunningFromTrainers[] = _("No! There’s no running\nfrom a TRAINER battle!\p");
 static const u8 sText_CantEscape[] = _("Can’t escape!\p");
 static const u8 sText_DontLeaveBirch[] = _("PROF. BIRCH: Don’t leave me like this!\p");
@@ -388,33 +398,33 @@ static const u8 sText_WildPkmnAppeared2[] = _("Wild {B_OPPONENT_MON1_NAME} appea
 static const u8 sText_WildPkmnAppearedPause[] = _("Wild {B_OPPONENT_MON1_NAME} appeared!{PAUSE 127}");
 static const u8 sText_TwoWildPkmnAppeared[] = _("Wild {B_OPPONENT_MON1_NAME} and\n{B_OPPONENT_MON2_NAME} appeared!\p");
 static const u8 sText_Trainer1WantsToBattle[] = _("{B_TRAINER1_CLASS} {B_TRAINER1_NAME}\nwould like to battle!\p");
-static const u8 sText_LinkTrainerWantsToBattle[] = _("{B_20}\nwants to battle!");
-static const u8 sText_TwoLinkTrainersWantToBattle[] = _("{B_20} and {B_21}\nwant to battle!");
+static const u8 sText_LinkTrainerWantsToBattle[] = _("{B_LINK_OPPONENT1_NAME}\nwants to battle!");
+static const u8 sText_TwoLinkTrainersWantToBattle[] = _("{B_LINK_OPPONENT1_NAME} and {B_LINK_OPPONENT2_NAME}\nwant to battle!");
 static const u8 sText_Trainer1SentOutPkmn[] = _("{B_TRAINER1_CLASS} {B_TRAINER1_NAME} sent\nout {B_OPPONENT_MON1_NAME}!");
 static const u8 sText_Trainer1SentOutTwoPkmn[] = _("{B_TRAINER1_CLASS} {B_TRAINER1_NAME} sent\nout {B_OPPONENT_MON1_NAME} and {B_OPPONENT_MON2_NAME}!");
 static const u8 sText_Trainer1SentOutPkmn2[] = _("{B_TRAINER1_CLASS} {B_TRAINER1_NAME} sent\nout {B_BUFF1}!");
-static const u8 sText_LinkTrainerSentOutPkmn[] = _("{B_20} sent out\n{B_OPPONENT_MON1_NAME}!");
-static const u8 sText_LinkTrainerSentOutTwoPkmn[] = _("{B_20} sent out\n{B_OPPONENT_MON1_NAME} and {B_OPPONENT_MON2_NAME}!");
-static const u8 sText_TwoLinkTrainersSentOutPkmn[] = _("{B_20} sent out {B_LINK_OPPONENT_MON1_NAME}!\n{B_21} sent out {B_LINK_OPPONENT_MON2_NAME}!");
-static const u8 sText_LinkTrainerSentOutPkmn2[] = _("{B_20} sent out\n{B_BUFF1}!");
-static const u8 sText_LinkTrainerMultiSentOutPkmn[] = _("{B_22} sent out\n{B_BUFF1}!");
+static const u8 sText_LinkTrainerSentOutPkmn[] = _("{B_LINK_OPPONENT1_NAME} sent out\n{B_OPPONENT_MON1_NAME}!");
+static const u8 sText_LinkTrainerSentOutTwoPkmn[] = _("{B_LINK_OPPONENT1_NAME} sent out\n{B_OPPONENT_MON1_NAME} and {B_OPPONENT_MON2_NAME}!");
+static const u8 sText_TwoLinkTrainersSentOutPkmn[] = _("{B_LINK_OPPONENT1_NAME} sent out {B_LINK_OPPONENT_MON1_NAME}!\n{B_LINK_OPPONENT2_NAME} sent out {B_LINK_OPPONENT_MON2_NAME}!");
+static const u8 sText_LinkTrainerSentOutPkmn2[] = _("{B_LINK_OPPONENT1_NAME} sent out\n{B_BUFF1}!");
+static const u8 sText_LinkTrainerMultiSentOutPkmn[] = _("{B_LINK_SCR_TRAINER_NAME} sent out\n{B_BUFF1}!");
 static const u8 sText_GoPkmn[] = _("Go! {B_PLAYER_MON1_NAME}!");
 static const u8 sText_GoTwoPkmn[] = _("Go! {B_PLAYER_MON1_NAME} and\n{B_PLAYER_MON2_NAME}!");
 static const u8 sText_GoPkmn2[] = _("Go! {B_BUFF1}!");
 static const u8 sText_DoItPkmn[] = _("Do it! {B_BUFF1}!");
 static const u8 sText_GoForItPkmn[] = _("Go for it, {B_BUFF1}!");
 static const u8 sText_YourFoesWeakGetEmPkmn[] = _("Your foe’s weak!\nGet ’em, {B_BUFF1}!");
-static const u8 sText_LinkPartnerSentOutPkmnGoPkmn[] = _("{B_1F} sent out {B_LINK_PLAYER_MON2_NAME}!\nGo! {B_LINK_PLAYER_MON1_NAME}!");
+static const u8 sText_LinkPartnerSentOutPkmnGoPkmn[] = _("{B_LINK_PARTNER_NAME} sent out {B_LINK_PLAYER_MON2_NAME}!\nGo! {B_LINK_PLAYER_MON1_NAME}!");
 static const u8 sText_PkmnThatsEnough[] = _("{B_BUFF1}, that’s enough!\nCome back!");
 static const u8 sText_PkmnComeBack[] = _("{B_BUFF1}, come back!");
 static const u8 sText_PkmnOkComeBack[] = _("{B_BUFF1}, OK!\nCome back!");
 static const u8 sText_PkmnGoodComeBack[] = _("{B_BUFF1}, good!\nCome back!");
 static const u8 sText_Trainer1WithdrewPkmn[] = _("{B_TRAINER1_CLASS} {B_TRAINER1_NAME}\nwithdrew {B_BUFF1}!");
-static const u8 sText_LinkTrainer1WithdrewPkmn[] = _("{B_20} withdrew\n{B_BUFF1}!");
-static const u8 sText_LinkTrainer2WithdrewPkmn[] = _("{B_22} withdrew\n{B_BUFF1}!");
+static const u8 sText_LinkTrainer1WithdrewPkmn[] = _("{B_LINK_OPPONENT1_NAME} withdrew\n{B_BUFF1}!");
+static const u8 sText_LinkTrainer2WithdrewPkmn[] = _("{B_LINK_SCR_TRAINER_NAME} withdrew\n{B_BUFF1}!");
 static const u8 sText_WildPkmnPrefix[] = _("Wild ");
 static const u8 sText_FoePkmnPrefix[] = _("Foe ");
-static const u8 sText_EmptyString8[] = _( "");
+static const u8 sText_EmptyString8[] = _("");
 static const u8 sText_FoePkmnPrefix2[] = _("Foe");
 static const u8 sText_AllyPkmnPrefix[] = _("Ally");
 static const u8 sText_FoePkmnPrefix3[] = _("Foe");
@@ -1187,7 +1197,14 @@ const u8 * const gStatNamesTable2[] =
 };
 
 const u8 gText_SafariBalls[] = _("{HIGHLIGHT DARK_GREY}SAFARI BALLS");
-const u8 gText_SafariBallLeft[] = _("{HIGHLIGHT DARK_GREY}Left: $" "{HIGHLIGHT DARK_GREY}");const u8 gText_Sleep[] = _( "sleep");const u8 gText_Poison[] = _(     "poison");const u8 gText_Burn[] = _( "burn");const u8 gText_Paralysis[] = _( "paralysis");const u8 gText_Ice[] = _( "ice");const u8 gText_Confusion[] = _( "confusion");const u8 gText_Love[] = _( "love");
+const u8 gText_SafariBallLeft[] = _("{HIGHLIGHT DARK_GREY}Left: $" "{HIGHLIGHT DARK_GREY}");
+const u8 gText_Sleep[] = _("sleep");
+const u8 gText_Poison[] = _("poison");
+const u8 gText_Burn[] = _("burn");
+const u8 gText_Paralysis[] = _("paralysis");
+const u8 gText_Ice[] = _("ice");
+const u8 gText_Confusion[] = _("confusion");
+const u8 gText_Love[] = _("love");
 const u8 gText_SpaceAndSpace[] = _(" and ");
 const u8 gText_CommaSpace[] = _(", ");
 const u8 gText_Space2[] = _(" ");
@@ -1231,7 +1248,7 @@ static const u8 sText_Round2[] = _("Round 2");
 static const u8 sText_Semifinal[] = _("Semifinal");
 static const u8 sText_Final[] = _("Final");
 
-const u8 * const gRoundsStringTable[] =
+const u8 *const gRoundsStringTable[] =
 {
     sText_Round1,
     sText_Round2,
@@ -1304,12 +1321,12 @@ static const u8 sText_PlayerLostAgainstTrainer1[] = _("Player lost against\n{B_T
 static const u8 sText_PlayerBattledToDrawTrainer1[] = _("Player battled to a draw against\n{B_TRAINER1_CLASS} {B_TRAINER1_NAME}!");
 const u8 gText_RecordBattleToPass[] = _("Would you like to record your battle\non your FRONTIER PASS?");
 const u8 gText_BattleRecordedOnPass[] = _("{B_PLAYER_NAME}’s battle result was recorded\non the FRONTIER PASS.");
-static const u8 sText_LinkTrainerWantsToBattlePause[] = _("{B_20}\nwants to battle!{PAUSE 49}");
-static const u8 sText_TwoLinkTrainersWantToBattlePause[] = _("{B_20} and {B_21}\nwant to battle!{PAUSE 49}");
+static const u8 sText_LinkTrainerWantsToBattlePause[] = _("{B_LINK_OPPONENT1_NAME}\nwants to battle!{PAUSE 49}");
+static const u8 sText_TwoLinkTrainersWantToBattlePause[] = _("{B_LINK_OPPONENT1_NAME} and {B_LINK_OPPONENT2_NAME}\nwant to battle!{PAUSE 49}");
 
 // This is four lists of moves which use a different attack string in Japanese
-// to the default. See the documentation for sub_814F950 for more detail.
-static const u16 sUnknownMoveTable[] =
+// to the default. See the documentation for ChooseTypeOfMoveUsedString for more detail.
+static const u16 sGrammarMoveUsedTable[] =
 {
     MOVE_SWORDS_DANCE, MOVE_STRENGTH, MOVE_GROWTH,
     MOVE_HARDEN, MOVE_MINIMIZE, MOVE_SMOKESCREEN,
@@ -1351,86 +1368,609 @@ static const u16 sUnknownMoveTable[] =
 
 static const u8 sDummyWeirdStatusString[] = {EOS, EOS, EOS, EOS, EOS, EOS, EOS, EOS, 0, 0};
 
-static const u8 sUnknown_085CD42C[] =
+static const struct BattleWindowText sTextOnWindowsInfo_Normal[] =
 {
-    0xFF, 0x1, 0x0, 0x1, 0x0, 0x0, 0x1, 0x1, 0xF, 0x6, 0x0, 0x0, 0xFF, 0x1,
-    0x1, 0x1, 0x0, 0x0, 0x0, 0x1, 0xF, 0x6, 0x0, 0x0, 0xEE, 0x1, 0x0, 0x1, 0x0,
-    0x0, 0x0, 0xD, 0xE, 0xF, 0x0, 0x0, 0xEE, 0x7, 0x0, 0x1, 0x0, 0x0, 0x0,
-    0xD, 0xE, 0xF, 0x0, 0x0, 0xEE, 0x7, 0x0, 0x1, 0x0, 0x0, 0x0, 0xD,
-    0xE, 0xF, 0x0, 0x0, 0xEE, 0x7, 0x0, 0x1, 0x0, 0x0, 0x0, 0xD, 0xE,
-    0xF, 0x0, 0x0, 0xEE, 0x7, 0x0, 0x1, 0x0, 0x0, 0x0, 0xD, 0xE, 0xF,
-    0x0, 0x0, 0xEE, 0x7, 0x0, 0x1, 0x0, 0x0, 0x0, 0xC, 0xE, 0xB, 0x0, 0x0,
-    0xEE, 0x1, 0x0, 0x1, 0x0, 0x0, 0x0, 0xD, 0xE, 0xF, 0x0, 0x0, 0xEE,
-    0x1, 0x2, 0x1, 0x0, 0x0, 0x0, 0xC, 0xE, 0xB, 0x0, 0x0, 0xEE, 0x7, 0x0,
-    0x1, 0x0, 0x0, 0x0, 0xD, 0xE, 0xF, 0x0, 0x0, 0xEE, 0x7, 0x0, 0x1, 0x0,
-    0x0, 0x0, 0xD, 0xE, 0xF, 0x0, 0x0, 0xEE, 0x1, 0x0, 0x1, 0x0, 0x0, 0x0,
-    0xD, 0xE, 0xF, 0x0, 0x0, 0xEE, 0x1, 0x0, 0x1, 0x0, 0x0, 0x0, 0xD,
-    0xE, 0xF, 0x0, 0x0, 0x0, 0x1, 0x20, 0x1, 0x0, 0x0, 0x0, 0x1, 0x0, 0x2,
-    0x0, 0x0, 0xEE, 0x1, 0xFF, 0x1, 0x0, 0x0, 0x0, 0xD, 0xE, 0xF, 0x0,
-    0x0, 0xEE, 0x1, 0xFF, 0x1, 0x0, 0x0, 0x0, 0xD, 0xE, 0xF, 0x0, 0x0,
-    0xEE, 0x1, 0xFF, 0x1, 0x0, 0x0, 0x0, 0xD, 0xE, 0xF, 0x0, 0x0, 0xEE,
-    0x1, 0xFF, 0x1, 0x0, 0x0, 0x0, 0xD, 0xE, 0xF, 0x0, 0x0, 0xEE, 0x1,
-    0xFF, 0x1, 0x0, 0x0, 0x0, 0xD, 0xE, 0xF, 0x0, 0x0, 0xEE, 0x1, 0xFF,
-    0x1, 0x0, 0x0, 0x0, 0xD, 0xE, 0xF, 0x0, 0x0, 0x0, 0x1, 0xFF, 0x1, 0x0,
-    0x0, 0x0, 0x1, 0x0, 0x6, 0x0, 0x0, 0x0, 0x1, 0xFF, 0x1, 0x0, 0x0, 0x0, 0x1, 0x0,
-    0x6, 0x0, 0x0, 0x0, 0x1, 0xFF, 0x1, 0x0, 0x0, 0x0, 0x1, 0x0, 0x6, 0x0, 0x0
+	{ // 0
+		.fillValue = 0xFF,
+		.fontId = 1,
+		.x = 0,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 1,
+		.fgColor = 1,
+		.bgColor = 15,
+		.shadowColor = 6,
+	},
+	{ // 1
+		.fillValue = 0xFF,
+		.fontId = 1,
+		.x = 1,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 0,
+		.fgColor = 1,
+		.bgColor = 15,
+		.shadowColor = 6,
+	},
+	{ // 2
+		.fillValue = 0xEE,
+		.fontId = 1,
+		.x = 0,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 0,
+		.fgColor = 13,
+		.bgColor = 14,
+		.shadowColor = 15,
+	},
+	{ // 3
+		.fillValue = 0xEE,
+		.fontId = 7,
+		.x = 0,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 0,
+		.fgColor = 13,
+		.bgColor = 14,
+		.shadowColor = 15,
+	},
+	{ // 4
+		.fillValue = 0xEE,
+		.fontId = 7,
+		.x = 0,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 0,
+		.fgColor = 13,
+		.bgColor = 14,
+		.shadowColor = 15,
+	},
+	{ // 5
+		.fillValue = 0xEE,
+		.fontId = 7,
+		.x = 0,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 0,
+		.fgColor = 13,
+		.bgColor = 14,
+		.shadowColor = 15,
+	},
+	{ // 6
+		.fillValue = 0xEE,
+		.fontId = 7,
+		.x = 0,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 0,
+		.fgColor = 13,
+		.bgColor = 14,
+		.shadowColor = 15,
+	},
+	{ // 7
+		.fillValue = 0xEE,
+		.fontId = 7,
+		.x = 0,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 0,
+		.fgColor = 12,
+		.bgColor = 14,
+		.shadowColor = 11,
+	},
+	{ // 8
+		.fillValue = 0xEE,
+		.fontId = 1,
+		.x = 0,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 0,
+		.fgColor = 13,
+		.bgColor = 14,
+		.shadowColor = 15,
+	},
+	{ // 9
+		.fillValue = 0xEE,
+		.fontId = 1,
+		.x = 2,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 0,
+		.fgColor = 12,
+		.bgColor = 14,
+		.shadowColor = 11,
+	},
+	{ // 10
+		.fillValue = 0xEE,
+		.fontId = 7,
+		.x = 0,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 0,
+		.fgColor = 13,
+		.bgColor = 14,
+		.shadowColor = 15,
+	},
+	{ // 11
+		.fillValue = 0xEE,
+		.fontId = 7,
+		.x = 0,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 0,
+		.fgColor = 13,
+		.bgColor = 14,
+		.shadowColor = 15,
+	},
+	{ // 12
+		.fillValue = 0xEE,
+		.fontId = 1,
+		.x = 0,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 0,
+		.fgColor = 13,
+		.bgColor = 14,
+		.shadowColor = 15,
+	},
+	{ // 13
+		.fillValue = 0xEE,
+		.fontId = 1,
+		.x = 0,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 0,
+		.fgColor = 13,
+		.bgColor = 14,
+		.shadowColor = 15,
+	},
+	{ // 14
+		.fillValue = 0x0,
+		.fontId = 1,
+		.x = 32,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 0,
+		.fgColor = 1,
+		.bgColor = 0,
+		.shadowColor = 2,
+	},
+	{ // 15
+		.fillValue = 0xEE,
+		.fontId = 1,
+		.x = -1,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 0,
+		.fgColor = 13,
+		.bgColor = 14,
+		.shadowColor = 15,
+	},
+	{ // 16
+		.fillValue = 0xEE,
+		.fontId = 1,
+		.x = -1,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 0,
+		.fgColor = 13,
+		.bgColor = 14,
+		.shadowColor = 15,
+	},
+	{ // 17
+		.fillValue = 0xEE,
+		.fontId = 1,
+		.x = -1,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 0,
+		.fgColor = 13,
+		.bgColor = 14,
+		.shadowColor = 15,
+	},
+	{ // 18
+		.fillValue = 0xEE,
+		.fontId = 1,
+		.x = -1,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 0,
+		.fgColor = 13,
+		.bgColor = 14,
+		.shadowColor = 15,
+	},
+	{ // 19
+		.fillValue = 0xEE,
+		.fontId = 1,
+		.x = -1,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 0,
+		.fgColor = 13,
+		.bgColor = 14,
+		.shadowColor = 15,
+	},
+	{ // 20
+		.fillValue = 0xEE,
+		.fontId = 1,
+		.x = -1,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 0,
+		.fgColor = 13,
+		.bgColor = 14,
+		.shadowColor = 15,
+	},
+	{ // 21
+		.fillValue = 0x0,
+		.fontId = 1,
+		.x = -1,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 0,
+		.fgColor = 1,
+		.bgColor = 0,
+		.shadowColor = 6,
+	},
+	{ // 22
+		.fillValue = 0x0,
+		.fontId = 1,
+		.x = -1,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 0,
+		.fgColor = 1,
+		.bgColor = 0,
+		.shadowColor = 6,
+	},
+	{ // 23
+		.fillValue = 0x0,
+		.fontId = 1,
+		.x = -1,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 0,
+		.fgColor = 1,
+		.bgColor = 0,
+		.shadowColor = 6,
+	},
 };
 
-static const u8 sUnknown_085CD54C[] =
+static const struct BattleWindowText sTextOnWindowsInfo_Arena[] =
 {
-    0xFF, 0x1, 0x0, 0x1, 0x0, 0x0, 0x1, 0x1, 0xF, 0x6, 0x0, 0x0, 0xFF, 0x1,
-    0x1, 0x1, 0x0, 0x0, 0x0, 0x1, 0xF, 0x6, 0x0, 0x0, 0xEE, 0x1, 0x0, 0x1, 0x0,
-    0x0, 0x0, 0xD, 0xE, 0xF, 0x0, 0x0, 0xEE, 0x7, 0x0, 0x1, 0x0, 0x0, 0x0,
-    0xD, 0xE, 0xF, 0x0, 0x0, 0xEE, 0x7, 0x0, 0x1, 0x0, 0x0, 0x0, 0xD,
-    0xE, 0xF, 0x0, 0x0, 0xEE, 0x7, 0x0, 0x1, 0x0, 0x0, 0x0, 0xD, 0xE,
-    0xF, 0x0, 0x0, 0xEE, 0x7, 0x0, 0x1, 0x0, 0x0, 0x0, 0xD, 0xE, 0xF,
-    0x0, 0x0, 0xEE, 0x7, 0x0, 0x1, 0x0, 0x0, 0x0, 0xC, 0xE, 0xB, 0x0, 0x0,
-    0xEE, 0x1, 0x0, 0x1, 0x0, 0x0, 0x0, 0xD, 0xE, 0xF, 0x0, 0x0, 0xEE,
-    0x1, 0x2, 0x1, 0x0, 0x0, 0x0, 0xC, 0xE, 0xB, 0x0, 0x0, 0xEE, 0x7, 0x0,
-    0x1, 0x0, 0x0, 0x0, 0xD, 0xE, 0xF, 0x0, 0x0, 0xEE, 0x7, 0x0, 0x1, 0x0,
-    0x0, 0x0, 0xD, 0xE, 0xF, 0x0, 0x0, 0xEE, 0x1, 0x0, 0x1, 0x0, 0x0, 0x0,
-    0xD, 0xE, 0xF, 0x0, 0x0, 0xEE, 0x1, 0x0, 0x1, 0x0, 0x0, 0x0, 0xD,
-    0xE, 0xF, 0x0, 0x0, 0x0, 0x1, 0x20, 0x1, 0x0, 0x0, 0x0, 0x1, 0x0, 0x2,
-    0x0, 0x0, 0xEE, 0x1, 0xFF, 0x1, 0x0, 0x0, 0x0, 0x1, 0xE, 0xF, 0x0,
-    0x0, 0xEE, 0x1, 0xFF, 0x1, 0x0, 0x0, 0x0, 0xD, 0xE, 0xF, 0x0, 0x0,
-    0xEE, 0x1, 0xFF, 0x1, 0x0, 0x0, 0x0, 0xD, 0xE, 0xF, 0x0, 0x0, 0xEE,
-    0x1, 0xFF, 0x1, 0x0, 0x0, 0x0, 0xD, 0xE, 0xF, 0x0, 0x0, 0xEE, 0x1,
-    0xFF, 0x1, 0x0, 0x0, 0x0, 0xD, 0xE, 0xF, 0x0, 0x0, 0xEE, 0x1, 0xFF,
-    0x1, 0x0, 0x0, 0x0, 0xD, 0xE, 0xF, 0x0, 0x0, 0xEE, 0x1, 0xFF, 0x1,
-    0x0, 0x0, 0x0, 0xD, 0xE, 0xF, 0x0, 0x0, 0x11, 0x1, 0x0, 0x1, 0x0, 0x0,
-    0x1, 0x2, 0x1, 0x3, 0x0, 0x0
+	{ // 0
+		.fillValue = 0xFF,
+		.fontId = 1,
+		.x = 0,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 1,
+		.fgColor = 1,
+		.bgColor = 15,
+		.shadowColor = 6,
+	},
+	{ // 1
+		.fillValue = 0xFF,
+		.fontId = 1,
+		.x = 1,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 0,
+		.fgColor = 1,
+		.bgColor = 15,
+		.shadowColor = 6,
+	},
+	{ // 2
+		.fillValue = 0xEE,
+		.fontId = 1,
+		.x = 0,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 0,
+		.fgColor = 13,
+		.bgColor = 14,
+		.shadowColor = 15,
+	},
+	{ // 3
+		.fillValue = 0xEE,
+		.fontId = 7,
+		.x = 0,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 0,
+		.fgColor = 13,
+		.bgColor = 14,
+		.shadowColor = 15,
+	},
+	{ // 4
+		.fillValue = 0xEE,
+		.fontId = 7,
+		.x = 0,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 0,
+		.fgColor = 13,
+		.bgColor = 14,
+		.shadowColor = 15,
+	},
+	{ // 5
+		.fillValue = 0xEE,
+		.fontId = 7,
+		.x = 0,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 0,
+		.fgColor = 13,
+		.bgColor = 14,
+		.shadowColor = 15,
+	},
+	{ // 6
+		.fillValue = 0xEE,
+		.fontId = 7,
+		.x = 0,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 0,
+		.fgColor = 13,
+		.bgColor = 14,
+		.shadowColor = 15,
+	},
+	{ // 7
+		.fillValue = 0xEE,
+		.fontId = 7,
+		.x = 0,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 0,
+		.fgColor = 12,
+		.bgColor = 14,
+		.shadowColor = 11,
+	},
+	{ // 8
+		.fillValue = 0xEE,
+		.fontId = 1,
+		.x = 0,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 0,
+		.fgColor = 13,
+		.bgColor = 14,
+		.shadowColor = 15,
+	},
+	{ // 9
+		.fillValue = 0xEE,
+		.fontId = 1,
+		.x = 2,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 0,
+		.fgColor = 12,
+		.bgColor = 14,
+		.shadowColor = 11,
+	},
+	{ // 10
+		.fillValue = 0xEE,
+		.fontId = 7,
+		.x = 0,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 0,
+		.fgColor = 13,
+		.bgColor = 14,
+		.shadowColor = 15,
+	},
+	{ // 11
+		.fillValue = 0xEE,
+		.fontId = 7,
+		.x = 0,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 0,
+		.fgColor = 13,
+		.bgColor = 14,
+		.shadowColor = 15,
+	},
+	{ // 12
+		.fillValue = 0xEE,
+		.fontId = 1,
+		.x = 0,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 0,
+		.fgColor = 13,
+		.bgColor = 14,
+		.shadowColor = 15,
+	},
+	{ // 13
+		.fillValue = 0xEE,
+		.fontId = 1,
+		.x = 0,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 0,
+		.fgColor = 13,
+		.bgColor = 14,
+		.shadowColor = 15,
+	},
+	{ // 14
+		.fillValue = 0x0,
+		.fontId = 1,
+		.x = 32,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 0,
+		.fgColor = 1,
+		.bgColor = 0,
+		.shadowColor = 2,
+	},
+	{ // 15
+		.fillValue = 0xEE,
+		.fontId = 1,
+		.x = -1,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 0,
+		.fgColor = 1,
+		.bgColor = 14,
+		.shadowColor = 15,
+	},
+	{ // 16
+		.fillValue = 0xEE,
+		.fontId = 1,
+		.x = -1,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 0,
+		.fgColor = 13,
+		.bgColor = 14,
+		.shadowColor = 15,
+	},
+	{ // 17
+		.fillValue = 0xEE,
+		.fontId = 1,
+		.x = -1,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 0,
+		.fgColor = 13,
+		.bgColor = 14,
+		.shadowColor = 15,
+	},
+	{ // 18
+		.fillValue = 0xEE,
+		.fontId = 1,
+		.x = -1,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 0,
+		.fgColor = 13,
+		.bgColor = 14,
+		.shadowColor = 15,
+	},
+	{ // 19
+		.fillValue = 0xEE,
+		.fontId = 1,
+		.x = -1,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 0,
+		.fgColor = 13,
+		.bgColor = 14,
+		.shadowColor = 15,
+	},
+	{ // 20
+		.fillValue = 0xEE,
+		.fontId = 1,
+		.x = -1,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 0,
+		.fgColor = 13,
+		.bgColor = 14,
+		.shadowColor = 15,
+	},
+	{ // 21
+		.fillValue = 0xEE,
+		.fontId = 1,
+		.x = -1,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 0,
+		.fgColor = 13,
+		.bgColor = 14,
+		.shadowColor = 15,
+	},
+	{ // 22
+		.fillValue = 0x11,
+		.fontId = 1,
+		.x = 0,
+		.y = 1,
+		.letterSpacing = 0,
+		.lineSpacing = 0,
+		.speed = 1,
+		.fgColor = 2,
+		.bgColor = 1,
+		.shadowColor = 3,
+	},
 };
 
-static const u8 * const gUnknown_085CD660[] =
+static const struct BattleWindowText *const sBattleTextOnWindowsInfo[] =
 {
-    sUnknown_085CD42C, sUnknown_085CD54C
+    sTextOnWindowsInfo_Normal, sTextOnWindowsInfo_Arena
 };
 
 static const u8 sRecordedBattleTextSpeeds[] = {8, 4, 1, 0};
 
+// code
 void BufferStringBattle(u16 stringID)
 {
     s32 i;
-    const u8* stringPtr = NULL;
+    const u8 *stringPtr = NULL;
 
-    gStringInfo = (struct StringInfoBattle*)(&gBattleBufferA[gActiveBattler][4]);
-    gLastUsedItem = gStringInfo->lastItem;
-    gLastUsedAbility = gStringInfo->lastAbility;
-    gBattleScripting.battler = gStringInfo->scrActive;
-    *(&gBattleStruct->field_52) = gStringInfo->unk1605E;
-    *(&gBattleStruct->hpScale) = gStringInfo->hpScale;
-    gPotentialItemEffectBattler = gStringInfo->StringBank;
-    *(&gBattleStruct->stringMoveType) = gStringInfo->moveType;
+    gBattleMsgDataPtr = (struct BattleMsgData*)(&gBattleBufferA[gActiveBattler][4]);
+    gLastUsedItem = gBattleMsgDataPtr->lastItem;
+    gLastUsedAbility = gBattleMsgDataPtr->lastAbility;
+    gBattleScripting.battler = gBattleMsgDataPtr->scrActive;
+    *(&gBattleStruct->field_52) = gBattleMsgDataPtr->unk1605E;
+    *(&gBattleStruct->hpScale) = gBattleMsgDataPtr->hpScale;
+    gPotentialItemEffectBattler = gBattleMsgDataPtr->itemEffectBattler;
+    *(&gBattleStruct->stringMoveType) = gBattleMsgDataPtr->moveType;
 
     for (i = 0; i < MAX_BATTLERS_COUNT; i++)
     {
-        gBattlerAbilities[i] = gStringInfo->abilities[i];
+        sBattlerAbilities[i] = gBattleMsgDataPtr->abilities[i];
     }
     for (i = 0; i < TEXT_BUFF_ARRAY_COUNT; i++)
     {
-        gBattleTextBuff1[i] = gStringInfo->textBuffs[0][i];
-        gBattleTextBuff2[i] = gStringInfo->textBuffs[1][i];
-        gBattleTextBuff3[i] = gStringInfo->textBuffs[2][i];
+        gBattleTextBuff1[i] = gBattleMsgDataPtr->textBuffs[0][i];
+        gBattleTextBuff2[i] = gBattleMsgDataPtr->textBuffs[1][i];
+        gBattleTextBuff3[i] = gBattleMsgDataPtr->textBuffs[2][i];
     }
 
     switch (stringID)
@@ -1542,7 +2082,7 @@ void BufferStringBattle(u16 stringID)
         }
         else
         {
-            if (gTrainerBattleOpponent_A == TRAINER_OPPONENT_800 || gBattleTypeFlags & BATTLE_TYPE_x2000000)
+            if (gTrainerBattleOpponent_A == TRAINER_LINK_OPPONENT || gBattleTypeFlags & BATTLE_TYPE_x2000000)
             {
                 if (gBattleTypeFlags & BATTLE_TYPE_MULTI)
                     stringPtr = sText_LinkTrainer2WithdrewPkmn;
@@ -1605,14 +2145,14 @@ void BufferStringBattle(u16 stringID)
         }
         break;
     case STRINGID_USEDMOVE: // pokemon used a move msg
-        sub_814F8F8(gBattleTextBuff1); // buff1 doesn't appear in the string, leftover from japanese move names?
+        ChooseMoveUsedParticle(gBattleTextBuff1); // buff1 doesn't appear in the string, leftover from japanese move names
 
-        if (gStringInfo->currentMove > LAST_MOVE_INDEX)
+        if (gBattleMsgDataPtr->currentMove >= MOVES_COUNT)
             StringCopy(gBattleTextBuff2, sATypeMove_Table[*(&gBattleStruct->stringMoveType)]);
         else
-            StringCopy(gBattleTextBuff2, gMoveNames[gStringInfo->currentMove]);
+            StringCopy(gBattleTextBuff2, gMoveNames[gBattleMsgDataPtr->currentMove]);
 
-        sub_814F950(gBattleTextBuff2);
+        ChooseTypeOfMoveUsedString(gBattleTextBuff2);
         stringPtr = sText_AttackerUsedX;
         break;
     case STRINGID_BATTLEEND: // battle end
@@ -1763,13 +2303,13 @@ u32 BattleStringExpandPlaceholders(const u8 *src, u8 *dst)
     u32 dstID = 0; // if they used dstID, why not use srcID as well?
     const u8 *toCpy = NULL;
     u8 text[30];
-    u8 multiplayerID;
+    u8 multiplayerId;
     s32 i;
 
     if (gBattleTypeFlags & BATTLE_TYPE_x2000000)
-        multiplayerID = gUnknown_0203C7B4;
+        multiplayerId = gUnknown_0203C7B4;
     else
-        multiplayerID = GetMultiplayerId();
+        multiplayerId = GetMultiplayerId();
 
     while (*src != EOS)
     {
@@ -1843,25 +2383,25 @@ u32 BattleStringExpandPlaceholders(const u8 *src, u8 *dst)
                 toCpy = text;
                 break;
             case B_TXT_LINK_PLAYER_MON1_NAME: // link first player poke name
-                GetMonData(&gPlayerParty[gBattlerPartyIndexes[gLinkPlayers[multiplayerID].lp_field_18]],
+                GetMonData(&gPlayerParty[gBattlerPartyIndexes[gLinkPlayers[multiplayerId].id]],
                            MON_DATA_NICKNAME, text);
                 StringGetEnd10(text);
                 toCpy = text;
                 break;
             case B_TXT_LINK_OPPONENT_MON1_NAME: // link first opponent poke name
-                GetMonData(&gEnemyParty[gBattlerPartyIndexes[gLinkPlayers[multiplayerID].lp_field_18 ^ 1]],
+                GetMonData(&gEnemyParty[gBattlerPartyIndexes[gLinkPlayers[multiplayerId].id ^ 1]],
                            MON_DATA_NICKNAME, text);
                 StringGetEnd10(text);
                 toCpy = text;
                 break;
             case B_TXT_LINK_PLAYER_MON2_NAME: // link second player poke name
-                GetMonData(&gPlayerParty[gBattlerPartyIndexes[gLinkPlayers[multiplayerID].lp_field_18 ^ 2]],
+                GetMonData(&gPlayerParty[gBattlerPartyIndexes[gLinkPlayers[multiplayerId].id ^ 2]],
                            MON_DATA_NICKNAME, text);
                 StringGetEnd10(text);
                 toCpy = text;
                 break;
             case B_TXT_LINK_OPPONENT_MON2_NAME: // link second opponent poke name
-                GetMonData(&gEnemyParty[gBattlerPartyIndexes[gLinkPlayers[multiplayerID].lp_field_18 ^ 3]],
+                GetMonData(&gEnemyParty[gBattlerPartyIndexes[gLinkPlayers[multiplayerId].id ^ 3]],
                            MON_DATA_NICKNAME, text);
                 StringGetEnd10(text);
                 toCpy = text;
@@ -1895,16 +2435,16 @@ u32 BattleStringExpandPlaceholders(const u8 *src, u8 *dst)
                 HANDLE_NICKNAME_STRING_CASE(gBattleScripting.battler, gBattlerPartyIndexes[gBattleScripting.battler])
                 break;
             case B_TXT_CURRENT_MOVE: // current move name
-                if (gStringInfo->currentMove > LAST_MOVE_INDEX)
+                if (gBattleMsgDataPtr->currentMove >= MOVES_COUNT)
                     toCpy = sATypeMove_Table[gBattleStruct->stringMoveType];
                 else
-                    toCpy = gMoveNames[gStringInfo->currentMove];
+                    toCpy = gMoveNames[gBattleMsgDataPtr->currentMove];
                 break;
             case B_TXT_LAST_MOVE: // originally used move name
-                if (gStringInfo->originallyUsedMove > LAST_MOVE_INDEX)
+                if (gBattleMsgDataPtr->originallyUsedMove >= MOVES_COUNT)
                     toCpy = sATypeMove_Table[gBattleStruct->stringMoveType];
                 else
-                    toCpy = gMoveNames[gStringInfo->originallyUsedMove];
+                    toCpy = gMoveNames[gBattleMsgDataPtr->originallyUsedMove];
                 break;
             case B_TXT_LAST_ITEM: // last used item
                 if (gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_x2000000))
@@ -1927,7 +2467,7 @@ u32 BattleStringExpandPlaceholders(const u8 *src, u8 *dst)
                         }
                         else
                         {
-                            if (gLinkPlayers[gBattleScripting.multiplayerId].lp_field_18 == gPotentialItemEffectBattler)
+                            if (gLinkPlayers[gBattleScripting.multiplayerId].id == gPotentialItemEffectBattler)
                             {
                                 StringCopy(text, gEnigmaBerries[gPotentialItemEffectBattler].name);
                                 StringAppend(text, sText_BerrySuffix);
@@ -1953,28 +2493,28 @@ u32 BattleStringExpandPlaceholders(const u8 *src, u8 *dst)
                 toCpy = gAbilityNames[gLastUsedAbility];
                 break;
             case B_TXT_ATK_ABILITY: // attacker ability
-                toCpy = gAbilityNames[gBattlerAbilities[gBattlerAttacker]];
+                toCpy = gAbilityNames[sBattlerAbilities[gBattlerAttacker]];
                 break;
             case B_TXT_DEF_ABILITY: // target ability
-                toCpy = gAbilityNames[gBattlerAbilities[gBattlerTarget]];
+                toCpy = gAbilityNames[sBattlerAbilities[gBattlerTarget]];
                 break;
             case B_TXT_SCR_ACTIVE_ABILITY: // scripting active ability
-                toCpy = gAbilityNames[gBattlerAbilities[gBattleScripting.battler]];
+                toCpy = gAbilityNames[sBattlerAbilities[gBattleScripting.battler]];
                 break;
             case B_TXT_EFF_ABILITY: // effect battlerId ability
-                toCpy = gAbilityNames[gBattlerAbilities[gEffectBattler]];
+                toCpy = gAbilityNames[sBattlerAbilities[gEffectBattler]];
                 break;
             case B_TXT_TRAINER1_CLASS: // trainer class name
                 if (gBattleTypeFlags & BATTLE_TYPE_SECRET_BASE)
                     toCpy = gTrainerClassNames[GetSecretBaseTrainerClass()];
                 else if (gTrainerBattleOpponent_A == TRAINER_OPPONENT_C00)
                     toCpy = gTrainerClassNames[sub_8068BB0()];
-                else if (gTrainerBattleOpponent_A == TRAINER_OPPONENT_3FE)
-                    toCpy = gTrainerClassNames[sub_81A4D00()];
+                else if (gTrainerBattleOpponent_A == TRAINER_FRONTIER_BRAIN)
+                    toCpy = gTrainerClassNames[GetFrontierBrainTrainerClass()];
                 else if (gBattleTypeFlags & BATTLE_TYPE_FRONTIER)
                     toCpy = gTrainerClassNames[GetFrontierOpponentClass(gTrainerBattleOpponent_A)];
-                else if (gBattleTypeFlags & BATTLE_TYPE_x4000000)
-                    toCpy = gTrainerClassNames[sub_81D5530(gTrainerBattleOpponent_A)];
+                else if (gBattleTypeFlags & BATTLE_TYPE_TRAINER_HILL)
+                    toCpy = gTrainerClassNames[GetTrainerHillOpponentClass(gTrainerBattleOpponent_A)];
                 else if (gBattleTypeFlags & BATTLE_TYPE_EREADER_TRAINER)
                     toCpy = gTrainerClassNames[GetEreaderTrainerClassId()];
                 else
@@ -1991,11 +2531,11 @@ u32 BattleStringExpandPlaceholders(const u8 *src, u8 *dst)
                 }
                 else if (gTrainerBattleOpponent_A == TRAINER_OPPONENT_C00)
                 {
-                    toCpy = gLinkPlayers[multiplayerID ^ BIT_SIDE].name;
+                    toCpy = gLinkPlayers[multiplayerId ^ BIT_SIDE].name;
                 }
-                else if (gTrainerBattleOpponent_A == TRAINER_OPPONENT_3FE)
+                else if (gTrainerBattleOpponent_A == TRAINER_FRONTIER_BRAIN)
                 {
-                    sub_81A4D50(text);
+                    CopyFrontierBrainTrainerName(text);
                     toCpy = text;
                 }
                 else if (gBattleTypeFlags & BATTLE_TYPE_FRONTIER)
@@ -2003,9 +2543,9 @@ u32 BattleStringExpandPlaceholders(const u8 *src, u8 *dst)
                     GetFrontierTrainerName(text, gTrainerBattleOpponent_A);
                     toCpy = text;
                 }
-                else if (gBattleTypeFlags & BATTLE_TYPE_x4000000)
+                else if (gBattleTypeFlags & BATTLE_TYPE_TRAINER_HILL)
                 {
-                    sub_81D5554(text, gTrainerBattleOpponent_A);
+                    GetTrainerHillTrainerName(text, gTrainerBattleOpponent_A);
                     toCpy = text;
                 }
                 else if (gBattleTypeFlags & BATTLE_TYPE_EREADER_TRAINER)
@@ -2018,19 +2558,19 @@ u32 BattleStringExpandPlaceholders(const u8 *src, u8 *dst)
                     toCpy = gTrainers[gTrainerBattleOpponent_A].trainerName;
                 }
                 break;
-            case B_TXT_1E: // link player name?
-                toCpy = gLinkPlayers[multiplayerID].name;
+            case B_TXT_LINK_PLAYER_NAME: // link player name
+                toCpy = gLinkPlayers[multiplayerId].name;
                 break;
-            case B_TXT_1F: // link partner name?
-                toCpy = gLinkPlayers[GetBattlerMultiplayerId(2 ^ gLinkPlayers[multiplayerID].lp_field_18)].name;
+            case B_TXT_LINK_PARTNER_NAME: // link partner name
+                toCpy = gLinkPlayers[GetBattlerMultiplayerId(BATTLE_PARTNER(gLinkPlayers[multiplayerId].id))].name;
                 break;
-            case B_TXT_20: // link opponent 1 name?
-                toCpy = gLinkPlayers[GetBattlerMultiplayerId(1 ^ gLinkPlayers[multiplayerID].lp_field_18)].name;
+            case B_TXT_LINK_OPPONENT1_NAME: // link opponent 1 name
+                toCpy = gLinkPlayers[GetBattlerMultiplayerId(BATTLE_OPPOSITE(gLinkPlayers[multiplayerId].id))].name;
                 break;
-            case B_TXT_21: // link opponent 2 name?
-                toCpy = gLinkPlayers[GetBattlerMultiplayerId(3 ^ gLinkPlayers[multiplayerID].lp_field_18)].name;
+            case B_TXT_LINK_OPPONENT2_NAME: // link opponent 2 name
+                toCpy = gLinkPlayers[GetBattlerMultiplayerId(BATTLE_PARTNER(BATTLE_OPPOSITE(gLinkPlayers[multiplayerId].id)))].name;
                 break;
-            case B_TXT_22: // link scripting active name
+            case B_TXT_LINK_SCR_TRAINER_NAME: // link scripting active name
                 toCpy = gLinkPlayers[GetBattlerMultiplayerId(gBattleScripting.battler)].name;
                 break;
             case B_TXT_PLAYER_NAME: // player name
@@ -2042,12 +2582,12 @@ u32 BattleStringExpandPlaceholders(const u8 *src, u8 *dst)
             case B_TXT_TRAINER1_LOSE_TEXT: // trainerA lose text
                 if (gBattleTypeFlags & BATTLE_TYPE_FRONTIER)
                 {
-                    sub_81A36D0(2, gTrainerBattleOpponent_A);
+                    CopyFrontierTrainerText(FRONTIER_LOSE_TEXT, gTrainerBattleOpponent_A);
                     toCpy = gStringVar4;
                 }
-                else if (gBattleTypeFlags & BATTLE_TYPE_x4000000)
+                else if (gBattleTypeFlags & BATTLE_TYPE_TRAINER_HILL)
                 {
-                    sub_81D572C(4, gTrainerBattleOpponent_A);
+                    CopyTrainerHillTrainerText(4, gTrainerBattleOpponent_A);
                     toCpy = gStringVar4;
                 }
                 else
@@ -2058,12 +2598,12 @@ u32 BattleStringExpandPlaceholders(const u8 *src, u8 *dst)
             case B_TXT_TRAINER1_WIN_TEXT: // trainerA win text
                 if (gBattleTypeFlags & BATTLE_TYPE_FRONTIER)
                 {
-                    sub_81A36D0(1, gTrainerBattleOpponent_A);
+                    CopyFrontierTrainerText(FRONTIER_WIN_TEXT, gTrainerBattleOpponent_A);
                     toCpy = gStringVar4;
                 }
-                else if (gBattleTypeFlags & BATTLE_TYPE_x4000000)
+                else if (gBattleTypeFlags & BATTLE_TYPE_TRAINER_HILL)
                 {
-                    sub_81D572C(3, gTrainerBattleOpponent_A);
+                    CopyTrainerHillTrainerText(3, gTrainerBattleOpponent_A);
                     toCpy = gStringVar4;
                 }
                 break;
@@ -2115,8 +2655,8 @@ u32 BattleStringExpandPlaceholders(const u8 *src, u8 *dst)
             case B_TXT_TRAINER2_CLASS:
                 if (gBattleTypeFlags & BATTLE_TYPE_FRONTIER)
                     toCpy = gTrainerClassNames[GetFrontierOpponentClass(gTrainerBattleOpponent_B)];
-                else if (gBattleTypeFlags & BATTLE_TYPE_x4000000)
-                    toCpy = gTrainerClassNames[sub_81D5530(gTrainerBattleOpponent_B)];
+                else if (gBattleTypeFlags & BATTLE_TYPE_TRAINER_HILL)
+                    toCpy = gTrainerClassNames[GetTrainerHillOpponentClass(gTrainerBattleOpponent_B)];
                 else
                     toCpy = gTrainerClassNames[gTrainers[gTrainerBattleOpponent_B].trainerClass];
                 break;
@@ -2126,9 +2666,9 @@ u32 BattleStringExpandPlaceholders(const u8 *src, u8 *dst)
                     GetFrontierTrainerName(text, gTrainerBattleOpponent_B);
                     toCpy = text;
                 }
-                else if (gBattleTypeFlags & BATTLE_TYPE_x4000000)
+                else if (gBattleTypeFlags & BATTLE_TYPE_TRAINER_HILL)
                 {
-                    sub_81D5554(text, gTrainerBattleOpponent_B);
+                    GetTrainerHillTrainerName(text, gTrainerBattleOpponent_B);
                     toCpy = text;
                 }
                 else
@@ -2139,12 +2679,12 @@ u32 BattleStringExpandPlaceholders(const u8 *src, u8 *dst)
             case B_TXT_TRAINER2_LOSE_TEXT:
                 if (gBattleTypeFlags & BATTLE_TYPE_FRONTIER)
                 {
-                    sub_81A36D0(2, gTrainerBattleOpponent_B);
+                    CopyFrontierTrainerText(FRONTIER_LOSE_TEXT, gTrainerBattleOpponent_B);
                     toCpy = gStringVar4;
                 }
-                else if (gBattleTypeFlags & BATTLE_TYPE_x4000000)
+                else if (gBattleTypeFlags & BATTLE_TYPE_TRAINER_HILL)
                 {
-                    sub_81D572C(4, gTrainerBattleOpponent_B);
+                    CopyTrainerHillTrainerText(4, gTrainerBattleOpponent_B);
                     toCpy = gStringVar4;
                 }
                 else
@@ -2155,12 +2695,12 @@ u32 BattleStringExpandPlaceholders(const u8 *src, u8 *dst)
             case B_TXT_TRAINER2_WIN_TEXT:
                 if (gBattleTypeFlags & BATTLE_TYPE_FRONTIER)
                 {
-                    sub_81A36D0(1, gTrainerBattleOpponent_B);
+                    CopyFrontierTrainerText(FRONTIER_WIN_TEXT, gTrainerBattleOpponent_B);
                     toCpy = gStringVar4;
                 }
-                else if (gBattleTypeFlags & BATTLE_TYPE_x4000000)
+                else if (gBattleTypeFlags & BATTLE_TYPE_TRAINER_HILL)
                 {
-                    sub_81D572C(3, gTrainerBattleOpponent_B);
+                    CopyTrainerHillTrainerText(3, gTrainerBattleOpponent_B);
                     toCpy = gStringVar4;
                 }
                 break;
@@ -2203,10 +2743,6 @@ u32 BattleStringExpandPlaceholders(const u8 *src, u8 *dst)
     return dstID;
 }
 
-// TODO: move these to a general header like util.h
-#define ByteRead16(ptr) ((ptr)[0] | ((ptr)[1] << 8))
-#define ByteRead32(ptr) ((ptr)[0] | (ptr)[1] << 8 | (ptr)[2] << 16 | (ptr)[3] << 24)
-
 static void ExpandBattleTextBuffPlaceholders(const u8 *src, u8 *dst)
 {
     u32 srcID = 1;
@@ -2220,7 +2756,7 @@ static void ExpandBattleTextBuffPlaceholders(const u8 *src, u8 *dst)
         switch (src[srcID])
         {
         case B_BUFF_STRING: // battle string
-            hword = ByteRead16(&src[srcID + 1]);
+            hword = T1_READ_16(&src[srcID + 1]);
             StringAppend(dst, gBattleStringsTable[hword - BATTLESTRINGS_ID_ADDER]);
             srcID += 3;
             break;
@@ -2231,17 +2767,17 @@ static void ExpandBattleTextBuffPlaceholders(const u8 *src, u8 *dst)
                 value = src[srcID + 3];
                 break;
             case 2:
-                value = ByteRead16(&src[srcID + 3]);
+                value = T1_READ_16(&src[srcID + 3]);
                 break;
             case 4:
-                value = ByteRead32(&src[srcID + 3]);
+                value = T1_READ_32(&src[srcID + 3]);
                 break;
             }
             ConvertIntToDecimalStringN(dst, value, 0, src[srcID + 2]);
             srcID += src[srcID + 1] + 3;
             break;
         case B_BUFF_MOVE: // move name
-            StringAppend(dst, gMoveNames[ByteRead16(&src[srcID + 1])]);
+            StringAppend(dst, gMoveNames[T1_READ_16(&src[srcID + 1])]);
             srcID += 3;
             break;
         case B_BUFF_TYPE: // type name
@@ -2271,7 +2807,7 @@ static void ExpandBattleTextBuffPlaceholders(const u8 *src, u8 *dst)
             srcID += 2;
             break;
         case B_BUFF_SPECIES: // species name
-            GetSpeciesName(dst, ByteRead16(&src[srcID + 1]));
+            GetSpeciesName(dst, T1_READ_16(&src[srcID + 1]));
             srcID += 3;
             break;
         case B_BUFF_MON_NICK: // poke nick without prefix
@@ -2291,24 +2827,30 @@ static void ExpandBattleTextBuffPlaceholders(const u8 *src, u8 *dst)
             srcID += 2;
             break;
         case B_BUFF_ITEM: // item name
-            hword = ByteRead16(&src[srcID + 1]);
+            hword = T1_READ_16(&src[srcID + 1]);
             if (gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_x2000000))
             {
                 if (hword == ITEM_ENIGMA_BERRY)
                 {
-                    if (gLinkPlayers[gBattleScripting.multiplayerId].lp_field_18 == gPotentialItemEffectBattler)
+                    if (gLinkPlayers[gBattleScripting.multiplayerId].id == gPotentialItemEffectBattler)
                     {
                         StringCopy(dst, gEnigmaBerries[gPotentialItemEffectBattler].name);
                         StringAppend(dst, sText_BerrySuffix);
                     }
                     else
+                    {
                         StringAppend(dst, sText_EnigmaBerry);
+                    }
                 }
                 else
+                {
                     CopyItemName(hword, dst);
+                }
             }
             else
+            {
                 CopyItemName(hword, dst);
+            }
             srcID += 3;
             break;
         }
@@ -2317,18 +2859,18 @@ static void ExpandBattleTextBuffPlaceholders(const u8 *src, u8 *dst)
 
 // Loads one of two text strings into the provided buffer. This is functionally
 // unused, since the value loaded into the buffer is not read; it loaded one of
-// two particles (either "は" or "の") which works in tandem with sub_814F950
+// two particles (either "は" or "の") which works in tandem with ChooseTypeOfMoveUsedString
 // below to effect changes in the meaning of the line.
-static void sub_814F8F8(u8* textBuff)
+static void ChooseMoveUsedParticle(u8* textBuff)
 {
     s32 counter = 0;
     u32 i = 0;
 
     while (counter != 4)
     {
-        if (sUnknownMoveTable[i] == 0)
+        if (sGrammarMoveUsedTable[i] == 0)
             counter++;
-        if (sUnknownMoveTable[i++] == gStringInfo->currentMove)
+        if (sGrammarMoveUsedTable[i++] == gBattleMsgDataPtr->currentMove)
             break;
     }
 
@@ -2342,7 +2884,7 @@ static void sub_814F8F8(u8* textBuff)
 }
 
 // Appends "!" to the text buffer `dst`. In the original Japanese this looked
-// into the table of moves at sUnknownMoveTable and varied the line accordingly.
+// into the table of moves at sGrammarMoveUsedTable and varied the line accordingly.
 //
 // sText_ExclamationMark was a plain "!", used for any attack not on the list.
 // It resulted in the translation "<NAME>'s <ATTACK>!".
@@ -2359,7 +2901,7 @@ static void sub_814F8F8(u8* textBuff)
 //
 // sText_ExclamationMark5 was " こうげき！" This resulted in a translation of
 // "<NAME>'s <ATTACK> attack!".
-static void sub_814F950(u8* dst)
+static void ChooseTypeOfMoveUsedString(u8* dst)
 {
     s32 counter = 0;
     s32 i = 0;
@@ -2369,9 +2911,9 @@ static void sub_814F950(u8* dst)
 
     while (counter != 4)
     {
-        if (sUnknownMoveTable[i] == MOVE_NONE)
+        if (sGrammarMoveUsedTable[i] == MOVE_NONE)
             counter++;
-        if (sUnknownMoveTable[i++] == gStringInfo->currentMove)
+        if (sGrammarMoveUsedTable[i++] == gBattleMsgDataPtr->currentMove)
             break;
     }
 
@@ -2395,47 +2937,46 @@ static void sub_814F950(u8* dst)
     }
 }
 
-void BattleHandleAddTextPrinter(const u8 *text, u8 arg1)
+void BattlePutTextOnWindow(const u8 *text, u8 windowId)
 {
-    const u8 *r8 = gUnknown_085CD660[gBattleScripting.field_24];
-    bool32 r9;
+    const struct BattleWindowText *textInfo = sBattleTextOnWindowsInfo[gBattleScripting.windowsType];
+    bool32 copyToVram;
     struct TextSubPrinter textSubPrinter;
     u8 speed;
 
-    if (arg1 & 0x80)
+    if (windowId & 0x80)
     {
-        arg1 &= ~(0x80);
-        r9 = FALSE;
+        windowId &= ~(0x80);
+        copyToVram = FALSE;
     }
     else
     {
-        FillWindowPixelBuffer(arg1, r8[12 * arg1]);
-        r9 = TRUE;
+        FillWindowPixelBuffer(windowId, textInfo[windowId].fillValue);
+        copyToVram = TRUE;
     }
 
     textSubPrinter.current_text_offset = text;
-    textSubPrinter.windowId = arg1;
-    textSubPrinter.fontId = r8[(12 * arg1) + 1];
-    textSubPrinter.x = r8[(12 * arg1) + 2];
-    textSubPrinter.y = r8[(12 * arg1) + 3];
+    textSubPrinter.windowId = windowId;
+    textSubPrinter.fontId = textInfo[windowId].fontId;
+    textSubPrinter.x = textInfo[windowId].x;
+    textSubPrinter.y = textInfo[windowId].y;
     textSubPrinter.currentX = textSubPrinter.x;
     textSubPrinter.currentY = textSubPrinter.y;
-    textSubPrinter.letterSpacing = r8[(12 * arg1) + 4];
-    textSubPrinter.lineSpacing = r8[(12 * arg1) + 5];
+    textSubPrinter.letterSpacing = textInfo[windowId].letterSpacing;
+    textSubPrinter.lineSpacing = textInfo[windowId].lineSpacing;
     textSubPrinter.fontColor_l = 0;
-    textSubPrinter.fgColor = r8[(12 * arg1) + 7];
-    textSubPrinter.bgColor = r8[(12 * arg1) + 8];
-    textSubPrinter.shadowColor = r8[(12 * arg1) + 9];
+    textSubPrinter.fgColor = textInfo[windowId].fgColor;
+    textSubPrinter.bgColor = textInfo[windowId].bgColor;
+    textSubPrinter.shadowColor = textInfo[windowId].shadowColor;
 
     if (textSubPrinter.x == 0xFF)
     {
-        s32 var2;
-        u32 var = sub_80397C4(gBattleScripting.field_24, arg1);
-        var2 = GetStringCenterAlignXOffsetWithLetterSpacing(textSubPrinter.fontId, textSubPrinter.current_text_offset, var, textSubPrinter.letterSpacing);
-        textSubPrinter.x = textSubPrinter.currentX = var2;
+        u32 width = sub_80397C4(gBattleScripting.windowsType, windowId);
+        s32 alignX = GetStringCenterAlignXOffsetWithLetterSpacing(textSubPrinter.fontId, textSubPrinter.current_text_offset, width, textSubPrinter.letterSpacing);
+        textSubPrinter.x = textSubPrinter.currentX = alignX;
     }
 
-    if (arg1 == 0x16)
+    if (windowId == 0x16)
         gTextFlags.flag_1 = 0;
     else
         gTextFlags.flag_1 = 1;
@@ -2445,7 +2986,7 @@ void BattleHandleAddTextPrinter(const u8 *text, u8 arg1)
     else
         gTextFlags.flag_2 = 0;
 
-    if (arg1 == 0 || arg1 == 0x16)
+    if (windowId == 0 || windowId == 0x16)
     {
         if (gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_x2000000))
             speed = 1;
@@ -2458,16 +2999,16 @@ void BattleHandleAddTextPrinter(const u8 *text, u8 arg1)
     }
     else
     {
-        speed = r8[(12 * arg1) + 6];
+        speed = textInfo[windowId].speed;
         gTextFlags.flag_0 = 0;
     }
 
     AddTextPrinter(&textSubPrinter, speed, NULL);
 
-    if (r9)
+    if (copyToVram)
     {
-        PutWindowTilemap(arg1);
-        CopyWindowToVram(arg1, 3);
+        PutWindowTilemap(windowId);
+        CopyWindowToVram(windowId, 3);
     }
 }
 

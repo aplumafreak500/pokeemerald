@@ -13,7 +13,7 @@
 extern u8 GetKeypadIconWidth(u8 keypadIconId);
 extern u16 Font6Func(struct TextPrinter *textPrinter);
 extern u32 GetGlyphWidthFont6(u16 glyphId, bool32 isJapanese);
-extern u8* UnkTextUtil_GetPtrI(u8 a1);
+extern u8* DynamicPlaceholderTextUtil_GetPlaceholderPtr(u8 a1);
 extern int sub_8197964();
 
 EWRAM_DATA struct TextPrinter gTempTextPrinter = {0};
@@ -139,14 +139,14 @@ void SetFontsPointer(const struct FontInfo *fonts)
     gFonts = fonts;
 }
 
-void DeactivateAllTextPrinters (void)
+void DeactivateAllTextPrinters(void)
 {
     int printer;
     for (printer = 0; printer < NUM_TEXT_PRINTERS; ++printer)
         gTextPrinters[printer].sub_union.sub.active = 0;
 }
 
-u16 PrintTextOnWindow(u8 windowId, u8 fontId, const u8 *str, u8 x, u8 y, u8 speed, void (*callback)(struct TextSubPrinter *, u16))
+u16 AddTextPrinterParameterized(u8 windowId, u8 fontId, const u8 *str, u8 x, u8 y, u8 speed, void (*callback)(struct TextSubPrinter *, u16))
 {
     struct TextSubPrinter subPrinter;
 
@@ -375,7 +375,7 @@ void GenerateFontHalfRowLookupTable(u8 fgColor, u8 bgColor, u8 shadowColor)
     *(current++) = (shadowColor << 12) | (shadowColor << 8) | (shadowColor << 4) | shadowColor;
 }
 #else
-ASM_DIRECT
+NAKED
 void GenerateFontHalfRowLookupTable(u8 fgColor, u8 bgColor, u8 shadowColor)
 {
     asm("push {r4-r7,lr}\n\
@@ -871,7 +871,7 @@ void DecompressGlyphTile(const u16 *src, u16 *dest)
     *(dest) = (gFontHalfRowLookupTable[gFontHalfRowOffsets[src[1] & 0xFF]] << 16) | gFontHalfRowLookupTable[gFontHalfRowOffsets[src[1] >> 8]];
 }
 #else
-ASM_DIRECT
+NAKED
 void DecompressGlyphTile(const u16 *src, u16 *dest)
 {
     asm("push {r4-r7,lr}\n\
@@ -1052,7 +1052,7 @@ u8 GetLastTextColor(u8 colorType)
     }
 }
 
-ASM_DIRECT
+NAKED
 void CopyGlyphToWindow(struct TextPrinter *x)
 {
     asm("push {r4-r7,lr}\n\
@@ -2341,7 +2341,7 @@ u16 RenderText(struct TextPrinter *textPrinter)
     return 1;
 }
 #else
-__attribute__((naked))
+NAKED
 u16 RenderText(struct TextPrinter *textPrinter)
 {
     asm("push {r4-r6,lr}\n\
@@ -3157,7 +3157,7 @@ u32 GetStringWidthFixedWidthFont(const u8 *str, u8 fontId, u8 letterSpacing)
             width = lineWidths[strPos];
     }
 
-    return (u8)(GetFontAttribute(fontId, 0) + letterSpacing) * width;
+    return (u8)(GetFontAttribute(fontId, FONTATTR_MAX_LETTER_WIDTH) + letterSpacing) * width;
 }
 
 u32 (*GetFontWidthFunc(u8 glyphId))(u16, bool32)
@@ -3193,7 +3193,7 @@ u32 GetStringWidth(u8 fontId, const u8 *str, s16 letterSpacing)
         return 0;
 
     if (letterSpacing == -1)
-        localLetterSpacing = GetFontAttribute(fontId, 2);
+        localLetterSpacing = GetFontAttribute(fontId, FONTATTR_LETTER_SPACING);
     else
         localLetterSpacing = letterSpacing;
 
@@ -3227,7 +3227,7 @@ u32 GetStringWidth(u8 fontId, const u8 *str, s16 letterSpacing)
                 }
             case 0xF7:
                 if (bufferPointer == NULL)
-                    bufferPointer = UnkTextUtil_GetPtrI(*++str);
+                    bufferPointer = DynamicPlaceholderTextUtil_GetPlaceholderPtr(*++str);
                 while (*bufferPointer != 0xFF)
                 {
                     glyphWidth = func(*bufferPointer++, isJapanese);
@@ -3269,7 +3269,7 @@ u32 GetStringWidth(u8 fontId, const u8 *str, s16 letterSpacing)
                         if (func == NULL)
                             return 0;
                         if (letterSpacing == -1)
-                            localLetterSpacing = GetFontAttribute(*str, 2);
+                            localLetterSpacing = GetFontAttribute(*str, FONTATTR_LETTER_SPACING);
                         break;
                     case 0x11:
                         glyphWidth = *++str;
@@ -3497,28 +3497,28 @@ u8 GetFontAttribute(u8 fontId, u8 attributeId)
     int result = 0;
     switch (attributeId)
     {
-        case 0:
+        case FONTATTR_MAX_LETTER_WIDTH:
             result = gFontInfos[fontId].maxLetterWidth;
             break;
-        case 1:
+        case FONTATTR_MAX_LETTER_HEIGHT:
             result = gFontInfos[fontId].maxLetterHeight;
             break;
-        case 2:
+        case FONTATTR_LETTER_SPACING:
             result = gFontInfos[fontId].letterSpacing;
             break;
-        case 3:
+        case FONTATTR_LINE_SPACING:
             result = gFontInfos[fontId].lineSpacing;
             break;
-        case 4:
+        case FONTATTR_COLOR_LOWNIBBLE:
             result = gFontInfos[fontId].fontColor_l;
             break;
-        case 5:
+        case FONTATTR_COLOR_FOREGROUND:
             result = gFontInfos[fontId].fgColor;
             break;
-        case 6:
+        case FONTATTR_COLOR_BACKGROUND:
             result = gFontInfos[fontId].bgColor;
             break;
-        case 7:
+        case FONTATTR_COLOR_SHADOW:
             result = gFontInfos[fontId].shadowColor;
             break;
     }

@@ -1,23 +1,26 @@
 #include "global.h"
 #include "battle.h"
-#include "sprite.h"
-#include "constants/trainers.h"
-#include "graphics.h"
-#include "decompress.h"
-#include "bg.h"
-#include "palette.h"
-#include "main.h"
-#include "gpu_regs.h"
-#include "link.h"
+#include "battle_bg.h"
+#include "battle_main.h"
 #include "battle_message.h"
-#include "task.h"
-#include "trig.h"
-#include "sound.h"
-#include "constants/songs.h"
-#include "window.h"
-#include "text_window.h"
-#include "menu.h"
 #include "battle_setup.h"
+#include "bg.h"
+#include "decompress.h"
+#include "gpu_regs.h"
+#include "graphics.h"
+#include "link.h"
+#include "main.h"
+#include "menu.h"
+#include "palette.h"
+#include "sound.h"
+#include "sprite.h"
+#include "task.h"
+#include "text_window.h"
+#include "trig.h"
+#include "window.h"
+#include "constants/map_types.h"
+#include "constants/songs.h"
+#include "constants/trainers.h"
 
 struct BattleBackground
 {
@@ -28,13 +31,6 @@ struct BattleBackground
     const void *palette;
 };
 
-extern const struct SpriteTemplate gUnknown_0831A9D0;
-extern const struct SpriteTemplate gUnknown_0831A9E8;
-extern const struct CompressedSpriteSheet gUnknown_0831AA00;
-extern const struct BgTemplate gUnknown_0831AA08[4];
-extern const struct WindowTemplate *gUnknown_0831ABA0[];
-extern const struct BattleBackground gBattleTerrainTable[];
-
 extern u16 gBattle_BG1_X;
 extern u16 gBattle_BG1_Y;
 extern u16 gBattle_BG2_X;
@@ -42,23 +38,661 @@ extern u16 gBattle_BG2_Y;
 
 extern u8 GetCurrentMapBattleScene(void);
 
-void sub_8035658(void)
+// .rodata
+static const u16 sUnrefArray[] = {0x0300, 0x0000}; //OamData?
+
+static const struct OamData gUnknown_0831A988 =
+{
+    .y = 0,
+    .affineMode = 3,
+    .objMode = 0,
+    .mosaic = 0,
+    .bpp = 0,
+    .shape = 0,
+    .x = 0,
+    .matrixNum = 0,
+    .size = 3,
+    .tileNum = 0,
+    .priority = 0,
+    .paletteNum = 0,
+    .affineParam = 0,
+};
+
+static const struct OamData gUnknown_0831A990 =
+{
+    .y = 0,
+    .affineMode = 3,
+    .objMode = 0,
+    .mosaic = 0,
+    .bpp = 0,
+    .shape = 0,
+    .x = 0,
+    .matrixNum = 0,
+    .size = 3,
+    .tileNum = 64,
+    .priority = 0,
+    .paletteNum = 0,
+    .affineParam = 0,
+};
+
+static const union AffineAnimCmd gUnknown_0831A998[] =
+{
+    AFFINEANIMCMD_FRAME(0x0080, 0x0080, 0x00, 0x00),
+    AFFINEANIMCMD_END,
+};
+
+static const union AffineAnimCmd gUnknown_0831A9A8[] =
+{
+    AFFINEANIMCMD_FRAME(0x0080, 0x0080, 0x00, 0x00),
+    AFFINEANIMCMD_FRAME(0x0018, 0x0018, 0x00, 0x80),
+    AFFINEANIMCMD_FRAME(0x0018, 0x0018, 0x00, 0x80),
+    AFFINEANIMCMD_END,
+};
+
+static const union AffineAnimCmd * const gUnknown_0831A9C8[] =
+{
+    gUnknown_0831A998,
+    gUnknown_0831A9A8,
+};
+
+static const struct SpriteTemplate gUnknown_0831A9D0 =
+{
+    .tileTag = 0x2710,
+    .paletteTag = 0x2710,
+    .oam = &gUnknown_0831A988,
+    .anims = gDummySpriteAnimTable,
+    .images = NULL,
+    .affineAnims = gUnknown_0831A9C8,
+    .callback = nullsub_17
+};
+
+static const struct SpriteTemplate gUnknown_0831A9E8 =
+{
+    .tileTag = 0x2710,
+    .paletteTag = 0x2710,
+    .oam = &gUnknown_0831A990,
+    .anims = gDummySpriteAnimTable,
+    .images = NULL,
+    .affineAnims = gUnknown_0831A9C8,
+    .callback = nullsub_17
+};
+
+static const struct CompressedSpriteSheet gUnknown_0831AA00 =
+{
+    gUnknown_08D77B0C, 0x1000, 0x2710
+};
+
+const struct BgTemplate gBattleBgTemplates[] =
+{
+    {
+        .bg = 0,
+        .charBaseIndex = 0,
+        .mapBaseIndex = 24,
+        .screenSize = 2,
+        .paletteMode = 0,
+        .priority = 0,
+        .baseTile = 0
+    },
+    {
+        .bg = 1,
+        .charBaseIndex = 1,
+        .mapBaseIndex = 28,
+        .screenSize = 2,
+        .paletteMode = 0,
+        .priority = 0,
+        .baseTile = 0
+    },
+    {
+        .bg = 2,
+        .charBaseIndex = 1,
+        .mapBaseIndex = 30,
+        .screenSize = 1,
+        .paletteMode = 0,
+        .priority = 1,
+        .baseTile = 0
+    },
+   {
+        .bg = 3,
+        .charBaseIndex = 2,
+        .mapBaseIndex = 26,
+        .screenSize = 1,
+        .paletteMode = 0,
+        .priority = 3,
+        .baseTile = 0
+    },
+};
+
+static const struct WindowTemplate gUnknown_0831AA18[] = 
+{
+    {
+        .priority = 0,
+        .tilemapLeft = 2,
+        .tilemapTop = 15,
+        .width = 26,
+        .height = 4,
+        .paletteNum = 0,
+        .baseBlock = 0x0090,
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 1,
+        .tilemapTop = 35,
+        .width = 14,
+        .height = 4,
+        .paletteNum = 0,
+        .baseBlock = 0x01c0,
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 17,
+        .tilemapTop = 35,
+        .width = 12,
+        .height = 4,
+        .paletteNum = 5,
+        .baseBlock = 0x0190,
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 2,
+        .tilemapTop = 55,
+        .width = 8,
+        .height = 2,
+        .paletteNum = 5,
+        .baseBlock = 0x0300,
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 11,
+        .tilemapTop = 55,
+        .width = 8,
+        .height = 2,
+        .paletteNum = 5,
+        .baseBlock = 0x0310,
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 2,
+        .tilemapTop = 57,
+        .width = 8,
+        .height = 2,
+        .paletteNum = 5,
+        .baseBlock = 0x0320,
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 11,
+        .tilemapTop = 57,
+        .width = 8,
+        .height = 2,
+        .paletteNum = 5,
+        .baseBlock = 0x0330,
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 21,
+        .tilemapTop = 55,
+        .width = 4,
+        .height = 2,
+        .paletteNum = 5,
+        .baseBlock = 0x0290,
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 21,
+        .tilemapTop = 57,
+        .width = 0,
+        .height = 0,
+        .paletteNum = 5,
+        .baseBlock = 0x0298,
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 25,
+        .tilemapTop = 55,
+        .width = 4,
+        .height = 2,
+        .paletteNum = 5,
+        .baseBlock = 0x0298,
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 21,
+        .tilemapTop = 57,
+        .width = 8,
+        .height = 2,
+        .paletteNum = 5,
+        .baseBlock = 0x02a0,
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 21,
+        .tilemapTop = 55,
+        .width = 8,
+        .height = 4,
+        .paletteNum = 5,
+        .baseBlock = 0x02b0,
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 26,
+        .tilemapTop = 9,
+        .width = 3,
+        .height = 4,
+        .paletteNum = 5,
+        .baseBlock = 0x0100,
+    },
+    {
+        .priority = 1,
+        .tilemapLeft = 19,
+        .tilemapTop = 8,
+        .width = 10,
+        .height = 11,
+        .paletteNum = 5,
+        .baseBlock = 0x0100,
+    },
+    {
+        .priority = 2,
+        .tilemapLeft = 18,
+        .tilemapTop = 0,
+        .width = 12,
+        .height = 3,
+        .paletteNum = 6,
+        .baseBlock = 0x016e,
+    },
+    {
+        .priority = 1,
+        .tilemapLeft = 2,
+        .tilemapTop = 3,
+        .width = 6,
+        .height = 2,
+        .paletteNum = 5,
+        .baseBlock = 0x0020,
+    },
+    {
+        .priority = 2,
+        .tilemapLeft = 2,
+        .tilemapTop = 3,
+        .width = 6,
+        .height = 2,
+        .paletteNum = 5,
+        .baseBlock = 0x0040,
+    },
+    {
+        .priority = 1,
+        .tilemapLeft = 2,
+        .tilemapTop = 2,
+        .width = 6,
+        .height = 2,
+        .paletteNum = 5,
+        .baseBlock = 0x0020,
+    },
+    {
+        .priority = 2,
+        .tilemapLeft = 2,
+        .tilemapTop = 2,
+        .width = 6,
+        .height = 2,
+        .paletteNum = 5,
+        .baseBlock = 0x0040,
+    },
+    {
+        .priority = 1,
+        .tilemapLeft = 2,
+        .tilemapTop = 6,
+        .width = 6,
+        .height = 2,
+        .paletteNum = 5,
+        .baseBlock = 0x0060,
+    },
+    {
+        .priority = 2,
+        .tilemapLeft = 2,
+        .tilemapTop = 6,
+        .width = 6,
+        .height = 2,
+        .paletteNum = 5,
+        .baseBlock = 0x0080,
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 12,
+        .tilemapTop = 2,
+        .width = 6,
+        .height = 2,
+        .paletteNum = 0,
+        .baseBlock = 0x00a0,
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 4,
+        .tilemapTop = 2,
+        .width = 7,
+        .height = 2,
+        .paletteNum = 0,
+        .baseBlock = 0x00a0,
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 19,
+        .tilemapTop = 2,
+        .width = 7,
+        .height = 2,
+        .paletteNum = 0,
+        .baseBlock = 0x00b0,
+    },
+    DUMMY_WIN_TEMPLATE
+};
+
+static const struct WindowTemplate gUnknown_0831AAE0[] = 
+{
+    {
+        .priority = 0,
+        .tilemapLeft = 2,
+        .tilemapTop = 15,
+        .width = 26,
+        .height = 4,
+        .paletteNum = 0,
+        .baseBlock = 0x0090,
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 1,
+        .tilemapTop = 35,
+        .width = 14,
+        .height = 4,
+        .paletteNum = 0,
+        .baseBlock = 0x01c0,
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 17,
+        .tilemapTop = 35,
+        .width = 12,
+        .height = 4,
+        .paletteNum = 5,
+        .baseBlock = 0x0190,
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 2,
+        .tilemapTop = 55,
+        .width = 8,
+        .height = 2,
+        .paletteNum = 5,
+        .baseBlock = 0x0300,
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 11,
+        .tilemapTop = 55,
+        .width = 8,
+        .height = 2,
+        .paletteNum = 5,
+        .baseBlock = 0x0310,
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 2,
+        .tilemapTop = 57,
+        .width = 8,
+        .height = 2,
+        .paletteNum = 5,
+        .baseBlock = 0x0320,
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 11,
+        .tilemapTop = 57,
+        .width = 8,
+        .height = 2,
+        .paletteNum = 5,
+        .baseBlock = 0x0330,
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 21,
+        .tilemapTop = 55,
+        .width = 4,
+        .height = 2,
+        .paletteNum = 5,
+        .baseBlock = 0x0290,
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 21,
+        .tilemapTop = 57,
+        .width = 0,
+        .height = 0,
+        .paletteNum = 5,
+        .baseBlock = 0x0298,
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 25,
+        .tilemapTop = 55,
+        .width = 4,
+        .height = 2,
+        .paletteNum = 5,
+        .baseBlock = 0x0298,
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 21,
+        .tilemapTop = 57,
+        .width = 8,
+        .height = 2,
+        .paletteNum = 5,
+        .baseBlock = 0x02a0,
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 21,
+        .tilemapTop = 55,
+        .width = 8,
+        .height = 4,
+        .paletteNum = 5,
+        .baseBlock = 0x02b0,
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 26,
+        .tilemapTop = 9,
+        .width = 3,
+        .height = 4,
+        .paletteNum = 5,
+        .baseBlock = 0x0100,
+    },
+    {
+        .priority = 1,
+        .tilemapLeft = 19,
+        .tilemapTop = 8,
+        .width = 10,
+        .height = 11,
+        .paletteNum = 5,
+        .baseBlock = 0x0100,
+    },
+    {
+        .priority = 2,
+        .tilemapLeft = 18,
+        .tilemapTop = 0,
+        .width = 12,
+        .height = 3,
+        .paletteNum = 6,
+        .baseBlock = 0x016e,
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 6,
+        .tilemapTop = 1,
+        .width = 8,
+        .height = 2,
+        .paletteNum = 5,
+        .baseBlock = 0x0100,
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 14,
+        .tilemapTop = 1,
+        .width = 2,
+        .height = 2,
+        .paletteNum = 5,
+        .baseBlock = 0x0110,
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 16,
+        .tilemapTop = 1,
+        .width = 8,
+        .height = 2,
+        .paletteNum = 5,
+        .baseBlock = 0x0114,
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 12,
+        .tilemapTop = 4,
+        .width = 6,
+        .height = 2,
+        .paletteNum = 5,
+        .baseBlock = 0x0124,
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 12,
+        .tilemapTop = 6,
+        .width = 6,
+        .height = 2,
+        .paletteNum = 5,
+        .baseBlock = 0x0130,
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 12,
+        .tilemapTop = 8,
+        .width = 6,
+        .height = 2,
+        .paletteNum = 5,
+        .baseBlock = 0x013c,
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 8,
+        .tilemapTop = 11,
+        .width = 14,
+        .height = 2,
+        .paletteNum = 5,
+        .baseBlock = 0x0148,
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 2,
+        .tilemapTop = 15,
+        .width = 26,
+        .height = 4,
+        .paletteNum = 7,
+        .baseBlock = 0x0090,
+    },
+    DUMMY_WIN_TEMPLATE
+};
+
+const struct WindowTemplate * const gBattleWindowTemplates[] =
+{
+    gUnknown_0831AA18,
+    gUnknown_0831AAE0,
+};
+
+static const struct BattleBackground gBattleTerrainTable[] =
+{
+    {
+        .tileset = gBattleTerrainTiles_TallGrass,
+        .tilemap = gBattleTerrainTilemap_TallGrass,
+        .entryTileset = gBattleTerrainAnimTiles_TallGrass,
+        .entryTilemap = gBattleTerrainAnimTilemap_TallGrass,
+        .palette = gBattleTerrainPalette_TallGrass,
+    },
+    {
+        .tileset = gBattleTerrainTiles_LongGrass,
+        .tilemap = gBattleTerrainTilemap_LongGrass,
+        .entryTileset = gBattleTerrainAnimTiles_LongGrass,
+        .entryTilemap = gBattleTerrainAnimTilemap_LongGrass,
+        .palette = gBattleTerrainPalette_LongGrass,
+    },
+    {
+        .tileset = gBattleTerrainTiles_Sand,
+        .tilemap = gBattleTerrainTilemap_Sand,
+        .entryTileset = gBattleTerrainAnimTiles_Sand,
+        .entryTilemap = gBattleTerrainAnimTilemap_Sand,
+        .palette = gBattleTerrainPalette_Sand,
+    },
+    {
+        .tileset = gBattleTerrainTiles_Underwater,
+        .tilemap = gBattleTerrainTilemap_Underwater,
+        .entryTileset = gBattleTerrainAnimTiles_Underwater,
+        .entryTilemap = gBattleTerrainAnimTilemap_Underwater,
+        .palette = gBattleTerrainPalette_Underwater,
+    },
+    {
+        .tileset = gBattleTerrainTiles_Water,
+        .tilemap = gBattleTerrainTilemap_Water,
+        .entryTileset = gBattleTerrainAnimTiles_Water,
+        .entryTilemap = gBattleTerrainAnimTilemap_Water,
+        .palette = gBattleTerrainPalette_Water,
+    },
+    {
+        .tileset = gBattleTerrainTiles_PondWater,
+        .tilemap = gBattleTerrainTilemap_PondWater,
+        .entryTileset = gBattleTerrainAnimTiles_PondWater,
+        .entryTilemap = gBattleTerrainAnimTilemap_PondWater,
+        .palette = gBattleTerrainPalette_PondWater,
+    },
+    {
+        .tileset = gBattleTerrainTiles_Rock,
+        .tilemap = gBattleTerrainTilemap_Rock,
+        .entryTileset = gBattleTerrainAnimTiles_Rock,
+        .entryTilemap = gBattleTerrainAnimTilemap_Rock,
+        .palette = gBattleTerrainPalette_Rock,
+    },
+    {
+        .tileset = gBattleTerrainTiles_Cave,
+        .tilemap = gBattleTerrainTilemap_Cave,
+        .entryTileset = gBattleTerrainAnimTiles_Cave,
+        .entryTilemap = gBattleTerrainAnimTilemap_Cave,
+        .palette = gBattleTerrainPalette_Cave,
+    },
+    {
+        .tileset = gBattleTerrainTiles_Building,
+        .tilemap = gBattleTerrainTilemap_Building,
+        .entryTileset = gBattleTerrainAnimTiles_Building,
+        .entryTilemap = gBattleTerrainAnimTilemap_Building,
+        .palette = gBattleTerrainPalette_Building,
+    },
+    {// plain
+        .tileset = gBattleTerrainTiles_Building,
+        .tilemap = gBattleTerrainTilemap_Building,
+        .entryTileset = gBattleTerrainAnimTiles_Building,
+        .entryTilemap = gBattleTerrainAnimTilemap_Building,
+        .palette = gBattleTerrainPalette_Plain,
+    },
+};
+
+// .text
+void BattleInitBgsAndWindows(void)
 {
     ResetBgsAndClearDma3BusyFlags(0);
-    InitBgsFromTemplates(0, gUnknown_0831AA08, ARRAY_COUNT(gUnknown_0831AA08));
+    InitBgsFromTemplates(0, gBattleBgTemplates, ARRAY_COUNT(gBattleBgTemplates));
 
     if (gBattleTypeFlags & BATTLE_TYPE_ARENA)
     {
-        gBattleScripting.field_24 = 1;
+        gBattleScripting.windowsType = 1;
         SetBgTilemapBuffer(1, gUnknown_02023060);
         SetBgTilemapBuffer(2, gUnknown_02023060);
     }
     else
     {
-        gBattleScripting.field_24 = 0;
+        gBattleScripting.windowsType = 0;
     }
 
-    InitWindows(gUnknown_0831ABA0[gBattleScripting.field_24]);
+    InitWindows(gBattleWindowTemplates[gBattleScripting.windowsType]);
     DeactivateAllTextPrinters();
 }
 
@@ -66,23 +700,23 @@ void sub_80356D0(void)
 {
     DisableInterrupts(INTR_FLAG_HBLANK);
     EnableInterrupts(INTR_FLAG_VBLANK | INTR_FLAG_VCOUNT | INTR_FLAG_TIMER3 | INTR_FLAG_SERIAL);
-    sub_8035658();
+    BattleInitBgsAndWindows();
     SetGpuReg(REG_OFFSET_BLDCNT, 0);
     SetGpuReg(REG_OFFSET_BLDALPHA, 0);
     SetGpuReg(REG_OFFSET_BLDY, 0);
     SetGpuReg(REG_OFFSET_DISPCNT, DISPCNT_OBJWIN_ON | DISPCNT_WIN0_ON | DISPCNT_OBJ_ON | DISPCNT_OBJ_1D_MAP);
 }
 
-void ApplyPlayerChosenFrameToBattleMenu(void)
+void LoadBattleMenuWindowGfx(void)
 {
-    sub_809882C(2, 0x12, 0x10);
-    sub_809882C(2, 0x22, 0x10);
+    LoadUserWindowBorderGfx(2, 0x12, 0x10);
+    LoadUserWindowBorderGfx(2, 0x22, 0x10);
     LoadCompressedPalette(gUnknown_08D85600, 0x50, 0x20);
 
     if (gBattleTypeFlags & BATTLE_TYPE_ARENA)
     {
         sub_81978B0(0x70);
-        copy_textbox_border_tile_patterns_to_vram(0, 0x30, 0x70);
+        LoadMessageBoxGfx(0, 0x30, 0x70);
         gPlttBufferUnfaded[0x76] = 0;
         CpuCopy16(&gPlttBufferUnfaded[0x76], &gPlttBufferFaded[0x76], 2);
     }
@@ -193,12 +827,12 @@ void LoadBattleTextboxAndBackground(void)
     CopyToBgTilemapBuffer(0, gBattleTextboxTilemap, 0, 0);
     CopyBgTilemapBufferToVram(0);
     LoadCompressedPalette(gBattleTextboxPalette, 0, 0x40);
-    ApplyPlayerChosenFrameToBattleMenu();
+    LoadBattleMenuWindowGfx();
 
     DrawMainBattleBackground();
 }
 
-static void sub_8035AE4(u8 taskId, u8 bank, u8 bgId, u8 destX, u8 destY)
+static void sub_8035AE4(u8 taskId, u8 battlerId, u8 bgId, u8 destX, u8 destY)
 {
     s32 i;
     u16 var = 0;
@@ -208,7 +842,7 @@ static void sub_8035AE4(u8 taskId, u8 bank, u8 bgId, u8 destX, u8 destY)
     {
         if (gTasks[taskId].data[5] != 0)
         {
-            switch (bank)
+            switch (battlerId)
             {
             case 0:
                 var = 0x3F & gTasks[taskId].data[3];
@@ -226,7 +860,7 @@ static void sub_8035AE4(u8 taskId, u8 bank, u8 bgId, u8 destX, u8 destY)
         }
         else
         {
-            switch (bank)
+            switch (battlerId)
             {
             case 0:
                 var = 0x3F & gTasks[taskId].data[3];
@@ -253,7 +887,7 @@ static void sub_8035AE4(u8 taskId, u8 bank, u8 bgId, u8 destX, u8 destY)
     }
     else
     {
-        if (bank == gBattleScripting.multiplayerId)
+        if (battlerId == gBattleScripting.multiplayerId)
             var = gTasks[taskId].data[3];
         else
             var = gTasks[taskId].data[4];
@@ -272,79 +906,79 @@ static void sub_8035C4C(void)
 {
     if (gBattleOutcome == B_OUTCOME_DREW)
     {
-        BattleHandleAddTextPrinter(gText_Draw, 0x15);
+        BattlePutTextOnWindow(gText_Draw, 0x15);
     }
     else if (gBattleTypeFlags & BATTLE_TYPE_MULTI)
     {
         if (gBattleOutcome == B_OUTCOME_WON)
         {
-            switch (gLinkPlayers[gBattleScripting.multiplayerId].lp_field_18)
+            switch (gLinkPlayers[gBattleScripting.multiplayerId].id)
             {
             case 0:
-                BattleHandleAddTextPrinter(gText_Win, 0x16);
-                BattleHandleAddTextPrinter(gText_Loss, 0x17);
+                BattlePutTextOnWindow(gText_Win, 0x16);
+                BattlePutTextOnWindow(gText_Loss, 0x17);
                 break;
             case 1:
-                BattleHandleAddTextPrinter(gText_Win, 0x17);
-                BattleHandleAddTextPrinter(gText_Loss, 0x16);
+                BattlePutTextOnWindow(gText_Win, 0x17);
+                BattlePutTextOnWindow(gText_Loss, 0x16);
                 break;
             case 2:
-                BattleHandleAddTextPrinter(gText_Win, 0x16);
-                BattleHandleAddTextPrinter(gText_Loss, 0x17);
+                BattlePutTextOnWindow(gText_Win, 0x16);
+                BattlePutTextOnWindow(gText_Loss, 0x17);
                 break;
             case 3:
-                BattleHandleAddTextPrinter(gText_Win, 0x17);
-                BattleHandleAddTextPrinter(gText_Loss, 0x16);
+                BattlePutTextOnWindow(gText_Win, 0x17);
+                BattlePutTextOnWindow(gText_Loss, 0x16);
                 break;
             }
         }
         else
         {
-            switch (gLinkPlayers[gBattleScripting.multiplayerId].lp_field_18)
+            switch (gLinkPlayers[gBattleScripting.multiplayerId].id)
             {
             case 0:
-                BattleHandleAddTextPrinter(gText_Win, 0x17);
-                BattleHandleAddTextPrinter(gText_Loss, 0x16);
+                BattlePutTextOnWindow(gText_Win, 0x17);
+                BattlePutTextOnWindow(gText_Loss, 0x16);
                 break;
             case 1:
-                BattleHandleAddTextPrinter(gText_Win, 0x16);
-                BattleHandleAddTextPrinter(gText_Loss, 0x17);
+                BattlePutTextOnWindow(gText_Win, 0x16);
+                BattlePutTextOnWindow(gText_Loss, 0x17);
                 break;
             case 2:
-                BattleHandleAddTextPrinter(gText_Win, 0x17);
-                BattleHandleAddTextPrinter(gText_Loss, 0x16);
+                BattlePutTextOnWindow(gText_Win, 0x17);
+                BattlePutTextOnWindow(gText_Loss, 0x16);
                 break;
             case 3:
-                BattleHandleAddTextPrinter(gText_Win, 0x16);
-                BattleHandleAddTextPrinter(gText_Loss, 0x17);
+                BattlePutTextOnWindow(gText_Win, 0x16);
+                BattlePutTextOnWindow(gText_Loss, 0x17);
                 break;
             }
         }
     }
     else if (gBattleOutcome == B_OUTCOME_WON)
     {
-        if (gLinkPlayers[gBattleScripting.multiplayerId].lp_field_18 != 0)
+        if (gLinkPlayers[gBattleScripting.multiplayerId].id != 0)
         {
-            BattleHandleAddTextPrinter(gText_Win, 0x17);
-            BattleHandleAddTextPrinter(gText_Loss, 0x16);
+            BattlePutTextOnWindow(gText_Win, 0x17);
+            BattlePutTextOnWindow(gText_Loss, 0x16);
         }
         else
         {
-            BattleHandleAddTextPrinter(gText_Win, 0x16);
-            BattleHandleAddTextPrinter(gText_Loss, 0x17);
+            BattlePutTextOnWindow(gText_Win, 0x16);
+            BattlePutTextOnWindow(gText_Loss, 0x17);
         }
     }
     else
     {
-        if (gLinkPlayers[gBattleScripting.multiplayerId].lp_field_18 != 0)
+        if (gLinkPlayers[gBattleScripting.multiplayerId].id != 0)
         {
-            BattleHandleAddTextPrinter(gText_Win, 0x16);
-            BattleHandleAddTextPrinter(gText_Loss, 0x17);
+            BattlePutTextOnWindow(gText_Win, 0x16);
+            BattlePutTextOnWindow(gText_Loss, 0x17);
         }
         else
         {
-            BattleHandleAddTextPrinter(gText_Win, 0x17);
-            BattleHandleAddTextPrinter(gText_Loss, 0x16);
+            BattlePutTextOnWindow(gText_Win, 0x17);
+            BattlePutTextOnWindow(gText_Loss, 0x16);
         }
     }
 }
@@ -365,23 +999,23 @@ void sub_8035D74(u8 taskId)
                 name = gLinkPlayers[i].name;
                 linkPlayer = &gLinkPlayers[i];
 
-                switch (linkPlayer->lp_field_18)
+                switch (linkPlayer->id)
                 {
                 case 0:
-                    BattleHandleAddTextPrinter(name, 0x11);
-                    sub_8035AE4(taskId, linkPlayer->lp_field_18, 1, 2, 4);
+                    BattlePutTextOnWindow(name, 0x11);
+                    sub_8035AE4(taskId, linkPlayer->id, 1, 2, 4);
                     break;
                 case 1:
-                    BattleHandleAddTextPrinter(name, 0x12);
-                    sub_8035AE4(taskId, linkPlayer->lp_field_18, 2, 2, 4);
+                    BattlePutTextOnWindow(name, 0x12);
+                    sub_8035AE4(taskId, linkPlayer->id, 2, 2, 4);
                     break;
                 case 2:
-                    BattleHandleAddTextPrinter(name, 0x13);
-                    sub_8035AE4(taskId, linkPlayer->lp_field_18, 1, 2, 8);
+                    BattlePutTextOnWindow(name, 0x13);
+                    sub_8035AE4(taskId, linkPlayer->id, 1, 2, 8);
                     break;
                 case 3:
-                    BattleHandleAddTextPrinter(name, 0x14);
-                    sub_8035AE4(taskId, linkPlayer->lp_field_18, 2, 2, 8);
+                    BattlePutTextOnWindow(name, 0x14);
+                    sub_8035AE4(taskId, linkPlayer->id, 2, 2, 8);
                     break;
                 }
             }
@@ -392,14 +1026,14 @@ void sub_8035D74(u8 taskId)
             u8 opponentId = playerId ^ BIT_SIDE;
             u8 opponentId_copy = opponentId;
 
-            if (gLinkPlayers[playerId].lp_field_18 != 0)
+            if (gLinkPlayers[playerId].id != 0)
                 opponentId = playerId, playerId = opponentId_copy;
 
             name = gLinkPlayers[playerId].name;
-            BattleHandleAddTextPrinter(name, 0xF);
+            BattlePutTextOnWindow(name, 0xF);
 
             name = gLinkPlayers[opponentId].name;
-            BattleHandleAddTextPrinter(name, 0x10);
+            BattlePutTextOnWindow(name, 0x10);
 
             sub_8035AE4(taskId, playerId, 1, 2, 7);
             sub_8035AE4(taskId, opponentId, 2, 2, 7);
@@ -411,8 +1045,8 @@ void sub_8035D74(u8 taskId)
         gPlttBufferUnfaded[palId * 16 + 0x10F] = gPlttBufferFaded[palId * 16 + 0x10F] = 0x7FFF;
         gBattleStruct->field_7D = CreateSprite(&gUnknown_0831A9D0, 111, 80, 0);
         gBattleStruct->field_7E = CreateSprite(&gUnknown_0831A9E8, 129, 80, 0);
-        gSprites[gBattleStruct->field_7D].invisible = 1;
-        gSprites[gBattleStruct->field_7E].invisible = 1;
+        gSprites[gBattleStruct->field_7D].invisible = TRUE;
+        gSprites[gBattleStruct->field_7E].invisible = TRUE;
         gTasks[taskId].data[0]++;
         break;
     case 2:
@@ -443,8 +1077,8 @@ void sub_8035D74(u8 taskId)
 
             PlaySE(SE_W231);
             DestroyTask(taskId);
-            gSprites[gBattleStruct->field_7D].invisible = 0;
-            gSprites[gBattleStruct->field_7E].invisible = 0;
+            gSprites[gBattleStruct->field_7D].invisible = FALSE;
+            gSprites[gBattleStruct->field_7E].invisible = FALSE;
             gSprites[gBattleStruct->field_7E].oam.tileNum += 0x40;
             gSprites[gBattleStruct->field_7D].data[0] = 0;
             gSprites[gBattleStruct->field_7E].data[0] = 1;
@@ -457,7 +1091,7 @@ void sub_8035D74(u8 taskId)
     }
 }
 
-void LoadBattleEntryBackground(void)
+void DrawBattleEntryBackground(void)
 {
     if (gBattleTypeFlags & BATTLE_TYPE_LINK)
     {
@@ -478,7 +1112,7 @@ void LoadBattleEntryBackground(void)
     }
     else if (gBattleTypeFlags & (BATTLE_TYPE_FRONTIER | BATTLE_TYPE_LINK | BATTLE_TYPE_x2000000 | BATTLE_TYPE_EREADER_TRAINER))
     {
-        if (!(gBattleTypeFlags & BATTLE_TYPE_INGAME_PARTNER) || gPartnerTrainerId == STEVEN_PARTNER_ID)
+        if (!(gBattleTypeFlags & BATTLE_TYPE_INGAME_PARTNER) || gPartnerTrainerId == TRAINER_STEVEN_PARTNER)
         {
             LZDecompressVram(gBattleTerrainAnimTiles_Building, (void*)(VRAM + 0x4000));
             LZDecompressVram(gBattleTerrainAnimTilemap_Building, (void*)(VRAM + 0xE000));
@@ -740,7 +1374,7 @@ bool8 LoadChosenBattleElement(u8 caseId)
         }
         break;
     case 6:
-        ApplyPlayerChosenFrameToBattleMenu();
+        LoadBattleMenuWindowGfx();
         break;
     default:
         ret = TRUE;

@@ -1,5 +1,6 @@
 #include "global.h"
 #include "pokemon.h"
+#include "battle.h"
 #include "daycare.h"
 #include "string_util.h"
 #include "constants/species.h"
@@ -21,8 +22,6 @@
 
 #define EGG_MOVES_ARRAY_COUNT           10
 #define EGG_LVL_UP_MOVES_ARRAY_COUNT    50
-
-extern u16 gMoveToLearn;
 
 // text
 extern const u8 gText_MaleSymbol4[];
@@ -48,7 +47,7 @@ extern void sub_81B9328(void);
 extern void CB2_ReturnToField(void);
 
 // this file's functions
-static void ClearDaycareMonMisc(struct DaycareMiscMon *misc);
+static void ClearDaycareMonMail(struct DayCareMail *mail);
 static void SetInitialEggData(struct Pokemon *mon, u16 species, struct DayCare *daycare);
 static u8 GetDaycareCompatibilityScore(struct DayCare *daycare);
 static void DaycarePrintMonInfo(u8 windowId, s32 daycareSlotId, u8 y);
@@ -62,7 +61,16 @@ EWRAM_DATA static u16 sHatchedEggMotherMoves[4] = {0};
 
 #include "data/pokemon/egg_moves.h"
 
-static const struct WindowTemplate sDaycareLevelMenuWindowTemplate = {0, 0xF, 1, 0xE, 6, 0xF, 8};
+static const struct WindowTemplate sDaycareLevelMenuWindowTemplate =
+{
+    .priority = 0,
+    .tilemapLeft = 15,
+    .tilemapTop = 1,
+    .width = 14,
+    .height = 6,
+    .paletteNum = 15,
+    .baseBlock = 8
+};
 
 static const struct ListMenuItem sLevelMenuItems[] =
 {
@@ -74,20 +82,20 @@ static const struct ListMenuItem sLevelMenuItems[] =
 static const struct ListMenuTemplate sDaycareListMenuLevelTemplate =
 {
     .items = sLevelMenuItems,
-    .moveCursorFunc = sub_81AF078,
-    .unk_08 = DaycarePrintMonInfo,
+    .moveCursorFunc = ListMenuDefaultCursorMoveFunc,
+    .itemPrintFunc = DaycarePrintMonInfo,
     .totalItems = 3,
     .maxShowed = 3,
     .windowId = 0,
-    .unk_11 = 0,
-    .unk_12 = 8,
+    .header_X = 0,
+    .item_X = 8,
     .cursor_X = 0,
     .upText_Y = 1,
     .cursorPal = 2,
     .fillValue = 1,
     .cursorShadowPal = 3,
     .lettersSpacing = 1,
-    .unk_16_3 = 0,
+    .itemVerticalPadding = 0,
     .scrollMultiple = LIST_NO_MULTIPLE_SCROLL,
     .fontId = 1,
     .cursorKind = 0
@@ -180,13 +188,13 @@ static void StorePokemonInDaycare(struct Pokemon *mon, struct DaycareMon *daycar
     {
         u8 mailId;
 
-        StringCopy(daycareMon->misc.OT_name, gSaveBlock2Ptr->playerName);
-        GetMonNick(mon, daycareMon->misc.monName);
-        StripExtCtrlCodes(daycareMon->misc.monName);
-        daycareMon->misc.gameLanguage = LANGUAGE_ENGLISH;
-        daycareMon->misc.monLanguage = GetMonData(mon, MON_DATA_LANGUAGE);
+        StringCopy(daycareMon->mail.OT_name, gSaveBlock2Ptr->playerName);
+        GetMonNick(mon, daycareMon->mail.monName);
+        StripExtCtrlCodes(daycareMon->mail.monName);
+        daycareMon->mail.gameLanguage = LANGUAGE_ENGLISH;
+        daycareMon->mail.monLanguage = GetMonData(mon, MON_DATA_LANGUAGE);
         mailId = GetMonData(mon, MON_DATA_MAIL);
-        daycareMon->misc.mail = gSaveBlock1Ptr->mail[mailId];
+        daycareMon->mail.message = gSaveBlock1Ptr->mail[mailId];
         TakeMailFromMon(mon);
     }
 
@@ -220,10 +228,10 @@ static void ShiftDaycareSlots(struct DayCare *daycare)
         daycare->mons[0].mon = daycare->mons[1].mon;
         ZeroBoxMonData(&daycare->mons[1].mon);
 
-        daycare->mons[0].misc = daycare->mons[1].misc;
+        daycare->mons[0].mail = daycare->mons[1].mail;
         daycare->mons[0].steps = daycare->mons[1].steps;
         daycare->mons[1].steps = 0;
-        ClearDaycareMonMisc(&daycare->mons[1].misc);
+        ClearDaycareMonMail(&daycare->mons[1].mail);
     }
 }
 
@@ -278,10 +286,10 @@ static u16 TakeSelectedPokemonFromDaycare(struct DaycareMon *daycareMon)
     }
 
     gPlayerParty[PARTY_SIZE - 1] = pokemon;
-    if (daycareMon->misc.mail.itemId)
+    if (daycareMon->mail.message.itemId)
     {
-        GiveMailToMon2(&gPlayerParty[PARTY_SIZE - 1], &daycareMon->misc.mail);
-        ClearDaycareMonMisc(&daycareMon->misc);
+        GiveMailToMon2(&gPlayerParty[PARTY_SIZE - 1], &daycareMon->mail.message);
+        ClearDaycareMonMail(&daycareMon->mail);
     }
 
     ZeroBoxMonData(&daycareMon->mon);
@@ -365,23 +373,23 @@ u8 GetNumLevelsGainedFromDaycare(void)
     return 0;
 }
 
-static void ClearDaycareMonMisc(struct DaycareMiscMon *misc)
+static void ClearDaycareMonMail(struct DayCareMail *mail)
 {
     s32 i;
 
-    for (i = 0; i < OT_NAME_LENGTH + 1; i++)
-        misc->OT_name[i] = 0;
+    for (i = 0; i < PLAYER_NAME_LENGTH + 1; i++)
+        mail->OT_name[i] = 0;
     for (i = 0; i < POKEMON_NAME_LENGTH + 1; i++)
-        misc->monName[i] = 0;
+        mail->monName[i] = 0;
 
-    ClearMailStruct(&misc->mail);
+    ClearMailStruct(&mail->message);
 }
 
 static void ClearDaycareMon(struct DaycareMon *daycareMon)
 {
     ZeroBoxMonData(&daycareMon->mon);
     daycareMon->steps = 0;
-    ClearDaycareMonMisc(&daycareMon->misc);
+    ClearDaycareMonMail(&daycareMon->mail);
 }
 
 static void ClearAllDaycareData(struct DayCare *daycare)

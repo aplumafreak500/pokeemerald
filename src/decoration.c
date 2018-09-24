@@ -17,11 +17,10 @@
 #include "field_player_avatar.h"
 #include "field_camera.h"
 #include "field_screen.h"
-#include "field_map_obj.h"
+#include "event_object_movement.h"
 #include "list_menu.h"
 #include "menu_helpers.h"
 #include "menu.h"
-#include "menu_indicators.h"
 #include "sound.h"
 #include "event_scripts.h"
 #include "event_data.h"
@@ -33,12 +32,10 @@
 #include "tilesets.h"
 #include "item_icon.h"
 #include "trader.h"
-#include "constants/map_objects.h"
+#include "constants/event_objects.h"
 #include "decoration_inventory.h"
 #include "decoration.h"
 #include "graphics.h"
-
-extern void (*gFieldCallback)(void);
 
 // Static type declarations
 
@@ -217,22 +214,67 @@ void (*const SecretBasePC_SelectedDecorActions[][2])(u8 taskId) = {
    }
 };
 
-const struct WindowTemplate gUnknown_085A6B90[4] = {
-    { 0,  1,  1, 18,  8, 15, 0x0001 },
-    { 0,  1,  1, 13, 18, 13, 0x0091 },
-    { 0, 17,  1, 12,  2, 15, 0x017b },
-    { 0, 16, 13, 13,  6, 15, 0x0193 }
+const struct WindowTemplate gUnknown_085A6B90[4] =
+{
+    {
+        .priority = 0,
+        .tilemapLeft = 1,
+        .tilemapTop = 1,
+        .width = 18,
+        .height = 8,
+        .paletteNum = 15,
+        .baseBlock = 0x0001
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 1,
+        .tilemapTop = 1,
+        .width = 13,
+        .height = 18,
+        .paletteNum = 13,
+        .baseBlock = 0x0091
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 17,
+        .tilemapTop = 1,
+        .width = 12,
+        .height = 2,
+        .paletteNum = 15,
+        .baseBlock = 0x017b
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 16,
+        .tilemapTop = 13,
+        .width = 13,
+        .height = 6,
+        .paletteNum = 15,
+        .baseBlock = 0x0193
+    }
 };
 
 const u16 gUnknown_085A6BB0[] = INCBIN_U16("graphics/decorations/unk_85a6bb0.gbapal");
 
-const struct ListMenuTemplate gUnknown_085A6BD0 = {
-    NULL,
-    sub_8127480,
-    sub_81274A0,
-    0, 0,
-    0, 0, 8, 0,
-    9, 2, 1, 3, FALSE, 0, FALSE, 7
+const struct ListMenuTemplate gUnknown_085A6BD0 =
+{
+    .items = NULL,
+    .moveCursorFunc = sub_8127480,
+    .itemPrintFunc = sub_81274A0,
+    .totalItems = 0,
+    .maxShowed = 0,
+    .windowId = 0,
+    .header_X = 0,
+    .item_X = 8,
+    .cursor_X = 0,
+    .upText_Y = 9,
+    .cursorPal = 2,
+    .fillValue = 1,
+    .cursorShadowPal = 3,
+    .lettersSpacing = FALSE,
+    .itemVerticalPadding = 0,
+    .scrollMultiple = FALSE,
+    .fontId = 7
 };
 
 #include "data/decoration/icon.h"
@@ -502,7 +544,7 @@ void sub_8126B80(u8 taskId)
 void sub_8126C08(void)
 {
     FillWindowPixelBuffer(0, 0x11);
-    AddTextPrinterParameterized(0, 1, sSecretBasePCMenuItemDescriptions[sSecretBasePCMenuCursorPos], 0, 0, 2, 1, 3);
+    AddTextPrinterParameterized2(0, 1, sSecretBasePCMenuItemDescriptions[sSecretBasePCMenuCursorPos], 0, 0, 2, 1, 3);
 }
 
 void SecretBasePC_Decorate(u8 taskId)
@@ -625,7 +667,7 @@ void sub_8126E8C(u8 taskId)
             sub_8126F68(r5, i, 8, i << 4, FALSE, 0xFF);
         }
     }
-    PrintTextOnWindow(r5, 1, gTasks[taskId].data[11] == 2 ? gText_Exit : gText_Cancel, 8, (i << 4) + 1, 0, 0);
+    AddTextPrinterParameterized(r5, 1, gTasks[taskId].data[11] == 2 ? gText_Exit : gText_Cancel, 8, (i << 4) + 1, 0, 0);
     schedule_bg_copy_tilemap_to_vram(0);
 }
 
@@ -639,12 +681,12 @@ void sub_8126F68(u8 winid, u8 decorCat, u8 x, u8 y, bool8 flag, u8 speed)
     sub_8127058(gStringVar4, flag);
     strbuf = StringLength(gStringVar4) + gStringVar4;
     StringCopy(strbuf, sDecorCatNames[decorCat]);
-    PrintTextOnWindow(winid, 1, gStringVar4, x, y, speed, NULL);
+    AddTextPrinterParameterized(winid, 1, gStringVar4, x, y, speed, NULL);
     strbuf = ConvertIntToDecimalStringN(strbuf, CountDecorationCategoryN(decorCat), STR_CONV_MODE_RIGHT_ALIGN, 2);
     *strbuf++ = CHAR_SLASH;
     ConvertIntToDecimalStringN(strbuf, gDecorationInventories[decorCat].size, STR_CONV_MODE_RIGHT_ALIGN, 2);
     x = GetStringRightAlignXOffset(1, gStringVar4, width);
-    PrintTextOnWindow(winid, 1, gStringVar4, x, y, speed, NULL);
+    AddTextPrinterParameterized(winid, 1, gStringVar4, x, y, speed, NULL);
 }
 
 void sub_8127058(u8 *str, bool8 flag)
@@ -841,7 +883,7 @@ void sub_8127500(void)
 {
     if (sDecorPCBuffer->unk_522 == 0xFF)
     {
-        sDecorPCBuffer->unk_522 = AddScrollIndicatorArrowPairParametrized(0x02, 0x3c, 0x0c, 0x94, sDecorPCBuffer->unk_520 - sDecorPCBuffer->unk_521, 0x6e, 0x6e, &sSecretBasePCSelectDecorPageNo);
+        sDecorPCBuffer->unk_522 = AddScrollIndicatorArrowPairParameterized(SCROLL_ARROW_UP, 0x3c, 0x0c, 0x94, sDecorPCBuffer->unk_520 - sDecorPCBuffer->unk_521, 0x6e, 0x6e, &sSecretBasePCSelectDecorPageNo);
     }
 }
 
@@ -935,7 +977,7 @@ void sub_8127744(u32 a0)
     {
         txt = gDecorations[gCurDecorInventoryItems[a0]].description;
     }
-    PrintTextOnWindow(winidx, 1, txt, 0, 1, 0, 0);
+    AddTextPrinterParameterized(winidx, 1, txt, 0, 1, 0, 0);
 }
 
 void sub_81277A8(void)
@@ -1090,7 +1132,7 @@ void sub_8127B04(u8 taskId)
 {
     DrawWholeMapView();
     Overworld_SetWarpDestination(gSaveBlock1Ptr->location.mapGroup, gSaveBlock1Ptr->location.mapNum, -1, gTasks[taskId].data[3], gTasks[taskId].data[4]);
-    warp_in();
+    WarpIntoMap();
 }
 
 u16 sub_8127B54(u8 decor, u8 a1)
@@ -1205,15 +1247,15 @@ void sub_8127E18(void)
         if (FlagGet(0xAE + i) == TRUE)
         {
             FlagClear(0xAE + i);
-            for (j = 0; j < gMapHeader.events->mapObjectCount; j ++)
+            for (j = 0; j < gMapHeader.events->eventObjectCount; j ++)
             {
-                if (gMapHeader.events->mapObjects[j].flagId == 0xAE + i)
+                if (gMapHeader.events->eventObjects[j].flagId == 0xAE + i)
                 {
                     break;
                 }
             }
-            VarSet(0x3F20 + gMapHeader.events->mapObjects[j].graphicsId, sPlaceDecorationGraphicsDataBuffer.decoration->tiles[0]);
-            gSpecialVar_0x8005 = gMapHeader.events->mapObjects[j].localId;
+            VarSet(0x3F20 + gMapHeader.events->eventObjects[j].graphicsId, sPlaceDecorationGraphicsDataBuffer.decoration->tiles[0]);
+            gSpecialVar_0x8005 = gMapHeader.events->eventObjects[j].localId;
             gSpecialVar_0x8006 = sCurDecorMapX;
             gSpecialVar_0x8007 = sCurDecorMapY;
             show_sprite(gSpecialVar_0x8005, gSaveBlock1Ptr->location.mapNum, gSaveBlock1Ptr->location.mapGroup);
@@ -1294,7 +1336,7 @@ void sub_8128060(u8 taskId)
             gTasks[taskId].data[2] = 2;
             break;
         case 2:
-            if (sub_80ABDFC() == TRUE)
+            if (IsWeatherNotFadingIn() == TRUE)
             {
                 gTasks[taskId].data[12] = 0;
                 sub_8128FD8(taskId);
@@ -1324,11 +1366,11 @@ void SetUpPlacingDecorationPlayerAvatar(u8 taskId, struct PlaceDecorationGraphic
     }
     if (gSaveBlock2Ptr->playerGender == MALE)
     {
-        sDecor_CameraSpriteObjectIdx2 = AddPseudoFieldObject(0xC1, SpriteCallbackDummy, v0, 0x48, 0);
+        sDecor_CameraSpriteObjectIdx2 = AddPseudoEventObject(0xC1, SpriteCallbackDummy, v0, 0x48, 0);
     }
     else
     {
-        sDecor_CameraSpriteObjectIdx2 = AddPseudoFieldObject(0xC2, SpriteCallbackDummy, v0, 0x48, 0);
+        sDecor_CameraSpriteObjectIdx2 = AddPseudoEventObject(0xC2, SpriteCallbackDummy, v0, 0x48, 0);
     }
     gSprites[sDecor_CameraSpriteObjectIdx2].oam.priority = 1;
     DestroySprite(&gSprites[sDecor_CameraSpriteObjectIdx1]);
@@ -1469,7 +1511,7 @@ bool8 sub_812853C(u8 taskId, const struct Decoration *decoration)
                     {
                         return FALSE;
                     }
-                    behaviorAt = GetFieldObjectIdByXYZ(curX, curY, 0);
+                    behaviorAt = GetEventObjectIdByXYZ(curX, curY, 0);
                     if (behaviorAt != 0 && behaviorAt != 16)
                     {
                         return FALSE;
@@ -1494,7 +1536,7 @@ bool8 sub_812853C(u8 taskId, const struct Decoration *decoration)
                     {
                         return FALSE;
                     }
-                    if (GetFieldObjectIdByXYZ(curX, curY, 0) != 16)
+                    if (GetEventObjectIdByXYZ(curX, curY, 0) != 16)
                     {
                         return FALSE;
                     }
@@ -1514,7 +1556,7 @@ bool8 sub_812853C(u8 taskId, const struct Decoration *decoration)
                 {
                     return FALSE;
                 }
-                behaviorAt = GetFieldObjectIdByXYZ(curX, curY, 0);
+                behaviorAt = GetEventObjectIdByXYZ(curX, curY, 0);
                 if (behaviorAt != 0 && behaviorAt != 16)
                 {
                     return FALSE;
@@ -1559,7 +1601,7 @@ bool8 sub_812853C(u8 taskId, const struct Decoration *decoration)
                         return FALSE;
                     }
                 }
-                if (GetFieldObjectIdByXYZ(curX, curY, 0) != 16)
+                if (GetEventObjectIdByXYZ(curX, curY, 0) != 16)
                 {
                     return FALSE;
                 }
@@ -1710,7 +1752,7 @@ void sub_8128C64(u8 taskId)
             data[2] ++;
             break;
         case 3:
-            if (sub_80ABDFC() == TRUE)
+            if (IsWeatherNotFadingIn() == TRUE)
             {
                 gTasks[taskId].func = sub_812764C;
             }
@@ -1739,7 +1781,7 @@ bool8 sub_8128D10(u8 taskId)
         data[1] ++;
         return FALSE;
     }
-    if (sDecorationLastDirectionMoved == DIR_NORTH && data[1] - 7 >= gMapHeader.mapData->height)
+    if (sDecorationLastDirectionMoved == DIR_NORTH && data[1] - 7 >= gMapHeader.mapLayout->height)
     {
         data[1] --;
         return FALSE;
@@ -1749,7 +1791,7 @@ bool8 sub_8128D10(u8 taskId)
         data[0] ++;
         return FALSE;
     }
-    if (sDecorationLastDirectionMoved == DIR_EAST && data[0] + data[5] - 8 >= gMapHeader.mapData->width)
+    if (sDecorationLastDirectionMoved == DIR_EAST && data[0] + data[5] - 8 >= gMapHeader.mapLayout->width)
     {
         data[0] --;
         return FALSE;
@@ -1993,7 +2035,7 @@ u8 gpu_pal_decompress_alloc_tag_and_upload(struct PlaceDecorationGraphicsDataBuf
     data->decoration = &gDecorations[decor];
     if (data->decoration->permission == DECORPERM_SOLID_MAT)
     {
-        return AddPseudoFieldObject(data->decoration->tiles[0], SpriteCallbackDummy, 0, 0, 1);
+        return AddPseudoEventObject(data->decoration->tiles[0], SpriteCallbackDummy, 0, 0, 1);
     }
     FreeSpritePaletteByTag(OVERWORLD_PLACE_DECOR_SELECTOR_PAL_TAG);
     sub_81291E8(data);
@@ -2043,7 +2085,7 @@ const u8 *GetDecorationIconPicOrPalette(u16 decor, u8 mode)
     return gUnknown_085A6BE8[decor][mode];
 }
 
-u8 AddDecorationIconObjectFromFieldObject(u16 tilesTag, u16 paletteTag, u8 decor)
+u8 AddDecorationIconObjectFromEventObject(u16 tilesTag, u16 paletteTag, u8 decor)
 {
     u8 spriteId;
     struct SpriteSheet sheet;
@@ -2074,7 +2116,7 @@ u8 AddDecorationIconObjectFromFieldObject(u16 tilesTag, u16 paletteTag, u8 decor
     }
     else
     {
-        spriteId = AddPseudoFieldObject(sPlaceDecorationGraphicsDataBuffer.decoration->tiles[0], SpriteCallbackDummy, 0, 0, 1);
+        spriteId = AddPseudoEventObject(sPlaceDecorationGraphicsDataBuffer.decoration->tiles[0], SpriteCallbackDummy, 0, 0, 1);
     }
     return spriteId;
 }
@@ -2095,7 +2137,7 @@ u8 AddDecorationIconObject(u8 decor, s16 x, s16 y, u8 priority, u16 tilesTag, u1
     }
     else if (gUnknown_085A6BE8[decor][0] == NULL)
     {
-        spriteId = AddDecorationIconObjectFromFieldObject(tilesTag, paletteTag, decor);
+        spriteId = AddDecorationIconObjectFromEventObject(tilesTag, paletteTag, decor);
         if (spriteId == MAX_SPRITES)
         {
             return MAX_SPRITES;
@@ -2144,11 +2186,11 @@ void sub_8129708(void)
     {
         gSpecialVar_0x8005 = sDecorRearrangementDataBuffer[gSpecialVar_0x8004].flagId;
         sub_81296EC(sDecorRearrangementDataBuffer[gSpecialVar_0x8004].idx);
-        for (i = 0; i < gMapHeader.events->mapObjectCount; i ++)
+        for (i = 0; i < gMapHeader.events->eventObjectCount; i ++)
         {
-            if (gMapHeader.events->mapObjects[i].flagId == gSpecialVar_0x8005)
+            if (gMapHeader.events->eventObjects[i].flagId == gSpecialVar_0x8005)
             {
-                gSpecialVar_0x8006 = gMapHeader.events->mapObjects[i].localId;
+                gSpecialVar_0x8006 = gMapHeader.events->eventObjects[i].localId;
                 break;
             }
         }
@@ -2159,11 +2201,11 @@ void sub_81297AC(void)
 {
     u8 i;
 
-    for (i = 0; i < gMapHeader.events->mapObjectCount; i ++)
+    for (i = 0; i < gMapHeader.events->eventObjectCount; i ++)
     {
-        if (gMapHeader.events->mapObjects[i].flagId == gSpecialVar_0x8004)
+        if (gMapHeader.events->eventObjects[i].flagId == gSpecialVar_0x8004)
         {
-            gSpecialVar_0x8005 = gMapHeader.events->mapObjects[i].localId;
+            gSpecialVar_0x8005 = gMapHeader.events->eventObjects[i].localId;
             break;
         }
     }
@@ -2189,7 +2231,7 @@ void sub_81297F8(void)
             {
                 for (x = 0; x < sDecorRearrangementDataBuffer[i].width; x ++)
                 {
-                    MapGridSetMetatileEntryAt(posX + 7 + x, posY + 7 - y, gMapHeader.mapData->map[posX + x + gMapHeader.mapData->width * (posY - y)] | 0x3000);
+                    MapGridSetMetatileEntryAt(posX + 7 + x, posY + 7 - y, gMapHeader.mapLayout->map[posX + x + gMapHeader.mapLayout->width * (posY - y)] | 0x3000);
                 }
             }
             sub_81296EC(sDecorRearrangementDataBuffer[i].idx);
@@ -2220,7 +2262,7 @@ void sub_81298EC(u8 taskId)
             gTasks[taskId].data[2] = 3;
             break;
         case 3:
-            if (sub_80ABDFC() == TRUE)
+            if (IsWeatherNotFadingIn() == TRUE)
             {
                 StringExpandPlaceholders(gStringVar4, gText_DecorationReturnedToPC);
                 DisplayItemMessageOnField(taskId, gStringVar4, sub_8129D64);
@@ -2250,17 +2292,17 @@ bool8 sub_81299AC(u8 taskId)
 
 void SetUpPuttingAwayDecorationPlayerAvatar(void)
 {
-    player_get_direction_lower_nybble();
+    GetPlayerFacingDirection();
     sDecor_CameraSpriteObjectIdx1 = gSprites[gUnknown_03005DD0.spriteId].data[0];
     sub_812A39C();
     gUnknown_03005DD0.spriteId = CreateSprite(&gUnknown_085A7404, 0x78, 0x50, 0);
     if (gSaveBlock2Ptr->playerGender == MALE)
     {
-        sDecor_CameraSpriteObjectIdx2 = AddPseudoFieldObject(0xC1, SpriteCallbackDummy, 0x88, 0x48, 0);
+        sDecor_CameraSpriteObjectIdx2 = AddPseudoEventObject(0xC1, SpriteCallbackDummy, 0x88, 0x48, 0);
     }
     else
     {
-        sDecor_CameraSpriteObjectIdx2 = AddPseudoFieldObject(0xC2, SpriteCallbackDummy, 0x88, 0x48, 0);
+        sDecor_CameraSpriteObjectIdx2 = AddPseudoEventObject(0xC2, SpriteCallbackDummy, 0x88, 0x48, 0);
     }
     gSprites[sDecor_CameraSpriteObjectIdx2].oam.priority = 1;
     DestroySprite(&gSprites[sDecor_CameraSpriteObjectIdx1]);
@@ -2290,7 +2332,7 @@ void sub_8129ABC(u8 taskId)
             data[2] = 2;
             break;
         case 2:
-            if (sub_80ABDFC() == TRUE)
+            if (IsWeatherNotFadingIn() == TRUE)
             {
                 data[12] = 1;
                 sub_8129B34(taskId);
@@ -2454,9 +2496,9 @@ void sub_8129F20(void)
     yOff = gUnknown_0203A17C.pos[sDecorRearrangementDataBuffer[sCurDecorSelectedInRearrangement].idx] & 0x0F;
     for (i = 0; i < 0x40; i ++)
     {
-        if (gSaveBlock1Ptr->mapObjectTemplates[i].x == xOff && gSaveBlock1Ptr->mapObjectTemplates[i].y == yOff && !FlagGet(gSaveBlock1Ptr->mapObjectTemplates[i].flagId))
+        if (gSaveBlock1Ptr->eventObjectTemplates[i].x == xOff && gSaveBlock1Ptr->eventObjectTemplates[i].y == yOff && !FlagGet(gSaveBlock1Ptr->eventObjectTemplates[i].flagId))
         {
-            sDecorRearrangementDataBuffer[sCurDecorSelectedInRearrangement].flagId = gSaveBlock1Ptr->mapObjectTemplates[i].flagId;
+            sDecorRearrangementDataBuffer[sCurDecorSelectedInRearrangement].flagId = gSaveBlock1Ptr->eventObjectTemplates[i].flagId;
             break;
         }
     }
@@ -2616,7 +2658,7 @@ void sub_812A2C4(u8 taskId)
             data[2] ++;
             break;
         case 3:
-            if (sub_80ABDFC() == TRUE)
+            if (IsWeatherNotFadingIn() == TRUE)
             {
                 gTasks[taskId].func = sub_8126B80;
             }

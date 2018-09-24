@@ -11,8 +11,8 @@ bool8 SetUpFieldMove_Teleport(void)
 {
     if (Overworld_MapTypeAllowsTeleportAndFly(gMapHeader.mapType) == TRUE)
     {
-        gUnknown_03005DB0 = FieldCallback_Teleport;
-        gUnknown_0203CEEC = hm_teleport_run_dp02scr;
+        gFieldCallback2 = FieldCallback_PrepareFadeInFromMenu;
+        gPostMenuFieldCallback = hm_teleport_run_dp02scr;
         return TRUE;
     }
     return FALSE;
@@ -37,7 +37,7 @@ bool8 FldEff_UseTeleport(void)
 void sub_817C94C(void)
 {
     FieldEffectActiveListRemove(FLDEFF_USE_TELEPORT);
-    sub_80B7FC8();
+    CreateTeleportFieldEffectTask();
 }
 
 

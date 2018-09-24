@@ -7,7 +7,7 @@ struct BagStruct
     void (*bagCallback)(void);
     u8 location;
     u8 pocket;
-    u8 unk6[2];
+    u16 unk6;
     u16 cursorPosition[5];
     u16 scrollPosition[5];
 };
@@ -55,7 +55,7 @@ void sub_81AAC14(void);
 void sub_81AAC50(void);
 void sub_81AAC70(void);
 void bag_menu_mail_related(void);
-
 void CB2_BagMenuFromStartMenu(void);
+u8 sub_81ABB2C(u8 pocketId);
 
 #endif //GUARD_item_menu_H

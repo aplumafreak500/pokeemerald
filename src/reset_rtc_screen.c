@@ -314,14 +314,14 @@ static void PrintTime(u8 windowId, u8 x, u8 y, u16 days, u8 hours, u8 minutes, u
     ConvertIntToDecimalStringN(gStringVar1, seconds, 2, 2);
     dest = StringCopy(dest, gStringVar1);
 
-    PrintTextOnWindow(windowId, 1, gStringVar4, x, y, TEXT_SPEED_FF, NULL);
+    AddTextPrinterParameterized(windowId, 1, gStringVar4, x, y, TEXT_SPEED_FF, NULL);
 }
 
 static void ShowChooseTimeWindow(u8 windowId, u16 days, u8 hours, u8 minutes, u8 seconds)
 {
     SetWindowBorderStyle(windowId, FALSE, 0x214, 0xE);
     PrintTime(windowId, 0, 1, days, hours, minutes, seconds);
-    PrintTextOnWindow(windowId, 1, gText_Confirm2, 126, 1, 0, NULL);
+    AddTextPrinterParameterized(windowId, 1, gText_Confirm2, 126, 1, 0, NULL);
     schedule_bg_copy_tilemap_to_vram(0);
 }
 
@@ -496,7 +496,7 @@ static void VBlankCB(void)
 static void ShowMessage(const u8 *str)
 {
     sub_8197B1C(1, FALSE, 0x200, 0xF);
-    PrintTextOnWindow(1, 1, str, 0, 1, 0, NULL);
+    AddTextPrinterParameterized(1, 1, str, 0, 1, 0, NULL);
     schedule_bg_copy_tilemap_to_vram(0);
 }
 
@@ -508,7 +508,7 @@ static void Task_ShowResetRtcPrompt(u8 taskId)
     {
     case 0:
         SetWindowBorderStyle(0, FALSE, 0x214, 0xE);
-        PrintTextOnWindow(0, 1, gText_PresentTime, 0, 1, TEXT_SPEED_FF, 0);
+        AddTextPrinterParameterized(0, 1, gText_PresentTime, 0, 1, TEXT_SPEED_FF, 0);
         PrintTime(
             0,
             0,
@@ -517,7 +517,7 @@ static void Task_ShowResetRtcPrompt(u8 taskId)
             gLocalTime.hours,
             gLocalTime.minutes,
             gLocalTime.seconds);
-        PrintTextOnWindow(0, 1, gText_PreviousTime, 0, 33, TEXT_SPEED_FF, 0);
+        AddTextPrinterParameterized(0, 1, gText_PreviousTime, 0, 33, TEXT_SPEED_FF, 0);
         PrintTime(
             0,
             0,
@@ -552,7 +552,7 @@ static void Task_ResetRtcScreen(u8 taskId)
     switch (data[0])
     {
     case 0:
-        BeginNormalPaletteFade(-1, 1, 0x10, 0, 0xFFFF);
+        BeginNormalPaletteFade(0xFFFFFFFF, 1, 0x10, 0, 0xFFFF);
         data[0] = 1;
         break;
     case 1:
@@ -621,7 +621,7 @@ static void Task_ResetRtcScreen(u8 taskId)
     case 5:
         if (gMain.newKeys & A_BUTTON)
         {
-            BeginNormalPaletteFade(-1, 1, 0, 0x10, 0xFFFF);
+            BeginNormalPaletteFade(0xFFFFFFFF, 1, 0, 0x10, 0xFFFF);
             data[0] = 6;
         }
         else

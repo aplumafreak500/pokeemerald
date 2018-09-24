@@ -18,7 +18,7 @@ SLOTMACHINEGFXDIR := graphics/slot_machine
 PKNAVGFXDIR := graphics/pokenav
 PKNAVOPTIONSGFXDIR := graphics/pokenav/options
 PSSGFXDIR := graphics/pokemon_storage
-MAPOBJGFXDIR := graphics/map_objects
+EVENTOBJGFXDIR := graphics/event_objects
 MISCGFXDIR := graphics/misc
 
 types := normal fight flying poison ground rock bug ghost steel mystery fire water grass electric psychic ice dragon dark
@@ -470,7 +470,7 @@ $(SLOTMACHINEGFXDIR)/reel_time_gfx.4bpp: $(SLOTMACHINEGFXDIR)/reel_time_pikachu.
 	@cat $^ >$@
 
 $(UNUSEDGFXDIR)/intro_birch_beauty.4bpp: %.4bpp: %.png
-	$(GFX) $< $@ -num_tiles 374
+	$(GFX) $< $@ -num_tiles 822
 
 $(PSSGFXDIR)/forest_frame.4bpp: %.4bpp: %.png
 	$(GFX) $< $@ -num_tiles 55
@@ -628,7 +628,7 @@ $(PSSGFXDIR)/ludicolo.4bpp: $(PSSGFXDIR)/friends_frame2.4bpp $(PSSGFXDIR)/ludico
 $(PSSGFXDIR)/whiscash.4bpp: $(PSSGFXDIR)/friends_frame2.4bpp $(PSSGFXDIR)/whiscash_bg.4bpp
 	@cat $^ >$@
 
-$(MAPOBJGFXDIR)/pics/effects/unknown_4F6D38/0.4bpp: %.4bpp: %.png
+$(EVENTOBJGFXDIR)/pics/effects/unknown_4F6D38/0.4bpp: %.4bpp: %.png
 	$(GFX) $< $@ -num_tiles 11
 
 $(INTERFACEGFXDIR)/selector_outline.4bpp: %.4bpp: %.png

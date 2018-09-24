@@ -1,8 +1,9 @@
 #ifndef GUARD_BATTLE_MESSAGE_H
 #define GUARD_BATTLE_MESSAGE_H
 
-// for 0xFD
+#define TEXT_BUFF_ARRAY_COUNT   16
 
+// for 0xFD
 #define B_TXT_BUFF1 0x0
 #define B_TXT_BUFF2 0x1
 #define B_TXT_COPY_VAR_1 0x2
@@ -33,11 +34,11 @@
 #define B_TXT_EFF_ABILITY 0x1B
 #define B_TXT_TRAINER1_CLASS 0x1C
 #define B_TXT_TRAINER1_NAME 0x1D
-#define B_TXT_1E 0x1E // trainer name for a link player
-#define B_TXT_1F 0x1F // trainer name for a link player
-#define B_TXT_20 0x20 // trainer name for a link player
-#define B_TXT_21 0x21 // trainer name for a link player
-#define B_TXT_22 0x22 // trainer name for a link player
+#define B_TXT_LINK_PLAYER_NAME 0x1E
+#define B_TXT_LINK_PARTNER_NAME 0x1F
+#define B_TXT_LINK_OPPONENT1_NAME 0x20
+#define B_TXT_LINK_OPPONENT2_NAME 0x21
+#define B_TXT_LINK_SCR_TRAINER_NAME 0x22
 #define B_TXT_PLAYER_NAME 0x23
 #define B_TXT_TRAINER1_LOSE_TEXT 0x24
 #define B_TXT_TRAINER1_WIN_TEXT 0x25
@@ -176,25 +177,25 @@
     textVar[4] = B_BUFF_EOS;                                    \
 }
 
-#define PREPARE_MON_NICK_WITH_PREFIX_BUFFER(textVar, bank, partyId)         \
+#define PREPARE_MON_NICK_WITH_PREFIX_BUFFER(textVar, battler, partyId)      \
 {                                                                           \
     textVar[0] = B_BUFF_PLACEHOLDER_BEGIN;                                  \
     textVar[1] = B_BUFF_MON_NICK_WITH_PREFIX;                               \
-    textVar[2] = bank;                                                      \
+    textVar[2] = battler;                                                   \
     textVar[3] = partyId;                                                   \
     textVar[4] = B_BUFF_EOS;                                                \
 }
 
-#define PREPARE_MON_NICK_BUFFER(textVar, bank, partyId)         \
+#define PREPARE_MON_NICK_BUFFER(textVar, battler, partyId)      \
 {                                                               \
     textVar[0] = B_BUFF_PLACEHOLDER_BEGIN;                      \
     textVar[1] = B_BUFF_MON_NICK;                               \
-    textVar[2] = bank;                                          \
+    textVar[2] = battler;                                       \
     textVar[3] = partyId;                                       \
     textVar[4] = B_BUFF_EOS;                                    \
 }
 
-struct StringInfoBattle
+struct BattleMsgData
 {
     u16 currentMove;
     u16 originallyUsedMove;
@@ -203,31 +204,27 @@ struct StringInfoBattle
     u8 scrActive;
     u8 unk1605E;
     u8 hpScale;
-    u8 StringBank;
+    u8 itemEffectBattler;
     u8 moveType;
-    u8 abilities[4];
-    u8 textBuffs[3][0x10];
+    u8 abilities[MAX_BATTLERS_COUNT];
+    u8 textBuffs[3][TEXT_BUFF_ARRAY_COUNT];
 };
 
 void BufferStringBattle(u16 stringID);
 u32 BattleStringExpandPlaceholdersToDisplayedString(const u8* src);
 u32 BattleStringExpandPlaceholders(const u8* src, u8* dst);
-void BattleHandleAddTextPrinter(const u8* text, u8 arg1);
+void BattlePutTextOnWindow(const u8* text, u8 arg1);
 void SetPpNumbersPaletteInMoveSelection(void);
 u8 GetCurrentPpToMaxPpState(u8 currentPp, u8 maxPp);
 
-#define TEXT_BUFF_ARRAY_COUNT   16
-
-extern u8 gDisplayedStringBattle[300];
-extern u8 gBattleTextBuff1[TEXT_BUFF_ARRAY_COUNT];
-extern u8 gBattleTextBuff2[TEXT_BUFF_ARRAY_COUNT];
-extern u8 gBattleTextBuff3[TEXT_BUFF_ARRAY_COUNT];
+extern struct BattleMsgData *gBattleMsgDataPtr;
 
 extern const u8* const gBattleStringsTable[];
 extern const u8* const gStatNamesTable[];
 extern const u8* const gPokeblockWasTooXStringTable[];
 extern const u8* const gRefereeStringsTable[];
 extern const u8* const gStatNamesTable2[];
+extern const u8 *const gRoundsStringTable[];
 
 extern const u8 gText_PkmnIsEvolving[];
 extern const u8 gText_CongratsPkmnEvolved[];
@@ -252,6 +249,13 @@ extern const u8 gText_BattleSwitchWhich4[];
 extern const u8 gText_BattleSwitchWhich5[];
 extern const u8 gText_SafariBalls[];
 extern const u8 gText_SafariBallLeft[];
+extern const u8 gText_Sleep[];
+extern const u8 gText_Poison[];
+extern const u8 gText_Burn[];
+extern const u8 gText_Paralysis[];
+extern const u8 gText_Ice[];
+extern const u8 gText_Confusion[];
+extern const u8 gText_Love[];
 extern const u8 gText_SpaceAndSpace[];
 extern const u8 gText_CommaSpace[];
 extern const u8 gText_Space2[];

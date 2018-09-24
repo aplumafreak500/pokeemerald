@@ -42,8 +42,24 @@ static const struct BgTemplate sBgTemplates[] =
 
 static const struct WindowTemplate sWindowTemplates[] =
 {
-    {0, 4, 15, 22, 4, 14, 20},
-    {0, 7, 6, 16, 4, 14, 0x6C},
+    {
+        .priority = 0,
+        .tilemapLeft = 4,
+        .tilemapTop = 15,
+        .width = 22,
+        .height = 4,
+        .paletteNum = 14,
+        .baseBlock = 20
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 7,
+        .tilemapTop = 6,
+        .width = 16,
+        .height = 4,
+        .paletteNum = 14,
+        .baseBlock = 0x6C
+    },
     DUMMY_WIN_TEMPLATE
 };
 
@@ -77,7 +93,7 @@ void CB2_InitMysteryEventMenu(void)
             FillWindowPixelBuffer(i, 0);
 
         FillBgTilemapBufferRect_Palette0(0, 0, 0, 0, 0x1E, 0x14);
-        sub_809882C(0, 1u, 0xD0u);
+        LoadUserWindowBorderGfx(0, 1u, 0xD0u);
         sub_81978B0(0xE0);
         SetGpuReg(REG_OFFSET_DISPCNT, DISPCNT_MODE_0 | DISPCNT_OBJ_1D_MAP | DISPCNT_BG0_ON);
         SetGpuReg(REG_OFFSET_BLDCNT, 0);
@@ -121,7 +137,7 @@ static void CB2_MysteryEventMenu(void)
         PutWindowTilemap(0);
         CopyWindowToVram(0, 3);
         ShowBg(0);
-        BeginNormalPaletteFade(-1, 0, 0x10, 0, 0);
+        BeginNormalPaletteFade(0xFFFFFFFF, 0, 0x10, 0, 0);
         gMain.state++;
         break;
     case 1:
@@ -264,7 +280,7 @@ static void CB2_MysteryEventMenu(void)
         }
         break;
     case 15:
-        BeginNormalPaletteFade(-1, 0, 0, 0x10, 0);
+        BeginNormalPaletteFade(0xFFFFFFFF, 0, 0, 0x10, 0);
         gMain.state++;
         break;
     case 16:
@@ -298,5 +314,5 @@ static void PrintMysteryMenuText(u8 windowId, const u8 *text, u8 x, u8 y, s32 sp
     textColor[2] = 3;
 
     FillWindowPixelBuffer(windowId, (textColor[0]) | (textColor[0] << 4));
-    AddTextPrinterParameterized2(windowId, 1, x, y, letterSpacing, lineSpacing, textColor, speed, text);
+    AddTextPrinterParameterized4(windowId, 1, x, y, letterSpacing, lineSpacing, textColor, speed, text);
 }

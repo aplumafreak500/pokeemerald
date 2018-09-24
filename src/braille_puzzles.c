@@ -1,20 +1,17 @@
 #include "global.h"
 #include "event_data.h"
-#include "constants/songs.h"
-#include "sound.h"
-#include "script.h"
-#include "constants/species.h"
-#include "task.h"
+#include "field_camera.h"
 #include "field_effect.h"
+#include "script.h"
+#include "sound.h"
+#include "task.h"
 #include "constants/flags.h"
+#include "constants/maps.h"
+#include "constants/songs.h"
+#include "constants/species.h"
 
 extern void MapGridSetMetatileIdAt(s32 x, s32 y, u16 metatileId); // fieldmap
-extern void DrawWholeMapView(); // field_camera
-extern void SetCameraPanningCallback(void ( *callback)()); // field_camera
-extern void InstallCameraPanAheadCallback(void);
-extern void SetCameraPanning(s16 x, s16 y);
 extern u8 GetCursorSelectionMonId(void);
-extern void FieldEffectActiveListRemove(u8 id); // field_effect
 extern u8 oei_task_add(void);
 
 // why do this, GF?
@@ -24,8 +21,47 @@ enum
     FLY_PUZZLE
 };
 
-extern u8 gBraillePuzzleCallbackFlag;
-extern const u8 gUnknown_085EFE74[][2];
+EWRAM_DATA static u8 sBraillePuzzleCallbackFlag = 0;
+
+static const u8 gUnknown_085EFE74[][2] =
+{
+    {0x04, 0x15},
+    {0x05, 0x15},
+    {0x06, 0x15},
+    {0x07, 0x15},
+    {0x08, 0x15},
+    {0x09, 0x15},
+    {0x0a, 0x15},
+    {0x0b, 0x15},
+    {0x0c, 0x15},
+    {0x0c, 0x16},
+    {0x0c, 0x17},
+    {0x0d, 0x17},
+    {0x0d, 0x18},
+    {0x0d, 0x19},
+    {0x0d, 0x1a},
+    {0x0d, 0x1b},
+    {0x0c, 0x1b},
+    {0x0c, 0x1c},
+    {0x04, 0x1d},
+    {0x05, 0x1d},
+    {0x06, 0x1d},
+    {0x07, 0x1d},
+    {0x08, 0x1d},
+    {0x09, 0x1d},
+    {0x0a, 0x1d},
+    {0x0b, 0x1d},
+    {0x0c, 0x1d},
+    {0x04, 0x1c},
+    {0x04, 0x1b},
+    {0x03, 0x1b},
+    {0x03, 0x1a},
+    {0x03, 0x19},
+    {0x03, 0x18},
+    {0x03, 0x17},
+    {0x04, 0x17},
+    {0x04, 0x16},
+};
 
 void SealedChamberShakingEffect(u8);
 void sub_8179860(void);
@@ -205,14 +241,25 @@ void SealedChamberShakingEffect(u8 taskId)
 // moved later in the function because it was rewritten.
 bool8 ShouldDoBrailleStrengthEffect(void)
 {
-    if (!FlagGet(FLAG_SYS_BRAILLE_STRENGTH) && (gSaveBlock1Ptr->location.mapGroup == 0x18 && gSaveBlock1Ptr->location.mapNum == 0x06))
+    if (!FlagGet(FLAG_SYS_BRAILLE_STRENGTH)
+        && gSaveBlock1Ptr->location.mapGroup == MAP_GROUP(DESERT_RUINS)
+        && gSaveBlock1Ptr->location.mapNum == MAP_NUM(DESERT_RUINS))
     {
         if (gSaveBlock1Ptr->pos.x == 6 && gSaveBlock1Ptr->pos.y == 23)
-            { gBraillePuzzleCallbackFlag = STRENGTH_PUZZLE; return TRUE; }
+        {
+            sBraillePuzzleCallbackFlag = STRENGTH_PUZZLE;
+            return TRUE;
+        }
         else if (gSaveBlock1Ptr->pos.x == 5 && gSaveBlock1Ptr->pos.y == 23)
-            { gBraillePuzzleCallbackFlag = STRENGTH_PUZZLE; return TRUE; }
+        {
+            sBraillePuzzleCallbackFlag = STRENGTH_PUZZLE;
+            return TRUE;
+        }
         else if (gSaveBlock1Ptr->pos.x == 7 && gSaveBlock1Ptr->pos.y == 23)
-            { gBraillePuzzleCallbackFlag = STRENGTH_PUZZLE; return TRUE; }
+        {
+            sBraillePuzzleCallbackFlag = STRENGTH_PUZZLE;
+            return TRUE;
+        }
     }
 
     return FALSE;
@@ -249,7 +296,7 @@ bool8 ShouldDoBrailleFlyEffect(void)
     if (!FlagGet(FLAG_SYS_BRAILLE_FLY) && (gSaveBlock1Ptr->location.mapGroup == 0x18 && gSaveBlock1Ptr->location.mapNum == 0x44))
     {
         if (gSaveBlock1Ptr->pos.x == 8 && gSaveBlock1Ptr->pos.y == 25)
-            { gBraillePuzzleCallbackFlag = FLY_PUZZLE; return TRUE; }
+            { sBraillePuzzleCallbackFlag = FLY_PUZZLE; return TRUE; }
     }
     return FALSE;
 }
@@ -362,7 +409,7 @@ bool8 FldEff_UsePuzzleEffect(void)
 {
     u8 taskId = oei_task_add();
 
-    if (gBraillePuzzleCallbackFlag == FLY_PUZZLE)
+    if (sBraillePuzzleCallbackFlag == FLY_PUZZLE)
     {
         gTasks[taskId].data[8] = (u32)UseFlyAncientTomb_Callback >> 16;
         gTasks[taskId].data[9] = (u32)UseFlyAncientTomb_Callback;

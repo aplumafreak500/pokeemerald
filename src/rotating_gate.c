@@ -1,7 +1,7 @@
 #include "global.h"
 #include "bike.h"
 #include "event_data.h"
-#include "field_map_obj.h"
+#include "event_object_movement.h"
 #include "constants/maps.h"
 #include "constants/songs.h"
 #include "sound.h"
@@ -187,12 +187,6 @@ struct RotatingGatePuzzle
     s16 y;
     u8 shape;
     u8 orientation;
-};
-
-struct Coords8
-{
-    s8 deltaX;
-    s8 deltaY;
 };
 
 // .rodata
@@ -646,7 +640,7 @@ static void RotatingGate_ResetAllGateOrientations(void)
     s32 i;
     u8 *ptr;
 
-    ptr = (u8 *)GetVarPointer(VAR_0x4000);
+    ptr = (u8 *)GetVarPointer(VAR_TEMP_0);
 
     for (i = 0; i < gRotatingGate_PuzzleCount; i++)
     {
@@ -656,12 +650,12 @@ static void RotatingGate_ResetAllGateOrientations(void)
 
 static s32 RotatingGate_GetGateOrientation(u8 gateId)
 {
-    return ((u8 *)GetVarPointer(VAR_0x4000))[gateId];
+    return ((u8 *)GetVarPointer(VAR_TEMP_0))[gateId];
 }
 
 static void RotatingGate_SetGateOrientation(u8 gateId, u8 orientation)
 {
-    ((u8 *)GetVarPointer(VAR_0x4000))[gateId] = orientation;
+    ((u8 *)GetVarPointer(VAR_TEMP_0))[gateId] = orientation;
 }
 
 static void RotatingGate_RotateInDirection(u8 gateId, u32 rotationDirection)
@@ -925,7 +919,7 @@ static s32 RotatingGate_CanRotate(u8 gateId, s16 rotationDirection)
 }
 
 #else
-ASM_DIRECT
+NAKED
 static s32 RotatingGate_CanRotate(u8 a, s16 rotationDirection)
 {
     asm(".syntax unified\n\

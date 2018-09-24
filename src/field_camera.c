@@ -4,13 +4,15 @@
 #include "field_camera.h"
 #include "field_player_avatar.h"
 #include "fieldmap.h"
-#include "field_map_obj.h"
+#include "event_object_movement.h"
 #include "gpu_regs.h"
 #include "menu.h"
 #include "overworld.h"
 #include "rotating_gate.h"
 #include "sprite.h"
 #include "text.h"
+
+EWRAM_DATA bool8 gUnusedBikeCameraAheadPanback = FALSE;
 
 // Static type declarations
 struct FieldCameraUnknownStruct
@@ -23,13 +25,13 @@ struct FieldCameraUnknownStruct
 };
 
 // static functions
-static void RedrawMapSliceNorth(struct FieldCameraUnknownStruct *a, const struct MapData *mapData);
-static void RedrawMapSliceSouth(struct FieldCameraUnknownStruct *a, const struct MapData *mapData);
-static void RedrawMapSliceEast(struct FieldCameraUnknownStruct *a, const struct MapData *mapData);
-static void RedrawMapSliceWest(struct FieldCameraUnknownStruct *a, const struct MapData *mapData);
+static void RedrawMapSliceNorth(struct FieldCameraUnknownStruct *a, const struct MapLayout *mapLayout);
+static void RedrawMapSliceSouth(struct FieldCameraUnknownStruct *a, const struct MapLayout *mapLayout);
+static void RedrawMapSliceEast(struct FieldCameraUnknownStruct *a, const struct MapLayout *mapLayout);
+static void RedrawMapSliceWest(struct FieldCameraUnknownStruct *a, const struct MapLayout *mapLayout);
 static s32 MapPosToBgTilemapOffset(struct FieldCameraUnknownStruct *a, s32 x, s32 y);
-static void DrawWholeMapViewInternal(int x, int y, const struct MapData *mapData);
-static void DrawMetatileAt(const struct MapData *mapData, u16, int, int);
+static void DrawWholeMapViewInternal(int x, int y, const struct MapLayout *mapLayout);
+static void DrawMetatileAt(const struct MapLayout *mapLayout, u16, int, int);
 static void DrawMetatile(s32 a, u16 *b, u16 c);
 static void CameraPanningCB_PanAhead(void);
 
@@ -39,6 +41,10 @@ static IWRAM_DATA s16 gUnknown_03000E28;
 static IWRAM_DATA s16 gUnknown_03000E2A;
 static IWRAM_DATA u8 gUnknown_03000E2C;
 static IWRAM_DATA void (*gUnknown_03000E30)(void);
+
+struct CameraObject gUnknown_03005DD0;
+u16 gUnknown_03005DE8;
+u16 gUnknown_03005DEC;
 
 // text
 static void move_tilemap_camera_to_upper_left_corner_(struct FieldCameraUnknownStruct *a)
@@ -91,11 +97,11 @@ void sub_8089C08(s16 *a, s16 *b)
 
 void DrawWholeMapView(void)
 {
-    DrawWholeMapViewInternal(gSaveBlock1Ptr->pos.x, gSaveBlock1Ptr->pos.y, gMapHeader.mapData);
+    DrawWholeMapViewInternal(gSaveBlock1Ptr->pos.x, gSaveBlock1Ptr->pos.y, gMapHeader.mapLayout);
     gUnknown_03000E20.unk4 = TRUE;
 }
 
-static void DrawWholeMapViewInternal(int x, int y, const struct MapData *mapData)
+static void DrawWholeMapViewInternal(int x, int y, const struct MapLayout *mapLayout)
 {
     u8 i;
     u8 j;
@@ -113,27 +119,27 @@ static void DrawWholeMapViewInternal(int x, int y, const struct MapData *mapData
             temp = gUnknown_03000E20.unk2 + j;
             if (temp >= 32)
                 temp -= 32;
-            DrawMetatileAt(mapData, r6 + temp, x + j / 2, y + i / 2);
+            DrawMetatileAt(mapLayout, r6 + temp, x + j / 2, y + i / 2);
         }
     }
 }
 
 static void RedrawMapSlicesForCameraUpdate(struct FieldCameraUnknownStruct *a, int x, int y)
 {
-    const struct MapData *mapData = gMapHeader.mapData;
+    const struct MapLayout *mapLayout = gMapHeader.mapLayout;
 
     if (x > 0)
-        RedrawMapSliceWest(a, mapData);
+        RedrawMapSliceWest(a, mapLayout);
     if (x < 0)
-        RedrawMapSliceEast(a, mapData);
+        RedrawMapSliceEast(a, mapLayout);
     if (y > 0)
-        RedrawMapSliceNorth(a, mapData);
+        RedrawMapSliceNorth(a, mapLayout);
     if (y < 0)
-        RedrawMapSliceSouth(a, mapData);
+        RedrawMapSliceSouth(a, mapLayout);
     a->unk4 = TRUE;
 }
 
-static void RedrawMapSliceNorth(struct FieldCameraUnknownStruct *a, const struct MapData *mapData)
+static void RedrawMapSliceNorth(struct FieldCameraUnknownStruct *a, const struct MapLayout *mapLayout)
 {
     u8 i;
     u8 temp;
@@ -148,11 +154,11 @@ static void RedrawMapSliceNorth(struct FieldCameraUnknownStruct *a, const struct
         temp = a->unk2 + i;
         if (temp >= 32)
             temp -= 32;
-        DrawMetatileAt(mapData, r7 + temp, gSaveBlock1Ptr->pos.x + i / 2, gSaveBlock1Ptr->pos.y + 14);
+        DrawMetatileAt(mapLayout, r7 + temp, gSaveBlock1Ptr->pos.x + i / 2, gSaveBlock1Ptr->pos.y + 14);
     }
 }
 
-static void RedrawMapSliceSouth(struct FieldCameraUnknownStruct *a, const struct MapData *mapData)
+static void RedrawMapSliceSouth(struct FieldCameraUnknownStruct *a, const struct MapLayout *mapLayout)
 {
     u8 i;
     u8 temp;
@@ -163,11 +169,11 @@ static void RedrawMapSliceSouth(struct FieldCameraUnknownStruct *a, const struct
         temp = a->unk2 + i;
         if (temp >= 32)
             temp -= 32;
-        DrawMetatileAt(mapData, r7 + temp, gSaveBlock1Ptr->pos.x + i / 2, gSaveBlock1Ptr->pos.y);
+        DrawMetatileAt(mapLayout, r7 + temp, gSaveBlock1Ptr->pos.x + i / 2, gSaveBlock1Ptr->pos.y);
     }
 }
 
-static void RedrawMapSliceEast(struct FieldCameraUnknownStruct *a, const struct MapData *mapData)
+static void RedrawMapSliceEast(struct FieldCameraUnknownStruct *a, const struct MapLayout *mapLayout)
 {
     u8 i;
     u8 temp;
@@ -178,11 +184,11 @@ static void RedrawMapSliceEast(struct FieldCameraUnknownStruct *a, const struct 
         temp = a->unk3 + i;
         if (temp >= 32)
             temp -= 32;
-        DrawMetatileAt(mapData, temp * 32 + r6, gSaveBlock1Ptr->pos.x, gSaveBlock1Ptr->pos.y + i / 2);
+        DrawMetatileAt(mapLayout, temp * 32 + r6, gSaveBlock1Ptr->pos.x, gSaveBlock1Ptr->pos.y + i / 2);
     }
 }
 
-static void RedrawMapSliceWest(struct FieldCameraUnknownStruct *a, const struct MapData *mapData)
+static void RedrawMapSliceWest(struct FieldCameraUnknownStruct *a, const struct MapLayout *mapLayout)
 {
     u8 i;
     u8 temp;
@@ -195,7 +201,7 @@ static void RedrawMapSliceWest(struct FieldCameraUnknownStruct *a, const struct 
         temp = a->unk3 + i;
         if (temp >= 32)
             temp -= 32;
-        DrawMetatileAt(mapData, temp * 32 + r5, gSaveBlock1Ptr->pos.x + 14, gSaveBlock1Ptr->pos.y + i / 2);
+        DrawMetatileAt(mapLayout, temp * 32 + r5, gSaveBlock1Ptr->pos.x + 14, gSaveBlock1Ptr->pos.y + i / 2);
     }
 }
 
@@ -205,7 +211,7 @@ void CurrentMapDrawMetatileAt(int a, int b)
 
     if (offset >= 0)
     {
-        DrawMetatileAt(gMapHeader.mapData, offset, a, b);
+        DrawMetatileAt(gMapHeader.mapLayout, offset, a, b);
         gUnknown_03000E20.unk4 = TRUE;
     }
 }
@@ -221,19 +227,19 @@ void DrawDoorMetatileAt(int x, int y, u16 *arr)
     }
 }
 
-static void DrawMetatileAt(const struct MapData *mapData, u16 b, int c, int d)
+static void DrawMetatileAt(const struct MapLayout *mapLayout, u16 b, int c, int d)
 {
     u16 metatileId = MapGridGetMetatileIdAt(c, d);
     u16 *metatiles;
 
-    if (metatileId > 1024)
+    if (metatileId > NUM_METATILES_TOTAL)
         metatileId = 0;
-    if (metatileId < 512)
-        metatiles = mapData->primaryTileset->metatiles;
+    if (metatileId < NUM_METATILES_IN_PRIMARY)
+        metatiles = mapLayout->primaryTileset->metatiles;
     else
     {
-        metatiles = mapData->secondaryTileset->metatiles;
-        metatileId -= 512;
+        metatiles = mapLayout->secondaryTileset->metatiles;
+        metatileId -= NUM_METATILES_IN_PRIMARY;
     }
     DrawMetatile(MapGridGetMetatileLayerTypeAt(c, d), metatiles + metatileId * 8, b);
 }
@@ -400,7 +406,7 @@ void CameraUpdate(void)
     if (deltaX != 0 || deltaY != 0)
     {
         CameraMove(deltaX, deltaY);
-        UpdateFieldObjectsForCameraUpdate(deltaX, deltaY);
+        UpdateEventObjectsForCameraUpdate(deltaX, deltaY);
         RotatingGatePuzzleCameraUpdate(deltaX, deltaY);
         ResetBerryTreeSparkleFlags();
         tilemap_move_something(&gUnknown_03000E20, deltaX * 2, deltaY * 2);
@@ -415,7 +421,7 @@ void CameraUpdate(void)
 void camera_move_and_redraw(int a, int b) //unused
 {
     CameraMove(a, b);
-    UpdateFieldObjectsForCameraUpdate(a, b);
+    UpdateEventObjectsForCameraUpdate(a, b);
     DrawWholeMapView();
     gUnknown_03005DEC -= a * 16;
     gUnknown_03005DE8 -= b * 16;
@@ -471,7 +477,7 @@ static void CameraPanningCB_PanAhead(void)
             gUnknown_03000E2C = 0;
         }
 
-        var = player_get_direction_upper_nybble();
+        var = GetPlayerMovementDirection();
         if (var == 2)
         {
             if (gUnknown_03000E2A > -8)

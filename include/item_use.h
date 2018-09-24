@@ -1,8 +1,6 @@
 #ifndef GUARD_ITEM_USE_H
 #define GUARD_ITEM_USE_H
 
-extern u16 gSpecialVar_ItemId;
-
 void ItemUseOutOfBattle_Mail(u8);
 void ItemUseOutOfBattle_Bike(u8);
 void ItemUseOnFieldCB_Bike(u8);
@@ -21,11 +19,13 @@ void DisplayItemRespondingMessageAndExitItemfinder(u8);
 void RotatePlayerAndExitItemfinder(u8);
 void ItemUseOutOfBattle_PokeblockCase(u8);
 void ItemUseOutOfBattle_CoinCase(u8);
+void ItemUseOutOfBattle_PowderJar(u8);
 void ItemUseOutOfBattle_SSTicket(u8);
 void sub_80C9D00(u8);
 void ItemUseOutOfBattle_WailmerPail(u8);
 void sub_80C9D74(u8);
 void ItemUseOutOfBattle_Medicine(u8);
+void ItemUseOutOfBattle_ReduceEV(u8);
 void ItemUseOutOfBattle_SacredAsh(u8);
 void ItemUseOutOfBattle_PPRecovery(u8);
 void ItemUseOutOfBattle_PPUp(u8);

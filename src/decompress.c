@@ -117,7 +117,7 @@ void Unused_LZDecompressWramIndirect(const void **src, void *dest)
 }
 
 // This one (unused) function is really challenging, won't even try to decompile it.
-ASM_DIRECT
+NAKED
 void sub_803471C()
 {
     asm(".syntax unified\n\
@@ -459,7 +459,7 @@ _08034964:\n\
         .syntax divided");
 }
 
-u32 sub_8034974(const u8 *ptr)
+u32 GetDecompressedDataSize(const u8 *ptr)
 {
     return (ptr[3] << 16) | (ptr[2] << 8) | (ptr[1]);
 }

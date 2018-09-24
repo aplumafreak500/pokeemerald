@@ -2,7 +2,7 @@
 #include "berry_tag_screen.h"
 #include "berry.h"
 #include "decompress.h"
-#include "field_map_obj.h"
+#include "event_object_movement.h"
 #include "item_menu.h"
 #include "constants/items.h"
 #include "item.h"
@@ -101,10 +101,42 @@ static const u8 sTextColors[2][3] =
 
 static const struct WindowTemplate sWindowTemplates[] =
 {
-    {0x01, 0x0b, 0x04, 0x08, 0x02, 0x0f, 0x0045}, // WIN_BERRY_NAME
-    {0x01, 0x0b, 0x07, 0x12, 0x04, 0x0f, 0x0055}, // WIN_SIZE_FIRM
-    {0x01, 0x04, 0x0e, 0x19, 0x04, 0x0f, 0x009d}, // WIN_DESC
-    {0x00, 0x02, 0x00, 0x08, 0x02, 0x0f, 0x0101}, // WIN_BERRY_TAG
+    { // WIN_BERRY_NAME
+        .priority = 1,
+        .tilemapLeft = 11,
+        .tilemapTop = 4,
+        .width = 8,
+        .height = 2,
+        .paletteNum = 15,
+        .baseBlock = 69,
+    },
+    { // WIN_SIZE_FIRM
+        .priority = 1,
+        .tilemapLeft = 11,
+        .tilemapTop = 7,
+        .width = 18,
+        .height = 4,
+        .paletteNum = 15,
+        .baseBlock = 85,
+    },
+    { // WIN_DESC
+        .priority = 1,
+        .tilemapLeft = 4,
+        .tilemapTop = 14,
+        .width = 25,
+        .height = 4,
+        .paletteNum = 15,
+        .baseBlock = 157,
+    },
+    { // WIN_BERRY_TAG
+        .priority = 0,
+        .tilemapLeft = 2,
+        .tilemapTop = 0,
+        .width = 8,
+        .height = 2,
+        .paletteNum = 15,
+        .baseBlock = 257,
+    },
     DUMMY_WIN_TEMPLATE
 };
 
@@ -247,7 +279,7 @@ static bool8 InitBerryTagScreen(void)
         gMain.state++;
         break;
     case 15:
-        BeginNormalPaletteFade(-1, 0, 0x10, 0, 0);
+        BeginNormalPaletteFade(0xFFFFFFFF, 0, 0x10, 0, 0);
         gPaletteFade.bufferTransferDisabled = 0;
         gMain.state++;
         break;
@@ -343,7 +375,7 @@ static void HandleInitWindows(void)
 
 static void PrintTextInBerryTagScreen(u8 windowId, const u8 *text, u8 x, u8 y, s32 speed, u8 colorStructId)
 {
-    AddTextPrinterParameterized2(windowId, 1, x, y, 0, 0, sTextColors[colorStructId], speed, text);
+    AddTextPrinterParameterized4(windowId, 1, x, y, 0, 0, sTextColors[colorStructId], speed, text);
 }
 
 static void AddBerryTagTextToBg0(void)
@@ -376,7 +408,7 @@ static void PrintBerryNumberAndName(void)
 static void PrintBerrySize(void)
 {
     const struct Berry *berry = GetBerryInfo(sBerryTag->berryId);
-    PrintTextOnWindow(WIN_SIZE_FIRM, 1, gText_SizeSlash, 0, 1, TEXT_SPEED_FF, NULL);
+    AddTextPrinterParameterized(WIN_SIZE_FIRM, 1, gText_SizeSlash, 0, 1, TEXT_SPEED_FF, NULL);
     if (berry->size != 0)
     {
         u32 inches, fraction;
@@ -390,34 +422,34 @@ static void PrintBerrySize(void)
         ConvertIntToDecimalStringN(gStringVar1, inches, 0, 2);
         ConvertIntToDecimalStringN(gStringVar2, fraction, 0, 2);
         StringExpandPlaceholders(gStringVar4, gText_Var1DotVar2);
-        PrintTextOnWindow(WIN_SIZE_FIRM, 1, gStringVar4, 0x28, 1, 0, NULL);
+        AddTextPrinterParameterized(WIN_SIZE_FIRM, 1, gStringVar4, 0x28, 1, 0, NULL);
     }
     else
     {
-        PrintTextOnWindow(WIN_SIZE_FIRM, 1, gText_ThreeMarks, 0x28, 1, 0, NULL);
+        AddTextPrinterParameterized(WIN_SIZE_FIRM, 1, gText_ThreeMarks, 0x28, 1, 0, NULL);
     }
 }
 
 static void PrintBerryFirmness(void)
 {
     const struct Berry *berry = GetBerryInfo(sBerryTag->berryId);
-    PrintTextOnWindow(WIN_SIZE_FIRM, 1, gText_FirmSlash, 0, 0x11, TEXT_SPEED_FF, NULL);
+    AddTextPrinterParameterized(WIN_SIZE_FIRM, 1, gText_FirmSlash, 0, 0x11, TEXT_SPEED_FF, NULL);
     if (berry->firmness != 0)
-        PrintTextOnWindow(WIN_SIZE_FIRM, 1, sBerryFirmnessStrings[berry->firmness - 1], 0x28, 0x11, 0, NULL);
+        AddTextPrinterParameterized(WIN_SIZE_FIRM, 1, sBerryFirmnessStrings[berry->firmness - 1], 0x28, 0x11, 0, NULL);
     else
-        PrintTextOnWindow(WIN_SIZE_FIRM, 1, gText_ThreeMarks, 0x28, 0x11, 0, NULL);
+        AddTextPrinterParameterized(WIN_SIZE_FIRM, 1, gText_ThreeMarks, 0x28, 0x11, 0, NULL);
 }
 
 static void PrintBerryDescription1(void)
 {
     const struct Berry *berry = GetBerryInfo(sBerryTag->berryId);
-    PrintTextOnWindow(WIN_DESC, 1, berry->description1, 0, 1, 0, NULL);
+    AddTextPrinterParameterized(WIN_DESC, 1, berry->description1, 0, 1, 0, NULL);
 }
 
 static void PrintBerryDescription2(void)
 {
     const struct Berry *berry = GetBerryInfo(sBerryTag->berryId);
-    PrintTextOnWindow(WIN_DESC, 1, berry->description2, 0, 0x11, 0, NULL);
+    AddTextPrinterParameterized(WIN_DESC, 1, berry->description2, 0, 0x11, 0, NULL);
 }
 
 static void CreateBerrySprite(void)
@@ -445,29 +477,29 @@ static void SetFlavorCirclesVisiblity(void)
     const struct Berry *berry = GetBerryInfo(sBerryTag->berryId);
 
     if (berry->spicy)
-        gSprites[sBerryTag->flavorCircleIds[FLAVOR_SPICY]].invisible = 0;
+        gSprites[sBerryTag->flavorCircleIds[FLAVOR_SPICY]].invisible = FALSE;
     else
-        gSprites[sBerryTag->flavorCircleIds[FLAVOR_SPICY]].invisible = 1;
+        gSprites[sBerryTag->flavorCircleIds[FLAVOR_SPICY]].invisible = TRUE;
 
     if (berry->dry)
-        gSprites[sBerryTag->flavorCircleIds[FLAVOR_DRY]].invisible = 0;
+        gSprites[sBerryTag->flavorCircleIds[FLAVOR_DRY]].invisible = FALSE;
     else
-        gSprites[sBerryTag->flavorCircleIds[FLAVOR_DRY]].invisible = 1;
+        gSprites[sBerryTag->flavorCircleIds[FLAVOR_DRY]].invisible = TRUE;
 
     if (berry->sweet)
-        gSprites[sBerryTag->flavorCircleIds[FLAVOR_SWEET]].invisible = 0;
+        gSprites[sBerryTag->flavorCircleIds[FLAVOR_SWEET]].invisible = FALSE;
     else
-        gSprites[sBerryTag->flavorCircleIds[FLAVOR_SWEET]].invisible = 1;
+        gSprites[sBerryTag->flavorCircleIds[FLAVOR_SWEET]].invisible = TRUE;
 
     if (berry->bitter)
-        gSprites[sBerryTag->flavorCircleIds[FLAVOR_BITTER]].invisible = 0;
+        gSprites[sBerryTag->flavorCircleIds[FLAVOR_BITTER]].invisible = FALSE;
     else
-        gSprites[sBerryTag->flavorCircleIds[FLAVOR_BITTER]].invisible = 1;
+        gSprites[sBerryTag->flavorCircleIds[FLAVOR_BITTER]].invisible = TRUE;
 
     if (berry->sour)
-        gSprites[sBerryTag->flavorCircleIds[FLAVOR_SOUR]].invisible = 0;
+        gSprites[sBerryTag->flavorCircleIds[FLAVOR_SOUR]].invisible = FALSE;
     else
-        gSprites[sBerryTag->flavorCircleIds[FLAVOR_SOUR]].invisible = 1;
+        gSprites[sBerryTag->flavorCircleIds[FLAVOR_SOUR]].invisible = TRUE;
 }
 
 static void DestroyFlavorCircleSprites(void)
@@ -481,7 +513,7 @@ static void DestroyFlavorCircleSprites(void)
 static void PrepareToCloseBerryTagScreen(u8 taskId)
 {
     PlaySE(SE_SELECT);
-    BeginNormalPaletteFade(-1, 0, 0, 0x10, 0);
+    BeginNormalPaletteFade(0xFFFFFFFF, 0, 0, 0x10, 0);
     gTasks[taskId].func = Task_CloseBerryTagScreen;
 }
 
@@ -517,7 +549,7 @@ static void TryChangeDisplayedBerry(u8 taskId, s8 toMove)
     s16 *data = gTasks[taskId].data;
     s16 currPocketPosition = gUnknown_0203CE58.scrollPosition[3] + gUnknown_0203CE58.cursorPosition[3];
     u32 newPocketPosition = currPocketPosition + toMove;
-    if (newPocketPosition < 46 && BagGetItemIdByPocketPosition(BAG_BERRIES, newPocketPosition) != 0)
+    if (newPocketPosition < 46 && BagGetItemIdByPocketPosition(POCKET_BERRIES, newPocketPosition) != 0)
     {
         if (toMove < 0)
             data[1] = 2;
@@ -537,7 +569,7 @@ static void HandleBagCursorPositionChange(s8 toMove)
     u16 *cursorPos = &gUnknown_0203CE58.cursorPosition[3];
     if (toMove > 0)
     {
-        if (*cursorPos < 4 || BagGetItemIdByPocketPosition(BAG_BERRIES, *scrollPos + 8) == 0)
+        if (*cursorPos < 4 || BagGetItemIdByPocketPosition(POCKET_BERRIES, *scrollPos + 8) == 0)
             *cursorPos += toMove;
         else
             *scrollPos += toMove;
@@ -550,7 +582,7 @@ static void HandleBagCursorPositionChange(s8 toMove)
             *scrollPos += toMove;
     }
 
-    sBerryTag->berryId = ItemIdToBerryType(BagGetItemIdByPocketPosition(BAG_BERRIES, *scrollPos + *cursorPos));
+    sBerryTag->berryId = ItemIdToBerryType(BagGetItemIdByPocketPosition(POCKET_BERRIES, *scrollPos + *cursorPos));
 }
 
 static void Task_DisplayAnotherBerry(u8 taskId)

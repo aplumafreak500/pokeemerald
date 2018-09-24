@@ -1,0 +1,5 @@
+gUnknown_03005DA8
+gFieldCallback
+gFieldCallback2
+gUnknown_03005DB4
+gFieldLinkPlayerCount

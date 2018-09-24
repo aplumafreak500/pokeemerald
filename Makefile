@@ -1,3 +1,18 @@
+include $(DEVKITARM)/base_tools
+export CPP := $(PREFIX)cpp
+export LD := $(PREFIX)ld
+
+ifeq ($(OS),Windows_NT)
+EXE := .exe
+else
+EXE :=
+endif
+
+TITLE       := POKEMON EMER
+GAME_CODE   := BPEE
+MAKER_CODE  := 01
+REVISION    := 0
+
 SHELL := /bin/bash -o pipefail
 
 ROM := pokeemerald.gba
@@ -10,40 +25,33 @@ C_SUBDIR = src
 ASM_SUBDIR = asm
 DATA_ASM_SUBDIR = data
 SONG_SUBDIR = sound/songs
+MID_SUBDIR = sound/songs/midi
 
 C_BUILDDIR = $(OBJ_DIR)/$(C_SUBDIR)
 ASM_BUILDDIR = $(OBJ_DIR)/$(ASM_SUBDIR)
 DATA_ASM_BUILDDIR = $(OBJ_DIR)/$(DATA_ASM_SUBDIR)
 SONG_BUILDDIR = $(OBJ_DIR)/$(SONG_SUBDIR)
+MID_BUILDDIR = $(OBJ_DIR)/$(MID_SUBDIR)
 
-AS      := $(DEVKITARM)/bin/arm-none-eabi-as
 ASFLAGS := -mcpu=arm7tdmi
 
-CC1             := tools/agbcc/bin/agbcc
+CC1             := tools/agbcc/bin/agbcc$(EXE)
 override CFLAGS += -mthumb-interwork -Wimplicit -Wparentheses -Werror -O2 -fhex-asm
 
-CPP      := $(DEVKITARM)/bin/arm-none-eabi-cpp
-CPPFLAGS := -I tools/agbcc/include -iquote include -nostdinc -undef
+CPPFLAGS := -I tools/agbcc/include -I tools/agbcc -iquote include -nostdinc -undef
 
-LD      := $(DEVKITARM)/bin/arm-none-eabi-ld
 LDFLAGS = -Map ../../$(MAP)
 
-OBJCOPY := $(DEVKITARM)/bin/arm-none-eabi-objcopy
+LIB := -L ../../tools/agbcc/lib -lgcc -lc
 
-ifeq ($(OS),Windows_NT)
-  LIB := ../../tools/agbcc/lib/libgcc.a ../../tools/agbcc/lib/libc.a
-else
-  LIB := -L ../../tools/agbcc/lib -lgcc -lc
-endif
-
-SHA1 := sha1sum -c
-
-GFX := tools/gbagfx/gbagfx
-AIF := tools/aif2pcm/aif2pcm
-MID := $(abspath tools/mid2agb/mid2agb)
-SCANINC := tools/scaninc/scaninc
-PREPROC := tools/preproc/preproc
-RAMSCRGEN := tools/ramscrgen/ramscrgen
+SHA1 := $(shell { command -v sha1sum || command -v shasum; } 2>/dev/null) -c
+GFX := tools/gbagfx/gbagfx$(EXE)
+AIF := tools/aif2pcm/aif2pcm$(EXE)
+MID := $(abspath tools/mid2agb/mid2agb)$(EXE)
+SCANINC := tools/scaninc/scaninc$(EXE)
+PREPROC := tools/preproc/preproc$(EXE)
+RAMSCRGEN := tools/ramscrgen/ramscrgen$(EXE)
+FIX := tools/gbafix/gbafix$(EXE)
 
 # Clear the default suffixes
 .SUFFIXES:
@@ -57,7 +65,7 @@ RAMSCRGEN := tools/ramscrgen/ramscrgen
 
 .PHONY: rom clean compare tidy
 
-$(shell mkdir -p $(C_BUILDDIR) $(ASM_BUILDDIR) $(DATA_ASM_BUILDDIR) $(SONG_BUILDDIR))
+$(shell mkdir -p $(C_BUILDDIR) $(ASM_BUILDDIR) $(DATA_ASM_BUILDDIR) $(SONG_BUILDDIR) $(MID_BUILDDIR))
 
 C_SRCS := $(wildcard $(C_SUBDIR)/*.c)
 C_OBJS := $(patsubst $(C_SUBDIR)/%.c,$(C_BUILDDIR)/%.o,$(C_SRCS))
@@ -71,7 +79,10 @@ DATA_ASM_OBJS := $(patsubst $(DATA_ASM_SUBDIR)/%.s,$(DATA_ASM_BUILDDIR)/%.o,$(DA
 SONG_SRCS := $(wildcard $(SONG_SUBDIR)/*.s)
 SONG_OBJS := $(patsubst $(SONG_SUBDIR)/%.s,$(SONG_BUILDDIR)/%.o,$(SONG_SRCS))
 
-OBJS := $(C_OBJS) $(ASM_OBJS) $(DATA_ASM_OBJS) $(SONG_OBJS)
+MID_SRCS := $(wildcard $(MID_SUBDIR)/*.mid)
+MID_OBJS := $(patsubst $(MID_SUBDIR)/%.mid,$(MID_BUILDDIR)/%.o,$(MID_SRCS))
+
+OBJS := $(C_OBJS) $(ASM_OBJS) $(DATA_ASM_OBJS) $(SONG_OBJS) $(MID_OBJS)
 OBJS_REL := $(patsubst $(OBJ_DIR)/%,%,$(OBJS))
 
 rom: $(ROM)
@@ -82,7 +93,7 @@ compare: $(ROM)
 
 clean: tidy
 	rm -f sound/direct_sound_samples/*.bin
-	rm -f $(SONG_OBJS)
+	rm -f $(SONG_OBJS) $(MID_OBJS) $(MID_SUBDIR)/*.s
 	find . \( -iname '*.1bpp' -o -iname '*.4bpp' -o -iname '*.8bpp' -o -iname '*.gbapal' -o -iname '*.lz' -o -iname '*.latfont' -o -iname '*.hwjpnfont' -o -iname '*.fwjpnfont' \) -exec rm {} +
 
 tidy:
@@ -90,6 +101,8 @@ tidy:
 	rm -r build/*
 
 include graphics_file_rules.mk
+include spritesheet_rules.mk
+include songs.mk
 
 %.s: ;
 %.png: ;
@@ -104,9 +117,7 @@ include graphics_file_rules.mk
 %.lz: % ; $(GFX) $< $@
 %.rl: % ; $(GFX) $< $@
 sound/direct_sound_samples/cry_%.bin: sound/direct_sound_samples/cry_%.aif ; $(AIF) $< $@ --compress
-%.bin: %.aif ; $(AIF) $< $@
-sound/songs/%.s: sound/songs/%.mid
-	cd $(@D) && ../../$(MID) $(<F)
+sound/%.bin: sound/%.aif ; $(AIF) $< $@
 
 $(C_BUILDDIR)/libc.o: CC1 := tools/agbcc/bin/old_agbcc
 $(C_BUILDDIR)/libc.o: CFLAGS := -O2
@@ -119,6 +130,8 @@ $(C_BUILDDIR)/agb_flash_mx.o: CFLAGS := -O -mthumb-interwork
 
 $(C_BUILDDIR)/m4a_2.o: CC1 := tools/agbcc/bin/old_agbcc
 $(C_BUILDDIR)/m4a_4.o: CC1 := tools/agbcc/bin/old_agbcc
+
+$(C_BUILDDIR)/record_mixing.o: CFLAGS += -ffreestanding
 
 ifeq ($(NODEP),)
 $(C_BUILDDIR)/%.o: c_dep = $(shell $(SCANINC) -I include $(C_SUBDIR)/$*.c)
@@ -169,5 +182,6 @@ $(ELF): $(OBJ_DIR)/ld_script.ld $(OBJS)
 	cd $(OBJ_DIR) && $(LD) $(LDFLAGS) -T ld_script.ld -o ../../$@ $(OBJS_REL) $(LIB)
 
 $(ROM): $(ELF)
-	$(OBJCOPY) -O binary --gap-fill 0xFF --pad-to 0x9000000 $< $@
+	$(OBJCOPY) -O binary $< $@
+	$(FIX) $@ -p -t"$(TITLE)" -c$(GAME_CODE) -m$(MAKER_CODE) -r$(REVISION) --silent
 

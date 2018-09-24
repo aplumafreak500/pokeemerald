@@ -2051,7 +2051,7 @@ u8 sub_800DD1C(u8 maxFlags)
     return 0;
 }
 #else
-ASM_DIRECT u8 sub_800DD1C(u8 maxFlags)
+NAKED u8 sub_800DD1C(u8 maxFlags)
 {
     asm_unified("\tpush {r4-r7,lr}\n"
                     "\tlsls r0, 24\n"
@@ -2126,7 +2126,7 @@ void sub_800DD94(struct UnkLinkRfuStruct_02022B14 *data, u8 r9, bool32 r2, int r
 
     for (i = 0; i < 2; i++)
     {
-        data->playerTrainerId[i] = gSaveBlock2Ptr->playerTrainerId[i];
+        data->unk_00.playerTrainerId[i] = gSaveBlock2Ptr->playerTrainerId[i];
     }
     for (i = 0; i < 4; i++)
     {
@@ -2136,14 +2136,14 @@ void sub_800DD94(struct UnkLinkRfuStruct_02022B14 *data, u8 r9, bool32 r2, int r
     data->playerGender = gSaveBlock2Ptr->playerGender;
     data->unk_0a_0 = r9;
     data->unk_0a_7 = r2;
-    data->unk_00_0 = 2;
-    data->unk_01_2 = 3;
-    data->unk_00_4 = 0;
-    data->unk_00_5 = 0;
-    data->unk_00_6 = 0;
-    data->unk_00_7 = FlagGet(FLAG_0x87F);
-    data->unk_01_0 = IsNationalPokedexEnabled();
-    data->unk_01_1 = FlagGet(FLAG_SYS_GAME_CLEAR);
+    data->unk_00.unk_00_0 = 2;
+    data->unk_00.unk_01_2 = 3;
+    data->unk_00.unk_00_4 = 0;
+    data->unk_00.unk_00_5 = 0;
+    data->unk_00.unk_00_6 = 0;
+    data->unk_00.unk_00_7 = FlagGet(FLAG_0x87F);
+    data->unk_00.unk_01_0 = IsNationalPokedexEnabled();
+    data->unk_00.unk_01_1 = FlagGet(FLAG_SYS_GAME_CLEAR);
 }
 
 bool8 sub_800DE7C(struct UnkLinkRfuStruct_02022B14 *buff1, u8 *buff2, u8 idx)
@@ -2155,12 +2155,12 @@ bool8 sub_800DE7C(struct UnkLinkRfuStruct_02022B14 *buff1, u8 *buff2, u8 idx)
         retVal = TRUE;
         if (sub_8010454(gUnknown_03007890->unk_14[idx].unk_04) && ((gUnknown_03007890->unk_07 >> idx) & 1))
         {
-            memcpy(buff1, &gUnknown_03007890->unk_14[idx].unk_06, sizeof(gUnknown_03007890->unk_14[idx].unk_06));
+            memcpy(buff1, &gUnknown_03007890->unk_14[idx].unk_06, 0xD);
             memcpy(buff2, gUnknown_03007890->unk_14[idx].unk_15, sizeof(gUnknown_03007890->unk_14[idx].unk_15));
         }
         else
         {
-            memset(buff1, 0, sizeof(gUnknown_03007890->unk_14[idx].unk_06));
+            memset(buff1, 0, 0xD);
             memset(buff2, 0, sizeof(gUnknown_03007890->unk_14[idx].unk_15));
         }
     }
@@ -2169,12 +2169,12 @@ bool8 sub_800DE7C(struct UnkLinkRfuStruct_02022B14 *buff1, u8 *buff2, u8 idx)
         retVal = FALSE;
         if (sub_8010454(gUnknown_03007890->unk_14[idx].unk_04))
         {
-            memcpy(buff1, &gUnknown_03007890->unk_14[idx].unk_06, sizeof(gUnknown_03007890->unk_14[idx].unk_06));
+            memcpy(buff1, &gUnknown_03007890->unk_14[idx].unk_06, 0xD);
             memcpy(buff2, gUnknown_03007890->unk_14[idx].unk_15, sizeof(gUnknown_03007890->unk_14[idx].unk_15));
         }
         else
         {
-            memset(buff1, 0, sizeof(gUnknown_03007890->unk_14[idx].unk_06));
+            memset(buff1, 0, 0xD);
             memset(buff2, 0, sizeof(gUnknown_03007890->unk_14[idx].unk_15));
         }
     }
@@ -2850,7 +2850,7 @@ void sub_800EF38(void)
     gUnknown_03005000.unk_ce7 = gUnknown_03004140.unk_00;
 }
 
-bool8 sub_800EF58(bool32 a0)
+bool32 sub_800EF58(bool32 a0)
 {
     if (gUnknown_03005000.unk_04 == 17 || a0)
     {
@@ -2897,7 +2897,7 @@ void sub_800EFB0(void)
     CpuFill16(0, gRecvCmds, sizeof gRecvCmds);
 }
 #else
-ASM_DIRECT void sub_800EFB0(void)
+NAKED void sub_800EFB0(void)
 {
     asm_unified("\tpush {r4-r7,lr}\n"
                     "\tsub sp, 0x4\n"
@@ -3233,7 +3233,7 @@ void sub_800F638(u8 unused, u32 flags)
     }
 }
 #else
-ASM_DIRECT void sub_800F638(u8 unused, u32 flags)
+NAKED void sub_800F638(u8 unused, u32 flags)
 {
     asm_unified("\tpush {r4-r7,lr}\n"
                     "\tmov r7, r10\n"
@@ -3601,7 +3601,7 @@ void sub_800FD14(u16 command)
     }
 }
 #else
-ASM_DIRECT void sub_800FD14(u16 command)
+NAKED void sub_800FD14(u16 command)
 {
     asm_unified("\tpush {r4,r5,lr}\n"
                     "\tlsls r0, 16\n"
@@ -4104,7 +4104,7 @@ bool8 sub_8010540(void)
     return retval;
 }
 
-bool8 sub_80105EC(void)
+bool32 sub_80105EC(void)
 {
     u8 flags = 0;
     int i;
@@ -4129,7 +4129,7 @@ bool8 sub_80105EC(void)
     return FALSE;
 }
 
-bool8 sub_801064C(u16 a0, const u8 *a1)
+bool32 sub_801064C(u16 a0, const u8 *a1)
 {
     u8 r1 = sub_8011CE4(a1, a0);
     if (r1 == 0xFF)
@@ -4154,14 +4154,14 @@ void sub_80106D4(void)
     rfu_NI_setSendData(1 << gUnknown_03005000.unk_c3e, 8, &gUnknown_03005000.unk_c85, 1);
 }
 
-u8 sub_8010714(u16 a0, const u8 *a1)
+u32 sub_8010714(u16 a0, const u8 *a1)
 {
     u8 r0 = sub_8011CE4(a1, a0);
     if (r0 == 0xff)
         return 2;
     if (gUnknown_03007880[r0]->unk_0 == 0)
-        return TRUE;
-    return FALSE;
+        return 1;
+    return 0;
 }
 
 void sub_8010750(void)
@@ -4512,14 +4512,14 @@ void sub_8010F84(u8 a0, u32 a1, u32 a2)
 
 void sub_8010FA0(bool32 a0, bool32 a1)
 {
-    gUnknown_02022B14.unk_00_4 = a0;
-    gUnknown_02022B14.unk_00_5 = a1;
+    gUnknown_02022B14.unk_00.unk_00_4 = a0;
+    gUnknown_02022B14.unk_00.unk_00_5 = a1;
 }
 
 void sub_8010FCC(u32 a0, u32 a1, u32 a2)
 {
-    gUnknown_02022B14.unk_09_2 = a0;
-    gUnknown_02022B14.unk_08_0 = a1;
+    gUnknown_02022B14.type = a0;
+    gUnknown_02022B14.species = a1;
     gUnknown_02022B14.unk_0b_1 = a2;
 }
 
@@ -4699,7 +4699,7 @@ void sub_801120C(u8 a0)
     }
 }
 #else
-ASM_DIRECT void sub_801120C(u8 a0)
+NAKED void sub_801120C(u8 a0)
 {
     asm_unified("\tpush {r4-r7,lr}\n"
                     "\tmov r7, r10\n"

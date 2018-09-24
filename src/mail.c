@@ -101,7 +101,7 @@ struct MailRead
     /*0x021c*/ u8 monIconSprite;
     /*0x021d*/ u8 language;
     /*0x021e*/ bool8 playerIsSender;
-    /*0x0220*/ void (*parserSingle)(u8 *dest, u16 word);
+    /*0x0220*/ u8 * (*parserSingle)(u8 *dest, u16 word);
     /*0x0224*/ void (*parserMultiple)(u8 *dest, const u16 *src, u16 length1, u16 length2);
     /*0x0228*/ const struct MailLayout *layout;
     /*0x022c*/ u8 bg1TilemapBuffer[0x1000];
@@ -417,7 +417,7 @@ static bool8 MailReadBuildGraphics(void)
             ShowBg(0);
             ShowBg(1);
             ShowBg(2);
-            BeginNormalPaletteFade(-1, 0, 16, 0, 0);
+            BeginNormalPaletteFade(0xFFFFFFFF, 0, 16, 0, 0);
             gPaletteFade.bufferTransferDisabled = FALSE;
             sMailRead->callback2 = CB2_WaitForPaletteExitOnKeyPress;
             return TRUE;
@@ -485,14 +485,14 @@ static void sub_8121B1C(void)
         {
             continue;
         }
-        box_print(0, 1, sMailRead->layout->var8[i].xOffset + sMailRead->layout->wordsYPos, y + sMailRead->layout->wordsXPos, sUnknown_0859F2AC, 0, sMailRead->strbuf[i]);
+        AddTextPrinterParameterized3(0, 1, sMailRead->layout->var8[i].xOffset + sMailRead->layout->wordsYPos, y + sMailRead->layout->wordsXPos, sUnknown_0859F2AC, 0, sMailRead->strbuf[i]);
         y += sMailRead->layout->var8[i].lineHeight;
     }
     bufptr = StringCopy(strbuf, gText_FromSpace);
     StringCopy(bufptr, sMailRead->playerName);
     box_x = GetStringCenterAlignXOffset(1, strbuf, sMailRead->signatureWidth) + 0x68;
     box_y = sMailRead->layout->signatureYPos + 0x58;
-    box_print(0, 1, box_x, box_y, sUnknown_0859F2AC, 0, strbuf);
+    AddTextPrinterParameterized3(0, 1, box_x, box_y, sUnknown_0859F2AC, 0, strbuf);
     CopyWindowToVram(0, 3);
     CopyWindowToVram(1, 3);
 }
@@ -526,7 +526,7 @@ static void CB2_ExitOnKeyPress(void)
 {
     if (gMain.newKeys & (A_BUTTON | B_BUTTON))
     {
-        BeginNormalPaletteFade(-1, 0, 0, 16, 0);
+        BeginNormalPaletteFade(0xFFFFFFFF, 0, 0, 16, 0);
         sMailRead->callback2 = CB2_ExitMailReadFreeVars;
     }
 }

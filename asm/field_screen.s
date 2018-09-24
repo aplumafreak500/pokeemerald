@@ -1764,8 +1764,8 @@ _080ABDE4:
 	.pool
 	thumb_func_end FadeScreen
 
-	thumb_func_start sub_80ABDFC
-sub_80ABDFC: @ 80ABDFC
+	thumb_func_start IsWeatherNotFadingIn
+IsWeatherNotFadingIn: @ 80ABDFC
 	ldr r0, =gUnknown_02038454
 	ldr r1, =0x000006c6
 	adds r0, r1
@@ -1777,11 +1777,11 @@ sub_80ABDFC: @ 80ABDFC
 	lsrs r0, 31
 	bx lr
 	.pool
-	thumb_func_end sub_80ABDFC
+	thumb_func_end IsWeatherNotFadingIn
 
-	thumb_func_start sub_80ABE18
-@ void sub_80ABE18(u8 a1)
-sub_80ABE18: @ 80ABE18
+	thumb_func_start UpdateSpritePaletteWithWeather
+@ void UpdateSpritePaletteWithWeather(u8 a1)
+UpdateSpritePaletteWithWeather: @ 80ABE18
 	push {r4-r6,lr}
 	lsls r0, 24
 	lsrs r0, 8
@@ -1882,7 +1882,7 @@ _080ABEF4:
 	pop {r0}
 	bx r0
 	.pool
-	thumb_func_end sub_80ABE18
+	thumb_func_end UpdateSpritePaletteWithWeather
 
 	thumb_func_start ApplyWeatherGammaShiftToPal
 ApplyWeatherGammaShiftToPal: @ 80ABF00
@@ -1939,7 +1939,7 @@ sub_80ABF4C: @ 80ABF4C
 	movs r2, 0x20
 	bl LoadPalette
 	ldrb r0, [r4]
-	bl sub_80ABE18
+	bl UpdateSpritePaletteWithWeather
 	pop {r4}
 	pop {r0}
 	bx r0
@@ -2504,8 +2504,8 @@ sub_80AC3E4: @ 80AC3E4
 	.pool
 	thumb_func_end sub_80AC3E4
 
-	thumb_func_start sub_80AC3F8
-sub_80AC3F8: @ 80AC3F8
+	thumb_func_start PreservePaletteInWeather
+PreservePaletteInWeather: @ 80AC3F8
 	push {r4,r5,lr}
 	adds r4, r0, 0
 	lsls r4, 24
@@ -2524,16 +2524,16 @@ sub_80AC3F8: @ 80AC3F8
 	pop {r0}
 	bx r0
 	.pool
-	thumb_func_end sub_80AC3F8
+	thumb_func_end PreservePaletteInWeather
 
-	thumb_func_start sub_80AC428
-sub_80AC428: @ 80AC428
+	thumb_func_start ResetPreservedPalettesInWeather
+ResetPreservedPalettesInWeather: @ 80AC428
 	ldr r1, =gUnknown_03000F50
 	ldr r0, =gUnknown_0854C250
 	str r0, [r1]
 	bx lr
 	.pool
-	thumb_func_end sub_80AC428
+	thumb_func_end ResetPreservedPalettesInWeather
 
 	thumb_func_start sub_80AC438
 sub_80AC438: @ 80AC438
@@ -7914,7 +7914,7 @@ sub_80AF0B4: @ 80AF0B4
 	adds r4, r0, 0
 	lsls r4, 24
 	lsrs r4, 24
-	bl warp1_get_mapheader
+	bl GetDestinationWarpMapHeader
 	ldrb r1, [r0, 0x17]
 	adds r0, r4, 0
 	bl sub_8137360
@@ -8382,7 +8382,7 @@ _080AF46C:
 _080AF480:
 	movs r0, 0
 	bl sub_80AF0F4
-	bl FreezeMapObjects
+	bl FreezeEventObjects
 	adds r0, r6, 0
 	adds r1, r7, 0
 	bl PlayerGetDestCoords
@@ -8403,17 +8403,17 @@ _080AF4A4:
 	movs r0, 0xFF
 	movs r1, 0
 	movs r2, 0
-	bl GetFieldObjectIdByLocalIdAndMap
+	bl GetEventObjectIdByLocalIdAndMap
 	adds r1, r0, 0
 	lsls r1, 24
 	lsrs r1, 24
 	lsls r0, r1, 3
 	adds r0, r1
 	lsls r0, 2
-	ldr r1, =gMapObjects
+	ldr r1, =gEventObjects
 	adds r0, r1
 	movs r1, 0x8
-	bl FieldObjectSetSpecialAnim
+	bl EventObjectSetHeldMovement
 	movs r0, 0x2
 	strh r0, [r5, 0x8]
 	b _080AF54A
@@ -8434,16 +8434,16 @@ _080AF4DC:
 	movs r0, 0xFF
 	movs r1, 0
 	movs r2, 0
-	bl GetFieldObjectIdByLocalIdAndMap
+	bl GetEventObjectIdByLocalIdAndMap
 	adds r1, r0, 0
 	lsls r1, 24
 	lsrs r1, 24
 	lsls r0, r1, 3
 	adds r0, r1
 	lsls r0, 2
-	ldr r1, =gMapObjects
+	ldr r1, =gEventObjects
 	adds r0, r1
-	bl FieldObjectClearAnimIfSpecialAnimFinished
+	bl EventObjectClearHeldMovementIfFinished
 	movs r0, 0x3
 	strh r0, [r5, 0x8]
 	b _080AF54A
@@ -8461,7 +8461,7 @@ _080AF520:
 	cmp r0, 0x1
 	beq _080AF54A
 _080AF536:
-	bl UnfreezeMapObjects
+	bl UnfreezeEventObjects
 	movs r0, 0x4
 	strh r0, [r5, 0x8]
 	b _080AF54A
@@ -8508,7 +8508,7 @@ _080AF580:
 _080AF58A:
 	movs r0, 0
 	bl sub_80AF0F4
-	bl FreezeMapObjects
+	bl FreezeEventObjects
 	adds r0, r6, 0
 	adds r1, r7, 0
 	bl PlayerGetDestCoords
@@ -8524,23 +8524,23 @@ _080AF5A2:
 	movs r0, 0xFF
 	movs r1, 0
 	movs r2, 0
-	bl GetFieldObjectIdByLocalIdAndMap
+	bl GetEventObjectIdByLocalIdAndMap
 	lsls r0, 24
 	lsrs r0, 24
 	lsls r4, r0, 3
 	adds r4, r0
 	lsls r4, 2
-	ldr r0, =gMapObjects
+	ldr r0, =gEventObjects
 	adds r4, r0
-	bl player_get_direction_lower_nybble
+	bl GetPlayerFacingDirection
 	lsls r0, 24
 	lsrs r0, 24
-	bl GetGoSpeed0AnimId
+	bl GetWalkNormalMovementAction
 	adds r1, r0, 0
 	lsls r1, 24
 	lsrs r1, 24
 	adds r0, r4, 0
-	bl FieldObjectSetSpecialAnim
+	bl EventObjectSetHeldMovement
 	movs r0, 0x2
 	strh r0, [r5, 0x8]
 	b _080AF60A
@@ -8550,7 +8550,7 @@ _080AF5EC:
 	lsls r0, 24
 	cmp r0, 0
 	beq _080AF60A
-	bl UnfreezeMapObjects
+	bl UnfreezeEventObjects
 	movs r0, 0x3
 	strh r0, [r5, 0x8]
 	b _080AF60A
@@ -8583,7 +8583,7 @@ task_map_chg_seq_0807E2CC: @ 80AF610
 	b _080AF65A
 	.pool
 _080AF634:
-	bl FreezeMapObjects
+	bl FreezeEventObjects
 	bl ScriptContext2_Enable
 	ldrh r0, [r4, 0x8]
 	adds r0, 0x1
@@ -8593,7 +8593,7 @@ _080AF644:
 	bl sub_80AF71C
 	cmp r0, 0
 	beq _080AF65A
-	bl UnfreezeMapObjects
+	bl UnfreezeEventObjects
 	bl ScriptContext2_Disable
 	adds r0, r5, 0
 	bl DestroyTask
@@ -8656,7 +8656,7 @@ task_mpl_807E3C8: @ 80AF6B0
 	bl ScriptContext2_Disable
 	adds r0, r4, 0
 	bl DestroyTask
-	bl sub_80984F4
+	bl ScriptUnfreezeEventObjects
 _080AF6CC:
 	pop {r4}
 	pop {r0}
@@ -8702,7 +8702,7 @@ sub_80AF710: @ 80AF710
 	thumb_func_start sub_80AF71C
 sub_80AF71C: @ 80AF71C
 	push {lr}
-	bl sub_80ABDFC
+	bl IsWeatherNotFadingIn
 	lsls r0, 24
 	lsrs r0, 24
 	cmp r0, 0x1
@@ -8861,7 +8861,7 @@ sub_80AF87C: @ 80AF87C
 	movs r0, 0x1
 	bl sub_8085540
 	bl ScriptContext2_Enable
-	bl save_serialize_npcs
+	bl SaveEventObjects
 	bl music_something
 	bl sub_80AF0B4
 	movs r0, 0x2D
@@ -8924,7 +8924,7 @@ _080AF914:
 	bl sub_80AF710
 	cmp r0, 0
 	bne _080AF93E
-	bl sub_80859A0
+	bl BGMusicStopped
 	lsls r0, 24
 	cmp r0, 0
 	beq _080AF93E
@@ -8934,7 +8934,7 @@ _080AF926:
 	strh r0, [r4, 0x8]
 	b _080AF93E
 _080AF92E:
-	bl warp_in
+	bl WarpIntoMap
 	ldr r0, =sub_8086074
 	bl SetMainCallback2
 	adds r0, r5, 0
@@ -8999,7 +8999,7 @@ _080AF9B2:
 	bl sub_80AF710
 	cmp r0, 0
 	bne _080AF9E8
-	bl sub_80859A0
+	bl BGMusicStopped
 	lsls r0, 24
 	cmp r0, 0
 	beq _080AF9E8
@@ -9014,7 +9014,7 @@ _080AF9D0:
 	ldrb r0, [r0]
 	cmp r0, 0
 	bne _080AF9E8
-	bl warp_in
+	bl WarpIntoMap
 	ldr r0, =CB2_LoadMap
 	bl SetMainCallback2
 	adds r0, r5, 0
@@ -9062,7 +9062,7 @@ _080AFA34:
 	beq _080AFA6C
 	b _080AFA7C
 _080AFA3A:
-	bl FreezeMapObjects
+	bl FreezeEventObjects
 	bl ScriptContext2_Enable
 	b _080AFA64
 _080AFA44:
@@ -9076,7 +9076,7 @@ _080AFA44:
 	bl sub_81BE72C
 	strh r5, [r4, 0xA]
 _080AFA5A:
-	bl sub_80859A0
+	bl BGMusicStopped
 	lsls r0, 24
 	cmp r0, 0
 	beq _080AFA7C
@@ -9086,7 +9086,7 @@ _080AFA64:
 	strh r0, [r4, 0x8]
 	b _080AFA7C
 _080AFA6C:
-	bl warp_in
+	bl WarpIntoMap
 	ldr r0, =CB2_LoadMap
 	bl SetMainCallback2
 	adds r0, r6, 0
@@ -9133,7 +9133,7 @@ _080AFAC0:
 	.4byte _080AFBB8
 	.4byte _080AFBD4
 _080AFAD4:
-	bl FreezeMapObjects
+	bl FreezeEventObjects
 	adds r0, r4, 0
 	adds r1, r6, 0
 	bl PlayerGetDestCoords
@@ -9174,20 +9174,20 @@ _080AFB26:
 	movs r0, 0xFF
 	movs r1, 0
 	movs r2, 0
-	bl GetFieldObjectIdByLocalIdAndMap
+	bl GetEventObjectIdByLocalIdAndMap
 	adds r1, r0, 0
 	lsls r1, 24
 	lsrs r1, 24
 	lsls r0, r1, 3
 	adds r0, r1
 	lsls r0, 2
-	ldr r4, =gMapObjects
+	ldr r4, =gEventObjects
 	adds r0, r4
-	bl FieldObjectClearAnimIfSpecialAnimActive
+	bl EventObjectClearHeldMovementIfActive
 	movs r0, 0xFF
 	movs r1, 0
 	movs r2, 0
-	bl GetFieldObjectIdByLocalIdAndMap
+	bl GetEventObjectIdByLocalIdAndMap
 	adds r1, r0, 0
 	lsls r1, 24
 	lsrs r1, 24
@@ -9196,7 +9196,7 @@ _080AFB26:
 	lsls r0, 2
 	adds r0, r4
 	movs r1, 0x9
-	bl FieldObjectSetSpecialAnim
+	bl EventObjectSetHeldMovement
 	movs r0, 0x2
 	strh r0, [r5, 0x8]
 	b _080AFBE8
@@ -9218,16 +9218,16 @@ _080AFB6C:
 	movs r0, 0xFF
 	movs r1, 0
 	movs r2, 0
-	bl GetFieldObjectIdByLocalIdAndMap
+	bl GetEventObjectIdByLocalIdAndMap
 	adds r1, r0, 0
 	lsls r1, 24
 	lsrs r1, 24
 	lsls r0, r1, 3
 	adds r0, r1
 	lsls r0, 2
-	ldr r1, =gMapObjects
+	ldr r1, =gEventObjects
 	adds r0, r1
-	bl FieldObjectClearAnimIfSpecialAnimFinished
+	bl EventObjectClearHeldMovementIfFinished
 	movs r0, 0
 	bl sub_80AF0F4
 	movs r0, 0x3
@@ -9290,14 +9290,14 @@ _080AFC1C:
 	beq _080AFC46
 	b _080AFC56
 _080AFC22:
-	bl FreezeMapObjects
+	bl FreezeEventObjects
 	bl ScriptContext2_Enable
 	b _080AFC3E
 _080AFC2C:
 	bl sub_80AF710
 	cmp r0, 0
 	bne _080AFC56
-	bl sub_80859A0
+	bl BGMusicStopped
 	lsls r0, 24
 	cmp r0, 0
 	beq _080AFC56
@@ -9307,7 +9307,7 @@ _080AFC3E:
 	strh r0, [r4, 0x8]
 	b _080AFC56
 _080AFC46:
-	bl warp_in
+	bl WarpIntoMap
 	ldr r0, =sub_8086024
 	bl SetMainCallback2
 	adds r0, r5, 0
@@ -9982,7 +9982,7 @@ task0A_mpl_807E31C: @ 80B0160
 	b _080B01B6
 	.pool
 _080B0184:
-	bl FreezeMapObjects
+	bl FreezeEventObjects
 	bl ScriptContext2_Enable
 	bl sub_808D194
 	ldrh r0, [r4, 0x8]
@@ -9996,7 +9996,7 @@ _080B0198:
 	bl sub_808D1B4
 	cmp r0, 0x1
 	beq _080B01B6
-	bl UnfreezeMapObjects
+	bl UnfreezeEventObjects
 	bl ScriptContext2_Disable
 	adds r0, r5, 0
 	bl DestroyTask
@@ -10033,7 +10033,7 @@ _080B01E4:
 	beq _080B022A
 	b _080B023A
 _080B01EE:
-	bl FreezeMapObjects
+	bl FreezeEventObjects
 	bl ScriptContext2_Enable
 	movs r0, 0x2D
 	bl PlaySE
@@ -10049,7 +10049,7 @@ _080B0210:
 	bl sub_80AF710
 	cmp r0, 0
 	bne _080B023A
-	bl sub_80859A0
+	bl BGMusicStopped
 	lsls r0, 24
 	cmp r0, 0
 	beq _080B023A
@@ -10059,7 +10059,7 @@ _080B0222:
 	strh r0, [r4, 0x8]
 	b _080B023A
 _080B022A:
-	bl warp_in
+	bl WarpIntoMap
 	ldr r0, =CB2_LoadMap
 	bl SetMainCallback2
 	adds r0, r5, 0
@@ -10492,7 +10492,7 @@ task50_0807F0C8: @ 80B05CC
 	push {r4,lr}
 	lsls r0, 24
 	lsrs r4, r0, 24
-	bl sub_80859A0
+	bl BGMusicStopped
 	lsls r0, 24
 	lsrs r0, 24
 	cmp r0, 0x1

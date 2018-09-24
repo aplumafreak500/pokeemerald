@@ -463,7 +463,7 @@ bool8 IsDma3ManagerBusyWithBgCopy(void)
     return FALSE;
 }
 #else
-ASM_DIRECT
+NAKED
 bool8 IsDma3ManagerBusyWithBgCopy(void)
 {
     asm("push {r4-r7,lr}\n\
@@ -965,9 +965,9 @@ void CopyBgTilemapBufferToVram(u8 bg)
     }
 }
 
-void CopyToBgTilemapBufferRect(u8 bg, void* src, u8 destX, u8 destY, u8 width, u8 height)
+void CopyToBgTilemapBufferRect(u8 bg, const void* src, u8 destX, u8 destY, u8 width, u8 height)
 {
-    void* srcCopy;
+    const void* srcCopy;
     u16 destX16;
     u16 destY16;
     u16 mode;
@@ -1001,7 +1001,7 @@ void CopyToBgTilemapBufferRect(u8 bg, void* src, u8 destX, u8 destY, u8 width, u
     }
 }
 
-void CopyToBgTilemapBufferRect_ChangePalette(u8 bg, void *src, u8 destX, u8 destY, u8 rectWidth, u8 rectHeight, u8 palette)
+void CopyToBgTilemapBufferRect_ChangePalette(u8 bg, const void *src, u8 destX, u8 destY, u8 rectWidth, u8 rectHeight, u8 palette)
 {
     CopyRectToBgTilemapBufferRect(bg, src, 0, 0, rectWidth, rectHeight, destX, destY, rectWidth, rectHeight, palette, 0, 0);
 }
@@ -1048,7 +1048,7 @@ void CopyRectToBgTilemapBufferRect(u8 bg, const void* src, u8 srcX, u8 srcY, u8 
         }
     }
 }*/
-ASM_DIRECT
+NAKED
 void CopyRectToBgTilemapBufferRect(u8 bg, const void* src, u8 srcX, u8 srcY, u8 srcWidth, u8 srcHeight, u8 destX, u8 destY, u8 rectWidth, u8 rectHeight, u8 palette1, u16 tileOffset, u16 palette2)
 {
     asm("push {r4-r7,lr}\n\
@@ -1495,7 +1495,7 @@ void CopyTileMapEntry(u16 *src, u16 *dest, s32 palette1, u32 tileOffset, u32 pal
     *dest = test;
 }
 #else
-ASM_DIRECT
+NAKED
 void CopyTileMapEntry(u16 *src, u16 *dest, s32 palette1, u32 tileOffset, u32 palette2)
 {
     asm("push {r4-r6,lr}\n\

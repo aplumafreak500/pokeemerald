@@ -55,15 +55,32 @@ static const struct BgTemplate gUnknown_085E5068[] = {
     }
 };
 
-static const struct WindowTemplate gUnknown_085E5070[] = {
-    { 0, 17, 17, 12,  2, 15, 0x0001 },
-    { 0, 22,  1,  7,  2, 15, 0x0019 },
+static const struct WindowTemplate gUnknown_085E5070[] =
+{
+    {
+        .priority = 0,
+        .tilemapLeft = 17,
+        .tilemapTop = 17,
+        .width = 12,
+        .height = 2,
+        .paletteNum = 15,
+        .baseBlock = 1
+    },
+    {
+        .priority = 0,
+        .tilemapLeft = 22,
+        .tilemapTop = 1,
+        .width = 7,
+        .height = 2,
+        .paletteNum = 15,
+        .baseBlock = 25
+    },
     DUMMY_WIN_TEMPLATE
 };
 
 // .text
 
-void sub_817018C(MainCallback callback)
+void FieldInitRegionMap(MainCallback callback)
 {
     SetVBlankCallback(NULL);
     sFieldRegionMapHandler = malloc(sizeof(*sFieldRegionMapHandler));
@@ -89,7 +106,7 @@ static void MCB2_InitRegionMapRegisters(void)
     InitBgsFromTemplates(1, gUnknown_085E5068, 2);
     InitWindows(gUnknown_085E5070);
     DeactivateAllTextPrinters();
-    sub_809882C(0, 0x27, 0xd0);
+    LoadUserWindowBorderGfx(0, 0x27, 0xd0);
     clear_scheduled_bg_copies_to_vram();
     SetMainCallback2(MCB2_FieldUpdateRegionMap);
     SetVBlankCallback(VBCB_FieldUpdateRegionMap);
@@ -126,11 +143,11 @@ static void FieldUpdateRegionMap(void)
         case 1:
             SetWindowBorderStyle(1, 0, 0x27, 0xd);
             offset = GetStringCenterAlignXOffset(1, gText_Hoenn, 0x38);
-            PrintTextOnWindow(1, 1, gText_Hoenn, offset, 1, 0, NULL);
+            AddTextPrinterParameterized(1, 1, gText_Hoenn, offset, 1, 0, NULL);
             schedule_bg_copy_tilemap_to_vram(0);
             SetWindowBorderStyle(0, 0, 0x27, 0xd);
             PrintRegionMapSecName();
-            BeginNormalPaletteFade(-1, 0, 16, 0, 0);
+            BeginNormalPaletteFade(0xFFFFFFFF, 0, 16, 0, 0);
             sFieldRegionMapHandler->state++;
             break;
         case 2:
@@ -158,7 +175,7 @@ static void FieldUpdateRegionMap(void)
             }
             break;
         case 5:
-            BeginNormalPaletteFade(-1, 0, 0, 16, 0);
+            BeginNormalPaletteFade(0xFFFFFFFF, 0, 0, 16, 0);
             sFieldRegionMapHandler->state++;
             break;
         case 6:
@@ -182,7 +199,7 @@ static void PrintRegionMapSecName(void)
     if (sFieldRegionMapHandler->regionMap.iconDrawType != MAPSECTYPE_NONE)
     {
         FillWindowPixelBuffer(0, 0x11);
-        PrintTextOnWindow(0, 1, sFieldRegionMapHandler->regionMap.mapSecName, 0, 1, 0, NULL);
+        AddTextPrinterParameterized(0, 1, sFieldRegionMapHandler->regionMap.mapSecName, 0, 1, 0, NULL);
         schedule_bg_copy_tilemap_to_vram(0);
     }
     else

@@ -91,7 +91,7 @@ typedef union // size = 0x24
         /*0x0E*/ u8 pokemonNameLanguage;
         /*0x0F*/ u8 filler_0F[1];
         /*0x10*/ u8 nickname[8];
-        /*0x18*/ u8 filler_18[4];
+        /*0x18*/ u16 words18[2];
         /*0x1C*/ u16 words[4];
     } fanclubOpinions;
 
@@ -99,7 +99,7 @@ typedef union // size = 0x24
     struct {
         /*0x00*/ u8 kind;
         /*0x01*/ bool8 active;
-        /*0x02*/ u8 pad02[4];
+        /*0x02*/ u16 words[2];
         /*0x06*/ u16 var06;
         /*0x08*/ u8 pad_08[3];
         /*0x0b*/ u8 string_0b[12];
@@ -301,7 +301,7 @@ typedef union // size = 0x24
         /*0x06*/ u8 nGoldSymbols;
         /*0x07*/ u8 location;
         /*0x08*/ u16 battlePoints;
-        /*0x0a*/ u16 mapDataId;
+        /*0x0a*/ u16 mapLayoutId;
         /*0x0c*/ u8 language;
         /*0x0d*/ u8 filler_0d[6];
         /*0x13*/ u8 playerName[8];
@@ -326,7 +326,7 @@ typedef union // size = 0x24
         /*0x02*/ u16 item;
         /*0x04*/ u8 location;
         /*0x05*/ u8 language;
-        /*0x06*/ u16 mapDataId;
+        /*0x06*/ u16 mapLayoutId;
         /*0x08*/ u8 filler_08[11];
         /*0x13*/ u8 playerName[8];
     } treasureInvestigators;

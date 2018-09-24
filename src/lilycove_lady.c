@@ -237,11 +237,11 @@ void sub_818D9C0(void)
 {
     LilycoveLady *lilycoveLady;
 
-    VarSet(VAR_0x4010, sUnknown_0860B07E[GetLilycoveLadyId()]);
+    VarSet(VAR_OBJ_GFX_ID_0, sUnknown_0860B07E[GetLilycoveLadyId()]);
     if (GetLilycoveLadyId() == LILYCOVE_LADY_CONTEST)
     {
         lilycoveLady = &gSaveBlock1Ptr->lilycoveLady;
-        VarSet(VAR_0x4011, sUnknown_0860B074[lilycoveLady->contest.category]);
+        VarSet(VAR_OBJ_GFX_ID_1, sUnknown_0860B074[lilycoveLady->contest.category]);
         gSpecialVar_Result = TRUE;
     }
     else
@@ -392,7 +392,7 @@ bool8 sub_818DC60(void)
 
 static void sub_818DCAC(u8 *dest, u16 itemId)
 {
-    StringCopy(dest, ItemId_GetItem(itemId)->name);
+    StringCopy(dest, ItemId_GetName(itemId));
 }
 
 void sub_818DCC8(void)
@@ -671,7 +671,7 @@ static u8 sub_818E258(const u8 *str)
 
 void sub_818E274(void)
 {
-    StringCopy(gStringVar1, ItemId_GetItem(gUnknown_0203CD68->itemId)->name);
+    StringCopy(gStringVar1, ItemId_GetName(gUnknown_0203CD68->itemId));
 }
 
 bool8 sub_818E298(void)
@@ -801,26 +801,26 @@ void sub_818E564(void)
     EnableBothScriptContexts();
 }
 
-void sub_818E570(const struct LilycoveLadyQuiz *quiz)
+void sub_818E570(const LilycoveLady *lilycoveLady)
 {
     u8 i;
 
     gUnknown_0203CD68 = &gSaveBlock1Ptr->lilycoveLady.quiz;
-    if (quiz->unk_02c < 16 && gUnknown_0203CD68->id == LILYCOVE_LADY_QUIZ)
+    if (lilycoveLady->quiz.unk_02c < 16 && gUnknown_0203CD68->id == LILYCOVE_LADY_QUIZ)
     {
         for (i = 0; i < 4; i ++)
         {
-            if (quiz->unk_02c != gUnknown_0203CD68->unk_02b)
+            if (lilycoveLady->quiz.unk_02c != gUnknown_0203CD68->unk_02b)
             {
                 break;
             }
             gUnknown_0203CD68->unk_02b = Random() % 16;
         }
-        if (quiz->unk_02c == gUnknown_0203CD68->unk_02b)
+        if (lilycoveLady->quiz.unk_02c == gUnknown_0203CD68->unk_02b)
         {
             gUnknown_0203CD68->unk_02b = (gUnknown_0203CD68->unk_02b + 1) % 16;
         }
-        gUnknown_0203CD68->unk_02c = quiz->unk_02c;
+        gUnknown_0203CD68->unk_02c = lilycoveLady->quiz.unk_02c;
     }
 }
 

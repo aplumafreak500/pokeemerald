@@ -2,7 +2,17 @@
 #define GUARD_TEXT_H
 
 #define CHAR_SPACE          0x00
+#define CHAR_PLUS           0x2E
 #define CHAR_0              0xA1
+#define CHAR_1              0xA2
+#define CHAR_2              0xA3
+#define CHAR_3              0xA4
+#define CHAR_4              0xA5
+#define CHAR_5              0xA6
+#define CHAR_6              0xA7
+#define CHAR_7              0xA8
+#define CHAR_8              0xA9
+#define CHAR_9              0xAA
 #define CHAR_QUESTION_MARK  0xAC
 #define CHAR_PERIOD         0xAD
 #define CHAR_HYPHEN         0xAE
@@ -97,6 +107,17 @@
 #define NUM_TEXT_PRINTERS 32
 
 #define TEXT_SPEED_FF 0xFF
+
+enum {
+    FONTATTR_MAX_LETTER_WIDTH,
+    FONTATTR_MAX_LETTER_HEIGHT,
+    FONTATTR_LETTER_SPACING,
+    FONTATTR_LINE_SPACING,
+    FONTATTR_COLOR_LOWNIBBLE,   // dunno what this is yet
+    FONTATTR_COLOR_FOREGROUND,
+    FONTATTR_COLOR_BACKGROUND,
+    FONTATTR_COLOR_SHADOW
+};
 
 struct TextPrinterSubStruct
 {
@@ -202,7 +223,7 @@ u8 gGlyphDimensions[0x2];
 
 void SetFontsPointer(const struct FontInfo *fonts);
 void DeactivateAllTextPrinters(void);
-u16 PrintTextOnWindow(u8 windowId, u8 fontId, const u8 *str, u8 x, u8 y, u8 speed, void (*callback)(struct TextSubPrinter *, u16));
+u16 AddTextPrinterParameterized(u8 windowId, u8 fontId, const u8 *str, u8 x, u8 y, u8 speed, void (*callback)(struct TextSubPrinter *, u16));
 bool16 AddTextPrinter(struct TextSubPrinter *textSubPrinter, u8 speed, void (*callback)(struct TextSubPrinter *, u16));
 void RunTextPrinters(void);
 bool16 IsTextPrinterActive(u8 id);

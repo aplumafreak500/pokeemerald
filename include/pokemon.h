@@ -205,7 +205,7 @@ struct BoxPokemon
     u8 hasSpecies:1;
     u8 isEgg:1;
     u8 unused:5;
-    u8 otName[OT_NAME_LENGTH];
+    u8 otName[PLAYER_NAME_LENGTH];
     u8 markings;
     u16 checksum;
     u16 unknown;
@@ -240,33 +240,6 @@ struct PokemonStorage
     /*0x83C2*/ u8 boxWallpapers[14];
 };
 
-struct UnknownPokemonStruct
-{
-    u16 species;
-    u16 heldItem;
-    u16 moves[4];
-    u8 level;
-    u8 ppBonuses;
-    u8 hpEV;
-    u8 attackEV;
-    u8 defenseEV;
-    u8 speedEV;
-    u8 spAttackEV;
-    u8 spDefenseEV;
-    u32 otId;
-    u32 hpIV:5;
-    u32 attackIV:5;
-    u32 defenseIV:5;
-    u32 speedIV:5;
-    u32 spAttackIV:5;
-    u32 spDefenseIV:5;
-    u32 gap:1;
-    u32 altAbility:1;
-    u32 personality;
-    u8 nickname[POKEMON_NAME_LENGTH + 1];
-    u8 friendship;
-};
-
 struct UnknownPokemonSubStruct2
 {
     u16 species;
@@ -295,12 +268,12 @@ struct UnknownPokemonStruct3
 
 struct Unknown_806F160_Struct
 {
-    u8 field_0_0 : 4;
-    u8 field_0_1 : 4;
+    u8 field_0_0:4;
+    u8 field_0_1:4;
     u8 field_1;
     u8 magic;
-    u8 field_3_0 : 4;
-    u8 field_3_1 : 4;
+    u8 field_3_0:4;
+    u8 field_3_1:4;
     void *bytes;
     u8 **byteArrays;
     struct SpriteTemplate *templates;
@@ -465,7 +438,7 @@ extern u8 gPlayerPartyCount;
 extern struct Pokemon gPlayerParty[PARTY_SIZE];
 extern u8 gEnemyPartyCount;
 extern struct Pokemon gEnemyParty[PARTY_SIZE];
-extern struct SpriteTemplate gUnknown_0202499C;
+extern struct SpriteTemplate gMultiuseSpriteTemplate;
 extern struct PokemonStorage* gPokemonStoragePtr;
 
 extern const struct BattleMove gBattleMoves[];
@@ -482,6 +455,8 @@ extern const u8 gUnknown_08329D2A[];
 extern const u8 gStatStageRatios[][2];
 extern const u16 gUnknown_08329D54[];
 extern const struct SpriteTemplate gUnknown_08329D98[];
+extern const struct CompressedSpritePalette gMonPaletteTable[];
+extern const s8 gNatureStatTable[][5];
 
 void ZeroBoxMonData(struct BoxPokemon *boxMon);
 void ZeroMonData(struct Pokemon *mon);
@@ -531,9 +506,9 @@ u8 GetDefaultMoveTarget(u8 battlerId);
 u8 GetMonGender(struct Pokemon *mon);
 u8 GetBoxMonGender(struct BoxPokemon *boxMon);
 u8 GetGenderFromSpeciesAndPersonality(u16 species, u32 personality);
-void sub_806A068(u16 species, u8 battlerPosition);
-void sub_806A12C(u16 trainerSpriteId, u8 battlerPosition);
-void sub_806A1C0(u16 arg0, u8 battlerPosition);
+void SetMultiuseSpriteTemplateToPokemon(u16 species, u8 battlerPosition);
+void SetMultiuseSpriteTemplateToTrainerBack(u16 trainerSpriteId, u8 battlerPosition);
+void SetMultiuseSpriteTemplateToTrainerFront(u16 arg0, u8 battlerPosition);
 
 // These are full type signatures for GetMonData() and GetBoxMonData(),
 // but they are not used since some code erroneously omits the third arg.
@@ -582,7 +557,7 @@ void sub_806D544(u16 species, u32 personality, u8 *dest);
 void DrawSpindaSpots(u16 species, u32 personality, u8 *dest, u8 a4);
 void EvolutionRenameMon(struct Pokemon *mon, u16 oldSpecies, u16 newSpecies);
 bool8 sub_806D7EC(void);
-bool16 sub_806D82C(u8 id);
+bool16 GetLinkTrainerFlankId(u8 id);
 s32 GetBattlerMultiplayerId(u16 a1);
 u8 GetTrainerEncounterMusicId(u16 trainerOpponentId);
 u16 ModifyStatByNature(u8 nature, u16 n, u8 statIndex);
@@ -619,7 +594,7 @@ bool8 IsTradedMon(struct Pokemon *mon);
 bool8 IsOtherTrainer(u32 otId, u8 *otName);
 void MonRestorePP(struct Pokemon *mon);
 void BoxMonRestorePP(struct BoxPokemon *boxMon);
-void sub_806E994(void);
+void SetMonPreventsSwitchingString(void);
 void SetWildMonHeldItem(void);
 bool8 IsMonShiny(struct Pokemon *mon);
 bool8 IsShinyOtIdPersonality(u32 otId, u32 personality);

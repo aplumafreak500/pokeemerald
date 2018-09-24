@@ -25,6 +25,7 @@
 #include "window.h"
 #include "constants/abilities.h"
 #include "daycare.h"
+#include "overworld.h"
 #include "battle.h" // to get rid of later
 
 struct EggHatchData
@@ -44,8 +45,6 @@ struct EggHatchData
     u8 textColor[3];
 };
 
-extern void (*gFieldCallback)(void);
-
 extern const struct CompressedSpriteSheet gMonFrontPicTable[];
 extern const u8 gBattleTextboxTiles[];
 extern const u8 gBattleTextboxTilemap[];
@@ -58,12 +57,10 @@ extern const u8 gText_NickHatchPrompt[];
 
 extern u8 sav1_map_get_name(void);
 extern void TVShowConvertInternationalString(u8* str1, u8* str2, u8);
-extern void sub_806A068(u16, u8);
 extern void FadeScreen(u8, u8);
 extern void overworld_free_bg_tilemaps(void);
 extern void sub_80AF168(void);
 extern void ScanlineEffect_Stop(void);
-extern void CB2_ReturnToField(void);
 extern void play_some_sound(void);
 extern void DoNamingScreen(u8, const u8*, u16, u8, u32, MainCallback);
 extern u16 sub_80D22D0(void);
@@ -256,13 +253,27 @@ static const struct BgTemplate sBgTemplates_EggHatch[2] =
 
 static const struct WindowTemplate sWinTemplates_EggHatch[2] =
 {
-    {0, 2, 0xF, 0x1A, 4, 0, 0x40},
+    {
+        .priority = 0,
+        .tilemapLeft = 2,
+        .tilemapTop = 15,
+        .width = 26,
+        .height = 4,
+        .paletteNum = 0,
+        .baseBlock = 64
+    },
     DUMMY_WIN_TEMPLATE
 };
 
 static const struct WindowTemplate sYesNoWinTemplate =
 {
-    0, 0x15, 9, 5, 4, 0xF, 0x1A8
+    .priority = 0,
+    .tilemapLeft = 21,
+    .tilemapTop = 9,
+    .width = 5,
+    .height = 4,
+    .paletteNum = 15,
+    .baseBlock = 424
 };
 
 static const s16 sEggShardVelocities[][2] =
@@ -391,13 +402,13 @@ static bool8 sub_807158C(struct DayCare *daycare, u8 daycareId)
     struct DaycareMon *daycareMon = &daycare->mons[daycareId];
 
     GetBoxMonNick(&daycareMon->mon, nick);
-    if (daycareMon->misc.mail.itemId != 0
-        && (StringCompareWithoutExtCtrlCodes(nick, daycareMon->misc.monName) != 0
-            || StringCompareWithoutExtCtrlCodes(gSaveBlock2Ptr->playerName, daycareMon->misc.OT_name) != 0))
+    if (daycareMon->mail.message.itemId != 0
+        && (StringCompareWithoutExtCtrlCodes(nick, daycareMon->mail.monName) != 0
+            || StringCompareWithoutExtCtrlCodes(gSaveBlock2Ptr->playerName, daycareMon->mail.OT_name) != 0))
     {
         StringCopy(gStringVar1, nick);
-        TVShowConvertInternationalString(gStringVar2, daycareMon->misc.OT_name, daycareMon->misc.gameLanguage);
-        TVShowConvertInternationalString(gStringVar3, daycareMon->misc.monName, daycareMon->misc.monLanguage);
+        TVShowConvertInternationalString(gStringVar2, daycareMon->mail.OT_name, daycareMon->mail.gameLanguage);
+        TVShowConvertInternationalString(gStringVar3, daycareMon->mail.monName, daycareMon->mail.monLanguage);
         return TRUE;
     }
     return FALSE;
@@ -438,9 +449,9 @@ static u8 EggHatchCreateMonSprite(u8 a0, u8 switchID, u8 pokeID, u16* speciesLoc
         }
         break;
     case 1:
-        sub_806A068(GetMonSpritePalStruct(mon)->tag, r5);
-        spriteID = CreateSprite(&gUnknown_0202499C, 120, 75, 6);
-        gSprites[spriteID].invisible = 1;
+        SetMultiuseSpriteTemplateToPokemon(GetMonSpritePalStruct(mon)->tag, r5);
+        spriteID = CreateSprite(&gMultiuseSpriteTemplate, 120, 75, 6);
+        gSprites[spriteID].invisible = TRUE;
         gSprites[spriteID].callback = SpriteCallbackDummy;
         break;
     }
@@ -515,7 +526,7 @@ static void CB2_EggHatch_0(void)
         gMain.state++;
         break;
     case 2:
-        copy_decompressed_tile_data_to_vram_autofree(0, gBattleTextboxTiles, 0, 0, 0);
+        DecompressAndLoadBgGfxUsingHeap(0, gBattleTextboxTiles, 0, 0, 0);
         CopyToBgTilemapBuffer(0, gBattleTextboxTilemap, 0, 0);
         LoadCompressedPalette(gBattleTextboxPalette, 0, 0x20);
         gMain.state++;
@@ -575,10 +586,10 @@ static void Task_EggHatchPlayBGM(u8 taskID)
         play_some_sound();
     }
     if (gTasks[taskID].data[0] == 1)
-        PlayBGM(376);
+        PlayBGM(MUS_ME_SHINKA);
     if (gTasks[taskID].data[0] > 60)
     {
-        PlayBGM(377);
+        PlayBGM(MUS_SHINKA);
         DestroyTask(taskID);
         // UB: task is destroyed, yet the value is incremented
     }
@@ -594,7 +605,7 @@ static void CB2_EggHatch_1(void)
     switch (sEggHatchData->CB2_state)
     {
     case 0:
-        BeginNormalPaletteFade(-1, 0, 0x10, 0, 0);
+        BeginNormalPaletteFade(0xFFFFFFFF, 0, 0x10, 0, 0);
         sEggHatchData->eggSpriteID = CreateSprite(&sSpriteTemplate_EggHatch, 120, 75, 5);
         ShowBg(0);
         ShowBg(1);
@@ -634,7 +645,7 @@ static void CB2_EggHatch_1(void)
         GetMonNick(&gPlayerParty[sEggHatchData->eggPartyID], gStringVar1);
         StringExpandPlaceholders(gStringVar4, gText_HatchedFromEgg);
         EggHatchPrintMessage(sEggHatchData->windowId, gStringVar4, 0, 3, 0xFF);
-        PlayFanfare(371);
+        PlayFanfare(MUS_FANFA5);
         sEggHatchData->CB2_state++;
         PutWindowTilemap(sEggHatchData->windowId);
         CopyWindowToVram(sEggHatchData->windowId, 3);
@@ -656,13 +667,13 @@ static void CB2_EggHatch_1(void)
     case 9:
         if (!IsTextPrinterActive(sEggHatchData->windowId))
         {
-            sub_809882C(sEggHatchData->windowId, 0x140, 0xE0);
+            LoadUserWindowBorderGfx(sEggHatchData->windowId, 0x140, 0xE0);
             CreateYesNoMenu(&sYesNoWinTemplate, 0x140, 0xE, 0);
             sEggHatchData->CB2_state++;
         }
         break;
     case 10:
-        switch (ProcessMenuInputNoWrap_())
+        switch (Menu_ProcessInputNoWrap_())
         {
         case 0:
             GetMonNick(&gPlayerParty[sEggHatchData->eggPartyID], gStringVar3);
@@ -677,7 +688,7 @@ static void CB2_EggHatch_1(void)
         }
         break;
     case 11:
-        BeginNormalPaletteFade(-1, 0, 0, 0x10, 0);
+        BeginNormalPaletteFade(0xFFFFFFFF, 0, 0, 0x10, 0);
         sEggHatchData->CB2_state++;
         break;
     case 12:
@@ -787,7 +798,7 @@ static void SpriteCB_Egg_4(struct Sprite* sprite)
 {
     s16 i;
     if (sprite->data[0] == 0)
-        BeginNormalPaletteFade(-1, -1, 0, 0x10, 0xFFFF);
+        BeginNormalPaletteFade(0xFFFFFFFF, -1, 0, 0x10, 0xFFFF);
     if (sprite->data[0] < 4u)
     {
         for (i = 0; i <= 3; i++)
@@ -797,7 +808,7 @@ static void SpriteCB_Egg_4(struct Sprite* sprite)
     if (!gPaletteFade.active)
     {
         PlaySE(SE_TAMAGO);
-        sprite->invisible = 1;
+        sprite->invisible = TRUE;
         sprite->callback = SpriteCB_Egg_5;
         sprite->data[0] = 0;
     }
@@ -807,11 +818,11 @@ static void SpriteCB_Egg_5(struct Sprite* sprite)
 {
     if (sprite->data[0] == 0)
     {
-        gSprites[sEggHatchData->pokeSpriteID].invisible = 0;
+        gSprites[sEggHatchData->pokeSpriteID].invisible = FALSE;
         StartSpriteAffineAnim(&gSprites[sEggHatchData->pokeSpriteID], 1);
     }
     if (sprite->data[0] == 8)
-        BeginNormalPaletteFade(-1, -1, 0x10, 0, 0xFFFF);
+        BeginNormalPaletteFade(0xFFFFFFFF, -1, 0x10, 0, 0xFFFF);
     if (sprite->data[0] <= 9)
         gSprites[sEggHatchData->pokeSpriteID].pos1.y -= 1;
     if (sprite->data[0] > 40)
@@ -859,7 +870,7 @@ static void EggHatchPrintMessage(u8 windowId, u8* string, u8 x, u8 y, u8 speed)
     sEggHatchData->textColor[0] = 0;
     sEggHatchData->textColor[1] = 5;
     sEggHatchData->textColor[2] = 6;
-    AddTextPrinterParameterized2(windowId, 1, x, y, 0, 0, sEggHatchData->textColor, speed, string);
+    AddTextPrinterParameterized4(windowId, 1, x, y, 0, 0, sEggHatchData->textColor, speed, string);
 }
 
 u8 GetEggStepsToSubtract(void)

@@ -19,6 +19,7 @@
 #include "gpu_regs.h"
 #include "trig.h"
 #include "constants/rgb.h"
+#include "constants/songs.h"
 
 #define VERSION_BANNER_SHAPE 1
 #define VERSION_BANNER_RIGHT_TILEOFFSET 64
@@ -545,7 +546,7 @@ void CB2_InitTitleScreen(void)
         break;
     }
     case 3:
-        BeginNormalPaletteFade(-1, 1, 0x10, 0, 0xFFFF);
+        BeginNormalPaletteFade(0xFFFFFFFF, 1, 0x10, 0, 0xFFFF);
         SetVBlankCallback(VBlankCB);
         gMain.state = 4;
         break;
@@ -574,7 +575,7 @@ void CB2_InitTitleScreen(void)
                                     | DISPCNT_OBJ_ON
                                     | DISPCNT_WIN0_ON
                                     | DISPCNT_OBJWIN_ON);
-        m4aSongNumStart(0x19D);
+        m4aSongNumStart(MUS_TITLE3);
         gMain.state = 5;
         break;
     case 5:
@@ -695,7 +696,7 @@ static void Task_TitleScreenPhase3(u8 taskId)
     if ((gMain.newKeys & A_BUTTON) || (gMain.newKeys & START_BUTTON))
     {
         FadeOutBGM(4);
-        BeginNormalPaletteFade(-1, 0, 0, 0x10, 0xFFFF);
+        BeginNormalPaletteFade(0xFFFFFFFF, 0, 0, 0x10, 0xFFFF);
         SetMainCallback2(CB2_GoToMainMenu);
     }
     else if ((gMain.heldKeys & CLEAR_SAVE_BUTTON_COMBO) == CLEAR_SAVE_BUTTON_COMBO)
@@ -706,13 +707,13 @@ static void Task_TitleScreenPhase3(u8 taskId)
       && CanResetRTC() == TRUE)
     {
         FadeOutBGM(4);
-        BeginNormalPaletteFade(-1, 0, 0, 0x10, 0);
+        BeginNormalPaletteFade(0xFFFFFFFF, 0, 0, 0x10, 0);
         SetMainCallback2(CB2_GoToResetRtcScreen);
     }
     else if ((gMain.heldKeys & BERRY_UPDATE_BUTTON_COMBO) == BERRY_UPDATE_BUTTON_COMBO)
     {
         FadeOutBGM(4);
-        BeginNormalPaletteFade(-1, 0, 0, 0x10, 0);
+        BeginNormalPaletteFade(0xFFFFFFFF, 0, 0, 0x10, 0);
         SetMainCallback2(CB2_GoToBerryFixScreen);
     }
     else
@@ -729,7 +730,7 @@ static void Task_TitleScreenPhase3(u8 taskId)
         UpdateLegendaryMarkingColor(gTasks[taskId].tCounter);
         if ((gMPlayInfo_BGM.status & 0xFFFF) == 0)
         {
-            BeginNormalPaletteFade(-1, 0, 0, 0x10, 0xFFFF);
+            BeginNormalPaletteFade(0xFFFFFFFF, 0, 0, 0x10, 0xFFFF);
             SetMainCallback2(CB2_GoToCopyrightScreen);
         }
     }

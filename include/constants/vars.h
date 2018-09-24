@@ -3,48 +3,59 @@
 
 #define VAR_0x3F20                 0x3F20
 
-#define VAR_0x4000                 0x4000
-#define VAR_0x4001                 0x4001
-#define VAR_0x4002                 0x4002
-#define VAR_0x4003                 0x4003
-#define VAR_0x4004                 0x4004
-#define VAR_0x4005                 0x4005
-#define VAR_0x4006                 0x4006
-#define VAR_0x4007                 0x4007
-#define VAR_0x4008                 0x4008
-#define VAR_0x4009                 0x4009
-#define VAR_0x400A                 0x400A
-#define VAR_0x400B                 0x400B
-#define VAR_0x400C                 0x400C
-#define VAR_0x400D                 0x400D
-#define VAR_0x400E                 0x400E
-#define VAR_0x400F                 0x400F
-#define VAR_0x4010                 0x4010
-#define VAR_0x4011                 0x4011
-#define VAR_0x4012                 0x4012
-#define VAR_0x4013                 0x4013
-#define VAR_0x4014                 0x4014
-#define VAR_0x4015                 0x4015
-#define VAR_0x4016                 0x4016
-#define VAR_0x4017                 0x4017
-#define VAR_0x4018                 0x4018
-#define VAR_0x4019                 0x4019
-#define VAR_0x401A                 0x401A
-#define VAR_0x401B                 0x401B
-#define VAR_0x401C                 0x401C
-#define VAR_0x401D                 0x401D
-#define VAR_0x401E                 0x401E
-#define VAR_0x401F                 0x401F
+#define VARS_START 0x4000
+
+// temporary vars
+// The first 0x10 vars are are temporary--they are cleared every time a map is loaded.
+#define VAR_TEMP_0                 0x4000
+#define VAR_TEMP_1                 0x4001
+#define VAR_TEMP_2                 0x4002
+#define VAR_TEMP_3                 0x4003
+#define VAR_TEMP_4                 0x4004
+#define VAR_TEMP_5                 0x4005
+#define VAR_TEMP_6                 0x4006
+#define VAR_TEMP_7                 0x4007
+#define VAR_TEMP_8                 0x4008
+#define VAR_TEMP_9                 0x4009
+#define VAR_TEMP_A                 0x400A
+#define VAR_TEMP_B                 0x400B
+#define VAR_TEMP_C                 0x400C
+#define VAR_TEMP_D                 0x400D
+#define VAR_TEMP_E                 0x400E
+#define VAR_TEMP_F                 0x400F
+
+// object gfx id vars
+// These 0x10 vars are used to dynamically control a map object's sprite.
+// For example, the rival's sprite id is dynamically set based on the player's gender.
+// See VarGetEventObjectGraphicsId().
+#define VAR_OBJ_GFX_ID_0           0x4010
+#define VAR_OBJ_GFX_ID_1           0x4011
+#define VAR_OBJ_GFX_ID_2           0x4012
+#define VAR_OBJ_GFX_ID_3           0x4013
+#define VAR_OBJ_GFX_ID_4           0x4014
+#define VAR_OBJ_GFX_ID_5           0x4015
+#define VAR_OBJ_GFX_ID_6           0x4016
+#define VAR_OBJ_GFX_ID_7           0x4017
+#define VAR_OBJ_GFX_ID_8           0x4018
+#define VAR_OBJ_GFX_ID_9           0x4019
+#define VAR_OBJ_GFX_ID_A           0x401A
+#define VAR_OBJ_GFX_ID_B           0x401B
+#define VAR_OBJ_GFX_ID_C           0x401C
+#define VAR_OBJ_GFX_ID_D           0x401D
+#define VAR_OBJ_GFX_ID_E           0x401E
+#define VAR_OBJ_GFX_ID_F           0x401F
+
+// general purpose vars
 #define VAR_RECYCLE_GOODS          0x4020
 #define VAR_REPEL_STEP_COUNT       0x4021
 #define VAR_ICE_STEP_COUNT         0x4022
-#define VAR_FIRST_POKE             0x4023
+#define VAR_STARTER_MON            0x4023 // 0=Treecko, 1=Torchic, 2=Mudkip
 #define VAR_MIRAGE_RND_H           0x4024
 #define VAR_MIRAGE_RND_L           0x4025
 #define VAR_SECRET_BASE_MAP        0x4026
-#define VAR_0x4027                 0x4027
-#define VAR_0x4028                 0x4028
-#define VAR_0x4029                 0x4029
+#define VAR_CYCLING_ROAD_RECORD_COLLISIONS                 0x4027
+#define VAR_CYCLING_ROAD_RECORD_TIME_L                 0x4028
+#define VAR_CYCLING_ROAD_RECORD_TIME_H                 0x4029
 #define VAR_HAPPINESS_STEP_COUNTER 0x402A
 #define VAR_POISON_STEP_COUNTER    0x402B
 #define VAR_RESET_RTC_ENABLE       0x402C
@@ -70,8 +81,8 @@
 #define VAR_ALTERING_CAVE_WILD_SET 0x403E
 #define VAR_0x403F                 0x403F
 #define VAR_DAYS                   0x4040
-#define VAR_0x4041                 0x4041
-#define VAR_0x4042                 0x4042
+#define VAR_FANCLUB_UNKNOWN_1                 0x4041
+#define VAR_FANCLUB_UNKNOWN_2                 0x4042
 #define VAR_DEPT_STORE_FLOOR       0x4043
 #define VAR_0x4044                 0x4044
 #define VAR_POKELOT_PRIZE          0x4045
@@ -154,12 +165,12 @@
 #define VAR_0x4092                 0x4092
 #define VAR_0x4093                 0x4093
 #define VAR_0x4094                 0x4094
-#define VAR_0x4095                 0x4095
+#define VAR_LILYCOVE_FAN_CLUB_STATE                 0x4095
 #define VAR_0x4096                 0x4096
 #define VAR_0x4097                 0x4097
 #define VAR_0x4098                 0x4098
 #define VAR_0x4099                 0x4099
-#define VAR_0x409A                 0x409A
+#define VAR_RUSTURF_TUNNEL_STATE                 0x409A
 #define VAR_0x409B                 0x409B
 #define VAR_0x409C                 0x409C
 #define VAR_0x409D                 0x409D
@@ -174,7 +185,7 @@
 #define VAR_0x40A6                 0x40A6
 #define VAR_0x40A7                 0x40A7
 #define VAR_0x40A8                 0x40A8
-#define VAR_0x40A9                 0x40A9
+#define VAR_CYCLING_CHALLENGE_STATE                 0x40A9
 #define VAR_0x40AA                 0x40AA
 #define VAR_0x40AB                 0x40AB
 #define VAR_0x40AC                 0x40AC
@@ -185,7 +196,7 @@
 #define VAR_0x40B1                 0x40B1
 #define VAR_0x40B2                 0x40B2
 #define VAR_WEATHER_INSTITUTE_STATE                 0x40B3
-#define VAR_PORTHOLE               0x40B4
+#define VAR_PORTHOLE_STATE               0x40B4
 #define VAR_0x40B5                 0x40B5
 #define VAR_0x40B6                 0x40B6
 #define VAR_0x40B7                 0x40B7
@@ -199,7 +210,7 @@
 #define VAR_0x40BF                 0x40BF
 #define VAR_0x40C0                 0x40C0
 #define VAR_0x40C1                 0x40C1
-#define VAR_0x40C2                 0x40C2
+#define VAR_PACIFIDLOG_TM_RECEIVED_DAY                 0x40C2
 #define VAR_0x40C3                 0x40C3
 #define VAR_0x40C4                 0x40C4
 #define VAR_0x40C5                 0x40C5
@@ -211,7 +222,7 @@
 #define VAR_0x40CB                 0x40CB
 #define VAR_0x40CC                 0x40CC
 #define VAR_0x40CD                 0x40CD
-#define VAR_0x40CE                 0x40CE
+#define VAR_FRONTIER_BATTLE_MODE                 0x40CE
 #define VAR_FRONTIER_FACILITY      0x40CF
 #define VAR_0x40D0                 0x40D0
 #define VAR_0x40D1                 0x40D1
@@ -262,6 +273,9 @@
 #define VAR_0x40FE                 0x40FE
 #define VAR_0x40FF                 0x40FF
 
+#define SPECIAL_VARS_START 0x8000
+// special vars
+// They are commonly used as parameters to commands, or return values from commands.
 #define VAR_0x8000                 0x8000
 #define VAR_0x8001                 0x8001
 #define VAR_0x8002                 0x8002

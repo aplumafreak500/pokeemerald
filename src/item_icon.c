@@ -4,13 +4,13 @@
 #include "sprite.h"
 #include "decompress.h"
 #include "constants/items.h"
+#include "data/item_icon_table.h"
 
 // EWRAM vars
 EWRAM_DATA void *gItemIconDecompressionBuffer = NULL;
 EWRAM_DATA void *gItemIcon4x4Buffer = NULL;
 
 // const rom data
-extern const void *const gItemIconTable[][2]; // todo: move to C file
 
 static const struct OamData sOamData_ItemIcon =
 {
@@ -162,7 +162,7 @@ const void *GetItemIconPicOrPalette(u16 itemId, u8 which)
 {
     if (itemId == 0xFFFF)
         itemId = ITEM_FIELD_ARROW;
-    else if (itemId > ITEM_LAST_ID)
+    else if (itemId >= ITEMS_COUNT)
         itemId = 0;
 
     return gItemIconTable[itemId][which];
