@@ -390,7 +390,6 @@ void sub_811FAF8(void)
     }
 }
 
-
 bool8 sub_811FBA4(void)
 {
     u16 i;
@@ -479,7 +478,7 @@ static void sub_811FC80(s16 x, s16 y, u16 baseTileTag, u16 basePaletteTag)
     for (i = 0; i < 2; i++)
     {
         spriteId = CreateSprite(&sprTemplate, x + 32, y + 32, 1);
-        if (spriteId != 64)
+        if (spriteId != MAX_SPRITES)
         {
             sMenu->menuWindowSprites[i] = &gSprites[spriteId];
             StartSpriteAnim(&gSprites[spriteId], i);
@@ -502,7 +501,7 @@ static void sub_811FC80(s16 x, s16 y, u16 baseTileTag, u16 basePaletteTag)
     for (i = 0; i < 4; i++)
     {
         spriteId = CreateSprite(&sprTemplate, x + 32, y + 16 + 16 * i, 0);
-        if (spriteId != 64)
+        if (spriteId != MAX_SPRITES)
         {
             sMenu->menuMarkingSprites[i] = &gSprites[spriteId];
             gSprites[spriteId].data[0] = i;
@@ -518,7 +517,7 @@ static void sub_811FC80(s16 x, s16 y, u16 baseTileTag, u16 basePaletteTag)
 
     spriteId = CreateSprite(&sprTemplate, 0, 0, 0);
 
-    if (spriteId != 64)
+    if (spriteId != MAX_SPRITES)
     {
         sMenu->menuTextSprite = &gSprites[spriteId];
         sMenu->menuTextSprite->oam.shape = ST_OAM_SQUARE;
@@ -535,7 +534,7 @@ static void sub_811FC80(s16 x, s16 y, u16 baseTileTag, u16 basePaletteTag)
 
     sprTemplate.callback = sub_811FF7C;
     spriteId = CreateSprite(&sprTemplate, x + 12, 0, 0);
-    if(spriteId != 64)
+    if (spriteId != MAX_SPRITES)
     {
         sMenu->unkSprite = &gSprites[spriteId];
         sMenu->unkSprite->data[0] = y + 16;
@@ -600,7 +599,7 @@ static struct Sprite *sub_811FFD4(u16 tileTag, u16 paletteTag, const u16 *palett
     LoadSpritePalette(&sprPalette);
 
     spriteId = CreateSprite(&sprTemplate, 0, 0, 0);
-    if (spriteId != 64)
+    if (spriteId != MAX_SPRITES)
         return  &gSprites[spriteId];
     else
         return NULL;

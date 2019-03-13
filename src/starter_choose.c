@@ -63,20 +63,20 @@ const u16 gBirchBallarrow_Pal[] = INCBIN_U16("graphics/misc/birch_ballarrow.gbap
 
 const u16 gBirchCircle_Pal[] = INCBIN_U16("graphics/misc/birch_circle.gbapal");
 
-const u8 gBirchBagTilemap[] = INCBIN_U8("graphics/misc/birch_bag_map.bin.lz");
+const u32 gBirchBagTilemap[] = INCBIN_U32("graphics/misc/birch_bag_map.bin.lz");
 
-const u8 gBirchGrassTilemap[] = INCBIN_U8("graphics/misc/birch_grass_map.bin.lz");
+const u32 gBirchGrassTilemap[] = INCBIN_U32("graphics/misc/birch_grass_map.bin.lz");
 
-const u8 gBirchHelpGfx[] = INCBIN_U8("graphics/misc/birch_help.4bpp.lz");
+const u32 gBirchHelpGfx[] = INCBIN_U32("graphics/misc/birch_help.4bpp.lz");
 
-const u8 gUnknown_085B18AC[] = INCBIN_U8("graphics/misc/birch_ballarrow.4bpp.lz");
+const u32 gUnknown_085B18AC[] = INCBIN_U32("graphics/misc/birch_ballarrow.4bpp.lz");
 
-const u8 gUnknown_085B1BCC[] = INCBIN_U8("graphics/misc/birch_circle.4bpp.lz");
+const u32 gUnknown_085B1BCC[] = INCBIN_U32("graphics/misc/birch_circle.4bpp.lz");
 
-static const struct WindowTemplate gUnknown_085B1DCC[] = 
+static const struct WindowTemplate gUnknown_085B1DCC[] =
 {
     {
-        .priority = 0,
+        .bg = 0,
         .tilemapLeft = 3,
         .tilemapTop = 15,
         .width = 24,
@@ -87,9 +87,9 @@ static const struct WindowTemplate gUnknown_085B1DCC[] =
     DUMMY_WIN_TEMPLATE,
 };
 
-static const struct WindowTemplate gUnknown_085B1DDC = 
+static const struct WindowTemplate gUnknown_085B1DDC =
 {
-    .priority = 0,
+    .bg = 0,
     .tilemapLeft = 24,
     .tilemapTop = 9,
     .width = 5,
@@ -98,9 +98,9 @@ static const struct WindowTemplate gUnknown_085B1DDC =
     .baseBlock = 0x0260
 };
 
-static const struct WindowTemplate gUnknown_085B1DE4 = 
+static const struct WindowTemplate gUnknown_085B1DE4 =
 {
-    .priority = 0,
+    .bg = 0,
     .tilemapLeft = 0,
     .tilemapTop = 0,
     .width = 13,
@@ -392,9 +392,9 @@ void CB2_ChooseStarter(void)
     DmaFill32(3, 0, OAM, OAM_SIZE);
     DmaFill16(3, 0, PLTT, PLTT_SIZE);
 
-    LZ77UnCompVram(&gBirchHelpGfx, (void *)VRAM);
-    LZ77UnCompVram(&gBirchBagTilemap, (void *)(VRAM + 0x3000));
-    LZ77UnCompVram(&gBirchGrassTilemap, (void *)(VRAM + 0x3800));
+    LZ77UnCompVram(gBirchHelpGfx, (void *)VRAM);
+    LZ77UnCompVram(gBirchBagTilemap, (void *)(BG_SCREEN_ADDR(6)));
+    LZ77UnCompVram(gBirchGrassTilemap, (void *)(BG_SCREEN_ADDR(7)));
 
     ResetBgsAndClearDma3BusyFlags(0);
     InitBgsFromTemplates(0, gUnknown_085B1E00, ARRAY_COUNT(gUnknown_085B1E00));
@@ -412,8 +412,8 @@ void CB2_ChooseStarter(void)
 
     LoadPalette(GetOverworldTextboxPalettePtr(), 0xE0, 0x20);
     LoadPalette(gBirchBagGrassPal, 0, 0x40);
-    LoadCompressedObjectPic(&gUnknown_085B1ED8[0]);
-    LoadCompressedObjectPic(&gUnknown_085B1EE8[0]);
+    LoadCompressedSpriteSheet(&gUnknown_085B1ED8[0]);
+    LoadCompressedSpriteSheet(&gUnknown_085B1EE8[0]);
     LoadSpritePalettes(gUnknown_085B1EF8);
     BeginNormalPaletteFade(0xFFFFFFFF, 0, 0x10, 0, 0);
 
@@ -425,7 +425,7 @@ void CB2_ChooseStarter(void)
     SetGpuReg(REG_OFFSET_WINOUT, 0x1F);
     SetGpuReg(REG_OFFSET_WIN0H, 0);
     SetGpuReg(REG_OFFSET_WIN0V, 0);
-    SetGpuReg(REG_OFFSET_BLDCNT, 0xFE);
+    SetGpuReg(REG_OFFSET_BLDCNT, BLDCNT_TGT1_BG1 | BLDCNT_TGT1_BG2 | BLDCNT_TGT1_BG3 | BLDCNT_TGT1_OBJ | BLDCNT_TGT1_BD | BLDCNT_EFFECT_DARKEN);
     SetGpuReg(REG_OFFSET_BLDALPHA, 0);
     SetGpuReg(REG_OFFSET_BLDY, 7);
     SetGpuReg(REG_OFFSET_DISPCNT, DISPCNT_WIN0_ON | DISPCNT_OBJ_ON | DISPCNT_OBJ_1D_MAP);
@@ -469,7 +469,7 @@ static void MainCallback2_StarterChoose(void)
 static void Task_StarterChoose1(u8 taskId)
 {
     CreateStarterPokemonLabel(gTasks[taskId].tStarterSelection);
-    SetWindowBorderStyle(0, FALSE, 0x2A8, 0xD);
+    DrawStdFrameWithCustomTileAndPalette(0, FALSE, 0x2A8, 0xD);
     AddTextPrinterParameterized(0, 1, gText_BirchInTrouble, 0, 1, 0, NULL);
     PutWindowTilemap(0);
     schedule_bg_copy_tilemap_to_vram(0);
@@ -523,7 +523,7 @@ static void Task_StarterChoose3(u8 taskId)
 static void Task_StarterChoose4(u8 taskId)
 {
     PlayCry1(GetStarterPokemon(gTasks[taskId].tStarterSelection), 0);
-    FillWindowPixelBuffer(0, 0x11);
+    FillWindowPixelBuffer(0, PIXEL_FILL(1));
     AddTextPrinterParameterized(0, 1, gText_ConfirmStarterChoice, 0, 1, 0, NULL);
     schedule_bg_copy_tilemap_to_vram(0);
     CreateYesNoMenu(&gUnknown_085B1DDC, 0x2A8, 0xD, 0);
@@ -534,7 +534,7 @@ static void Task_StarterChoose5(u8 taskId)
 {
     u8 spriteId;
 
-    switch (Menu_ProcessInputNoWrap_())
+    switch (Menu_ProcessInputNoWrapClearOnChoose())
     {
     case 0:  // YES
         // Return the starter choice and exit.
@@ -579,7 +579,7 @@ static void CreateStarterPokemonLabel(u8 selection)
     winTemplate.tilemapTop = gStarterChoose_LabelCoords[selection][1];
 
     sStarterChooseWindowId = AddWindow(&winTemplate);
-    FillWindowPixelBuffer(sStarterChooseWindowId, 0);
+    FillWindowPixelBuffer(sStarterChooseWindowId, PIXEL_FILL(0));
 
     width = GetStringCenterAlignXOffset(7, text, 0x68);
     AddTextPrinterParameterized3(sStarterChooseWindowId, 7, width, 1, gUnknown_085B1E0C, 0, text);
@@ -600,7 +600,7 @@ static void CreateStarterPokemonLabel(u8 selection)
 
 static void sub_8134604(void)
 {
-    FillWindowPixelBuffer(sStarterChooseWindowId, 0);
+    FillWindowPixelBuffer(sStarterChooseWindowId, PIXEL_FILL(0));
     ClearWindowTilemap(sStarterChooseWindowId);
     RemoveWindow(sStarterChooseWindowId);
     sStarterChooseWindowId = 0xFF;

@@ -174,7 +174,7 @@
 #define HITMARKER_GRUDGE                0x01000000
 #define HITMARKER_OBEYS                 0x02000000
 #define HITMARKER_x4000000              0x04000000
-#define HITMARKER_x8000000              0x08000000
+#define HITMARKER_CHARGING              0x08000000
 #define HITMARKER_FAINTED(battler)      (gBitTable[battler] << 0x1C)
 #define HITMARKER_UNK(battler)          (0x10000000 << battler)
 
@@ -280,5 +280,17 @@
 #define MOVE_EFFECT_NOTHING_3F          0x3F
 #define MOVE_EFFECT_AFFECTS_USER        0x40
 #define MOVE_EFFECT_CERTAIN             0x80
+
+// Battle terrain defines for gBattleTerrain.
+#define BATTLE_TERRAIN_GRASS        0
+#define BATTLE_TERRAIN_LONG_GRASS   1
+#define BATTLE_TERRAIN_SAND         2
+#define BATTLE_TERRAIN_UNDERWATER   3
+#define BATTLE_TERRAIN_WATER        4
+#define BATTLE_TERRAIN_POND         5
+#define BATTLE_TERRAIN_MOUNTAIN     6
+#define BATTLE_TERRAIN_CAVE         7
+#define BATTLE_TERRAIN_BUILDING     8
+#define BATTLE_TERRAIN_PLAIN        9
 
 #endif // GUARD_CONSTANTS_BATTLE_H

@@ -1,26 +1,21 @@
 #include "global.h"
 #include "battle.h"
 #include "battle_controllers.h"
-#include "malloc.h"
+#include "alloc.h"
 #include "pokemon.h"
+#include "trainer_hill.h"
+#include "party_menu.h"
 #include "event_data.h"
 #include "constants/abilities.h"
 #include "random.h"
 #include "battle_scripts.h"
-
-extern u8 gUnknown_0203CF00[];
-
-extern void sub_81D55D0(void);
-extern void sub_81D5694(void);
-extern u8 pokemon_order_func(u8);
-extern void sub_81B8FB0(u8, u8);
 
 void AllocateBattleResources(void)
 {
     gBattleResources = gBattleResources; // something dumb needed to match
 
     if (gBattleTypeFlags & BATTLE_TYPE_TRAINER_HILL)
-        sub_81D55D0();
+        InitTrainerHillBattleStruct();
 
     gBattleStruct = AllocZeroed(sizeof(*gBattleStruct));
 
@@ -42,7 +37,7 @@ void AllocateBattleResources(void)
 
     if (gBattleTypeFlags & BATTLE_TYPE_SECRET_BASE)
     {
-        u16 currSecretBaseId = VarGet(VAR_0x4054);
+        u16 currSecretBaseId = VarGet(VAR_CURRENT_SECRET_BASE);
         CreateSecretBaseEnemyParty(&gSaveBlock1Ptr->secretBases[currSecretBaseId]);
     }
 }
@@ -50,7 +45,7 @@ void AllocateBattleResources(void)
 void FreeBattleResources(void)
 {
     if (gBattleTypeFlags & BATTLE_TYPE_TRAINER_HILL)
-        sub_81D5694();
+        FreeTrainerHillBattleStruct();
 
     if (gBattleResources != NULL)
     {

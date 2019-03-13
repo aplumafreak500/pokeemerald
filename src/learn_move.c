@@ -5,11 +5,11 @@
 #include "contest_effect.h"
 #include "data2.h"
 #include "event_data.h"
-#include "field_screen.h"
+#include "field_screen_effect.h"
 #include "gpu_regs.h"
 #include "learn_move.h"
 #include "list_menu.h"
-#include "malloc.h"
+#include "alloc.h"
 #include "menu.h"
 #include "menu_helpers.h"
 #include "overworld.h"
@@ -52,7 +52,7 @@ static EWRAM_DATA struct {
 const u16 gUnknown_085CE9F8[] = INCBIN_U16("graphics/interface/ui_learn_move.gbapal");
 const u8 gUnknown_085CEA18[] = INCBIN_U8("graphics/interface/ui_learn_move.4bpp");
 
-const struct OamData gUnknown_085CEB98 = 
+const struct OamData gUnknown_085CEB98 =
 {
     .y = 0,
     .affineMode = 0,
@@ -69,7 +69,7 @@ const struct OamData gUnknown_085CEB98 =
     .affineParam = 0,
 };
 
-const struct OamData gUnknown_085CEBA0 = 
+const struct OamData gUnknown_085CEBA0 =
 {
     .y = 0,
     .affineMode = 0,
@@ -86,7 +86,7 @@ const struct OamData gUnknown_085CEBA0 =
     .affineParam = 0,
 };
 
-const struct OamData gUnknown_085CEBA8 = 
+const struct OamData gUnknown_085CEBA8 =
 {
     .y = 0,
     .affineMode = 0,
@@ -103,20 +103,20 @@ const struct OamData gUnknown_085CEBA8 =
     .affineParam = 0,
 };
 
-const struct SpriteSheet gUnknown_085CEBB0 = 
+const struct SpriteSheet gUnknown_085CEBB0 =
 {
     .data = gUnknown_085CEA18,
     .size = 0x180,
     .tag = 5525
 };
 
-const struct SpritePalette gUnknown_085CEBB8 = 
+const struct SpritePalette gUnknown_085CEBB8 =
 {
     .data = gUnknown_085CE9F8,
     .tag = 5526
 };
 
-const struct ScrollArrowsTemplate gUnknown_085CEBC0 = 
+const struct ScrollArrowsTemplate gUnknown_085CEBC0 =
 {
     .firstArrowType = 0,
     .firstX = 27,
@@ -131,7 +131,7 @@ const struct ScrollArrowsTemplate gUnknown_085CEBC0 =
     .palNum = 0,
 };
 
-const struct ScrollArrowsTemplate gUnknown_085CEBD0 = 
+const struct ScrollArrowsTemplate gUnknown_085CEBD0 =
 {
     .firstArrowType = 2,
     .firstX = 192,
@@ -146,31 +146,31 @@ const struct ScrollArrowsTemplate gUnknown_085CEBD0 =
     .palNum = 0,
 };
 
-const union AnimCmd gUnknown_085CEBE0[] = 
+const union AnimCmd gUnknown_085CEBE0[] =
 {
     ANIMCMD_FRAME(8, 5, FALSE, FALSE),
     ANIMCMD_END
 };
 
-const union AnimCmd gUnknown_085CEBE8[] = 
+const union AnimCmd gUnknown_085CEBE8[] =
 {
     ANIMCMD_FRAME(9, 5, FALSE, FALSE),
     ANIMCMD_END
 };
 
-const union AnimCmd gUnknown_085CEBF0[] = 
+const union AnimCmd gUnknown_085CEBF0[] =
 {
     ANIMCMD_FRAME(10, 5, FALSE, FALSE),
     ANIMCMD_END
 };
 
-const union AnimCmd gUnknown_085CEBF8[] = 
+const union AnimCmd gUnknown_085CEBF8[] =
 {
     ANIMCMD_FRAME(11, 5, FALSE, FALSE),
     ANIMCMD_END
 };
 
-const union AnimCmd *const gUnknown_085CEC00[] = 
+const union AnimCmd *const gUnknown_085CEC00[] =
 {
     gUnknown_085CEBE0,
     gUnknown_085CEBE8,
@@ -178,7 +178,7 @@ const union AnimCmd *const gUnknown_085CEC00[] =
     gUnknown_085CEBF8,
 };
 
-const struct SpriteTemplate gUnknown_085CEC10 = 
+const struct SpriteTemplate gUnknown_085CEC10 =
 {
     .tileTag = 5525,
     .paletteTag = 5526,
@@ -377,7 +377,7 @@ static void LearnMoveMain(void)
         break;
     case 9:
         {
-            s8 selection = Menu_ProcessInputNoWrap_();
+            s8 selection = Menu_ProcessInputNoWrapClearOnChoose();
 
             if (selection == 0)
             {
@@ -414,7 +414,7 @@ static void LearnMoveMain(void)
         break;
     case 13:
         {
-            s8 selection = Menu_ProcessInputNoWrap_();
+            s8 selection = Menu_ProcessInputNoWrapClearOnChoose();
 
             if (selection == 0)
             {
@@ -447,7 +447,7 @@ static void LearnMoveMain(void)
         break;
     case 18:
         {
-            s8 var = Menu_ProcessInputNoWrap_();
+            s8 var = Menu_ProcessInputNoWrapClearOnChoose();
 
             if (var == 0)
             {
@@ -474,7 +474,7 @@ static void LearnMoveMain(void)
         break;
     case 26:
         {
-            s8 var = Menu_ProcessInputNoWrap_();
+            s8 var = Menu_ProcessInputNoWrapClearOnChoose();
 
             if (var == 0)
             {
@@ -498,7 +498,7 @@ static void LearnMoveMain(void)
     case 27:
         if (!sub_81D2C3C())
         {
-            FillWindowPixelBuffer(3, 0x11);
+            FillWindowPixelBuffer(3, PIXEL_FILL(1));
             if (sLearnMoveStruct2.showContestInfo == FALSE)
             {
                 sLearnMoveStruct->state = 3;
@@ -631,14 +631,14 @@ static void HideSpritesAndPrintTeachText(bool8 a)
     if (!a)
     {
         StringExpandPlaceholders(gStringVar4, gText_TeachWhichMoveToPkmn);
-        FillWindowPixelBuffer(3, 0x11);
+        FillWindowPixelBuffer(3, PIXEL_FILL(1));
         AddTextPrinterParameterized(3, 1, gStringVar4, 0, 1, 0, NULL);
     }
 }
 
 static void HandleInput(bool8 showContest)
 {
-    s32 itemId = ListMenuHandleInputGetItemId(sLearnMoveStruct->listMenuTask);
+    s32 itemId = ListMenu_ProcessInput(sLearnMoveStruct->listMenuTask);
     ListMenuGetScrollAndRow(sLearnMoveStruct->listMenuTask, &sLearnMoveStruct2.listOffset, &sLearnMoveStruct2.listRow);
 
     switch (itemId)
@@ -695,7 +695,7 @@ static void ShowTeachMoveText(bool8 showContest)
     if (showContest == FALSE)
     {
         StringExpandPlaceholders(gStringVar4, gText_TeachWhichMoveToPkmn);
-        FillWindowPixelBuffer(3, 0x11);
+        FillWindowPixelBuffer(3, PIXEL_FILL(1));
         AddTextPrinterParameterized(3, 1, gStringVar4, 0, 1, 0, NULL);
     }
 }
@@ -707,7 +707,7 @@ static void CreateHearts(void)
     sLearnMoveStruct->scrollArrowTaskId2 = -1;
     sLearnMoveStruct->scrollArrowTaskId1 = -1;
     AddScrollArrows();
-    
+
     for (i = 0; i < 8; i++)
     {
         sLearnMoveStruct->spriteIds[i] = CreateSprite(&gUnknown_085CEC10, (i - (i / 4) * 4) * 8 + 104, (i / 4) * 8 + 36, 0);
@@ -791,7 +791,7 @@ void ShowHideHearts(s32 item)
     else
     {
         numHearts = (u8)(gContestEffects[gContestMoves[item].effect].appeal / 10);
-        
+
         if (numHearts == 0xFF)
         {
             numHearts = 0;
@@ -811,7 +811,7 @@ void ShowHideHearts(s32 item)
         }
 
         numHearts = (u8)(gContestEffects[gContestMoves[item].effect].jam / 10);
-        
+
         if (numHearts == 0xFF)
         {
             numHearts = 0;

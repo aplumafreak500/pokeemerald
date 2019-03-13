@@ -1,4 +1,5 @@
 #include "global.h"
+#include "battle.h"
 #include "title_screen.h"
 #include "sprite.h"
 #include "gba/m4a_internal.h"
@@ -18,6 +19,7 @@
 #include "scanline_effect.h"
 #include "gpu_regs.h"
 #include "trig.h"
+#include "graphics.h"
 #include "constants/rgb.h"
 #include "constants/songs.h"
 
@@ -36,17 +38,6 @@
 #define A_B_START_SELECT (A_BUTTON | B_BUTTON | START_BUTTON | SELECT_BUTTON)
 
 extern struct MusicPlayerInfo gMPlayInfo_BGM;
-extern u16 gBattle_BG1_X;
-extern u16 gBattle_BG1_Y;
-
-extern const u8 gTitleScreenEmeraldVersionGfx[];
-extern const u8 gTitleScreenPressStartGfx[];
-extern const u8 gTitleScreenPokemonLogoGfx[];
-extern const u8 gUnknown_08DE0644[];
-extern const u8 gUnknown_08DDE458[];
-extern const u16 gTitleScreenBgPalettes[];
-extern const u16 gTitleScreenPressStartPal[];
-extern const u16 gTitleScreenEmeraldVersionPal[];
 
 // this file's functions
 static void MainCB2(void);
@@ -68,21 +59,21 @@ static void SpriteCB_PokemonLogoShine(struct Sprite *sprite);
 // const rom data
 static const u16 sUnusedUnknownPal[] = INCBIN_U16("graphics/title_screen/unk_853EF78.gbapal");
 
-static const u8 sTitleScreenRayquazaGfx[] = INCBIN_U8("graphics/title_screen/rayquaza.4bpp.lz");
-static const u8 sTitleScreenRayquazaTilemap[] = INCBIN_U8("graphics/title_screen/rayquaza.bin.lz");
-static const u8 sTitleScreenLogoShineGfx[] = INCBIN_U8("graphics/title_screen/logo_shine.4bpp.lz");
-static const u8 sTitleScreenCloudsGfx[] = INCBIN_U8("graphics/title_screen/clouds.4bpp.lz");
+static const u32 sTitleScreenRayquazaGfx[] = INCBIN_U32("graphics/title_screen/rayquaza.4bpp.lz");
+static const u32 sTitleScreenRayquazaTilemap[] = INCBIN_U32("graphics/title_screen/rayquaza.bin.lz");
+static const u32 sTitleScreenLogoShineGfx[] = INCBIN_U32("graphics/title_screen/logo_shine.4bpp.lz");
+static const u32 sTitleScreenCloudsGfx[] = INCBIN_U32("graphics/title_screen/clouds.4bpp.lz");
 
-const u16 gUnknown_0853FF70[] =
+const u16 gIntroWaterDropData[] =
 {
-	0x0010, 0x0110, 0x0210, 0x0310, 0x0410, 0x0510, 0x0610, 0x0710,
-	0x0810, 0x0910, 0x0a10, 0x0b10, 0x0c10, 0x0d10, 0x0e10, 0x0f10,
-	0x100f, 0x100e, 0x100d, 0x100c, 0x100b, 0x100a, 0x1009, 0x1008,
-	0x1007, 0x1006, 0x1005, 0x1004, 0x1003, 0x1002, 0x1001, 0x1000,
-	0x1000, 0x1000, 0x1000, 0x1000, 0x1000, 0x1000, 0x1000, 0x1000,
-	0x1000, 0x1000, 0x1000, 0x1000, 0x1000, 0x1000, 0x1000, 0x1000,
-	0x1000, 0x1000, 0x1000, 0x1000, 0x1000, 0x1000, 0x1000, 0x1000,
-	0x1000, 0x1000, 0x1000, 0x1000, 0x1000, 0x1000, 0x1000, 0x1000,
+    0x0010, 0x0110, 0x0210, 0x0310, 0x0410, 0x0510, 0x0610, 0x0710,
+    0x0810, 0x0910, 0x0a10, 0x0b10, 0x0c10, 0x0d10, 0x0e10, 0x0f10,
+    0x100f, 0x100e, 0x100d, 0x100c, 0x100b, 0x100a, 0x1009, 0x1008,
+    0x1007, 0x1006, 0x1005, 0x1004, 0x1003, 0x1002, 0x1001, 0x1000,
+    0x1000, 0x1000, 0x1000, 0x1000, 0x1000, 0x1000, 0x1000, 0x1000,
+    0x1000, 0x1000, 0x1000, 0x1000, 0x1000, 0x1000, 0x1000, 0x1000,
+    0x1000, 0x1000, 0x1000, 0x1000, 0x1000, 0x1000, 0x1000, 0x1000,
+    0x1000, 0x1000, 0x1000, 0x1000, 0x1000, 0x1000, 0x1000, 0x1000,
 };
 
 static const struct OamData sVersionBannerLeftOamData =
@@ -333,7 +324,7 @@ static void SpriteCB_VersionBannerLeft(struct Sprite *sprite)
             sprite->pos1.y++;
         if (sprite->data[0] != 0)
             sprite->data[0]--;
-        SetGpuReg(REG_OFFSET_BLDALPHA, gUnknown_0853FF70[sprite->data[0]]);
+        SetGpuReg(REG_OFFSET_BLDALPHA, gIntroWaterDropData[sprite->data[0]]);
     }
 }
 
@@ -516,20 +507,20 @@ void CB2_InitTitleScreen(void)
         break;
     case 1:
         LZ77UnCompVram(gTitleScreenPokemonLogoGfx, (void *)VRAM);
-        LZ77UnCompVram(gUnknown_08DE0644, (void *)(VRAM + 0x4800));
+        LZ77UnCompVram(gUnknown_08DE0644, (void *)(BG_SCREEN_ADDR(9)));
         LoadPalette(gTitleScreenBgPalettes, 0, 0x1E0);
-        LZ77UnCompVram(sTitleScreenRayquazaGfx, (void *)(VRAM + 0x8000));
-        LZ77UnCompVram(sTitleScreenRayquazaTilemap, (void *)(VRAM + 0xD000));
-        LZ77UnCompVram(sTitleScreenCloudsGfx, (void *)(VRAM + 0xC000));
-        LZ77UnCompVram(gUnknown_08DDE458, (void *)(VRAM + 0xD800));
+        LZ77UnCompVram(sTitleScreenRayquazaGfx, (void *)(BG_CHAR_ADDR(2)));
+        LZ77UnCompVram(sTitleScreenRayquazaTilemap, (void *)(BG_SCREEN_ADDR(26)));
+        LZ77UnCompVram(sTitleScreenCloudsGfx, (void *)(BG_CHAR_ADDR(3)));
+        LZ77UnCompVram(gUnknown_08DDE458, (void *)(BG_SCREEN_ADDR(27)));
         ScanlineEffect_Stop();
         ResetTasks();
         ResetSpriteData();
         FreeAllSpritePalettes();
         gReservedSpritePaletteCount = 9;
-        LoadCompressedObjectPic(&sSpriteSheet_EmeraldVersion[0]);
-        LoadCompressedObjectPic(&sSpriteSheet_PressStart[0]);
-        LoadCompressedObjectPic(&sPokemonLogoShineSpriteSheet[0]);
+        LoadCompressedSpriteSheet(&sSpriteSheet_EmeraldVersion[0]);
+        LoadCompressedSpriteSheet(&sSpriteSheet_PressStart[0]);
+        LoadCompressedSpriteSheet(&sPokemonLogoShineSpriteSheet[0]);
         LoadPalette(gTitleScreenEmeraldVersionPal, 0x100, 0x20);
         LoadSpritePalette(&sSpritePalette_PressStart[0]);
         gMain.state = 2;
@@ -551,7 +542,7 @@ void CB2_InitTitleScreen(void)
         gMain.state = 4;
         break;
     case 4:
-        sub_816F2A8(0x78, 0x50, 0x100, 0);
+        PanFadeAndZoomScreen(0x78, 0x50, 0x100, 0);
         SetGpuReg(REG_OFFSET_BG2X_L, -29 * 256);
         SetGpuReg(REG_OFFSET_BG2X_H, -1);
         SetGpuReg(REG_OFFSET_BG2Y_L, -32 * 256);
@@ -562,7 +553,7 @@ void CB2_InitTitleScreen(void)
         SetGpuReg(REG_OFFSET_WIN1V, 0);
         SetGpuReg(REG_OFFSET_WININ, 0x1F1F);
         SetGpuReg(REG_OFFSET_WINOUT, 0x3F1F);
-        SetGpuReg(REG_OFFSET_BLDCNT, 0x84);
+        SetGpuReg(REG_OFFSET_BLDCNT, BLDCNT_TGT1_BG2 | BLDCNT_EFFECT_LIGHTEN);
         SetGpuReg(REG_OFFSET_BLDALPHA, 0);
         SetGpuReg(REG_OFFSET_BLDY, 0xC);
         SetGpuReg(REG_OFFSET_BG0CNT, BGCNT_PRIORITY(3) | BGCNT_CHARBASE(2) | BGCNT_SCREENBASE(26) | BGCNT_16COLOR | BGCNT_TXT256x256);
@@ -624,8 +615,8 @@ static void Task_TitleScreenPhase1(u8 taskId)
         SetGpuReg(REG_OFFSET_DISPCNT, DISPCNT_MODE_1 | DISPCNT_OBJ_1D_MAP | DISPCNT_BG2_ON | DISPCNT_OBJ_ON);
         SetGpuReg(REG_OFFSET_WININ, 0);
         SetGpuReg(REG_OFFSET_WINOUT, 0);
-        SetGpuReg(REG_OFFSET_BLDCNT, 0x3F50);
-        SetGpuReg(REG_OFFSET_BLDALPHA, 0x10);
+        SetGpuReg(REG_OFFSET_BLDCNT, BLDCNT_TGT1_OBJ | BLDCNT_EFFECT_BLEND | BLDCNT_TGT2_ALL);
+        SetGpuReg(REG_OFFSET_BLDALPHA, BLDALPHA_BLEND(16, 0));
         SetGpuReg(REG_OFFSET_BLDY, 0);
 
         // Create left side of version banner
@@ -661,8 +652,8 @@ static void Task_TitleScreenPhase2(u8 taskId)
     else
     {
         gTasks[taskId].tSkipToNext = TRUE;
-        SetGpuReg(REG_OFFSET_BLDCNT, 0x2142);
-        SetGpuReg(REG_OFFSET_BLDALPHA, 0xF06);
+        SetGpuReg(REG_OFFSET_BLDCNT, BLDCNT_TGT1_BG1 | BLDCNT_EFFECT_BLEND | BLDCNT_TGT2_BG0 | BLDCNT_TGT2_BD);
+        SetGpuReg(REG_OFFSET_BLDALPHA, BLDALPHA_BLEND(6, 15));
         SetGpuReg(REG_OFFSET_BLDY, 0);
         SetGpuReg(REG_OFFSET_DISPCNT, DISPCNT_MODE_1
                                     | DISPCNT_OBJ_1D_MAP

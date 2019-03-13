@@ -6,18 +6,21 @@
 #include "pokemon.h"
 #include "text.h"
 #include "text_window.h"
-#include "malloc.h"
+#include "alloc.h"
 #include "gpu_regs.h"
+#include "graphics.h"
 #include "main.h"
 #include "sound.h"
 #include "constants/songs.h"
 #include "decompress.h"
 #include "save.h"
+#include "strings.h"
 #include "window.h"
+#include "credits.h"
 #include "bg.h"
 #include "constants/species.h"
 #include "constants/game_stat.h"
-#include "blend_palette.h"
+#include "util.h"
 #include "string_util.h"
 #include "m4a.h"
 #include "international_string_util.h"
@@ -27,9 +30,11 @@
 #include "event_data.h"
 #include "overworld.h"
 #include "menu.h"
+#include "fldeff_misc.h"
 #include "trainer_pokemon_sprites.h"
 #include "data2.h"
 #include "rom_81520A8.h"
+#include "constants/rgb.h"
 
 struct HallofFameMon
 {
@@ -57,41 +62,9 @@ static EWRAM_DATA u32 sUnknown_0203BCD4 = 0;
 static EWRAM_DATA struct HallofFameTeam *sHofMonPtr = NULL;
 static EWRAM_DATA struct HofGfx *sHofGfxPtr = NULL;
 
-extern bool8 gHasHallOfFameRecords;
 extern struct MusicPlayerInfo gMPlayInfo_BGM;
 
 #define HALL_OF_FAME_MAX_TEAMS 50
-
-// strings
-extern const u8 gText_SavingDontTurnOffPower[];
-extern const u8 gText_LeagueChamp[];
-extern const u8 gText_HOFNumber[];
-extern const u8 gText_PickNextCancel[];
-extern const u8 gText_PickCancel[];
-extern const u8 gText_UnkCtrlF800Exit[];
-extern const u8 gText_HOFCorrupted[];
-extern const u8 gText_WelcomeToHOF[];
-extern const u8 gText_Number[];
-extern const u8 gText_Level[];
-extern const u8 gText_IDNumber[];
-extern const u8 gText_Name[];
-extern const u8 gText_MainMenuTime[];
-
-// graphics
-extern const u8 gContestConfetti_Gfx[];
-extern const u8 gContestConfetti_Pal[];
-
-extern void sub_8175620(void);
-extern bool8 sub_80F9C30(void);
-extern void sub_8198314(void);
-extern void ReturnFromHallOfFamePC(void);
-extern void sub_8198180(const u8 *src, u8, u8);
-extern void sub_80F9BF4(u16, u16, u8);
-extern void sub_81980F0(u8, u8, u8, u8, u16);
-extern void sub_80F9BCC(u16, u16, u8);
-extern bool8 sub_80F9C1C(void);
-extern void sub_81971D0(void);
-extern void sub_8197200(void);
 
 // this file's functions
 static void ClearVramOamPltt_LoadHofPal(void);
@@ -339,7 +312,7 @@ static const struct SpriteTemplate sSpriteTemplate_85E54D0 =
 
 static const u16 sHallOfFame_Pal[] = INCBIN_U16("graphics/misc/japanese_hof.gbapal");
 
-static const u8 sHallOfFame_Gfx[] = INCBIN_U8("graphics/misc/japanese_hof.4bpp.lz");
+static const u32 sHallOfFame_Gfx[] = INCBIN_U32("graphics/misc/japanese_hof.4bpp.lz");
 
 static const struct HallofFameMon sDummyFameMon =
 {
@@ -380,8 +353,8 @@ static bool8 InitHallOfFameScreen(void)
         gMain.state++;
         break;
     case 2:
-        SetGpuReg(REG_OFFSET_BLDCNT, 0x3F42);
-        SetGpuReg(REG_OFFSET_BLDALPHA, 0x710);
+        SetGpuReg(REG_OFFSET_BLDCNT, BLDCNT_TGT1_BG1 | BLDCNT_EFFECT_BLEND | BLDCNT_TGT2_ALL);
+        SetGpuReg(REG_OFFSET_BLDALPHA, BLDALPHA_BLEND(16, 7));
         SetGpuReg(REG_OFFSET_BLDY, 0);
         sub_8174FAC();
         sHofGfxPtr->state = 0;
@@ -391,7 +364,7 @@ static bool8 InitHallOfFameScreen(void)
         if (!sub_8175024())
         {
             SetVBlankCallback(VBlankCB_HallOfFame);
-            BeginNormalPaletteFade(0xFFFFFFFF, 0, 0x10, 0, 0);
+            BeginNormalPaletteFade(0xFFFFFFFF, 0, 0x10, 0, RGB_BLACK);
             gMain.state++;
         }
         break;
@@ -441,7 +414,7 @@ static void Task_Hof_InitMonData(u8 taskId)
 
     gTasks[taskId].tMonNumber = 0; // valid pokes
 
-    for (i = 0; i < 6; i++)
+    for (i = 0; i < PARTY_SIZE; i++)
     {
         u8 nick[POKEMON_NAME_LENGTH + 2];
         if (GetMonData(&gPlayerParty[i], MON_DATA_SPECIES))
@@ -471,7 +444,7 @@ static void Task_Hof_InitMonData(u8 taskId)
     gTasks[taskId].tDisplayedMonId = 0;
     gTasks[taskId].tPlayerSpriteID = 0xFF;
 
-    for (i = 0; i < 6; i++)
+    for (i = 0; i < PARTY_SIZE; i++)
     {
         gTasks[taskId].tMonSpriteId(i) = 0xFF;
     }
@@ -499,7 +472,7 @@ static void Task_Hof_InitTeamSaveData(u8 taskId)
 
     for (i = 0; i < HALL_OF_FAME_MAX_TEAMS; i++, lastSavedTeam++)
     {
-        if (lastSavedTeam->mon[0].species == 0)
+        if (lastSavedTeam->mon[0].species == SPECIES_NONE)
             break;
     }
     if (i >= HALL_OF_FAME_MAX_TEAMS)
@@ -515,7 +488,7 @@ static void Task_Hof_InitTeamSaveData(u8 taskId)
     }
     *lastSavedTeam = *sHofMonPtr;
 
-    NewMenuHelpers_DrawDialogueFrame(0, 0);
+    DrawDialogueFrame(0, 0);
     AddTextPrinterParameterized2(0, 1, gText_SavingDontTurnOffPower, 0, NULL, 2, 1, 3);
     CopyWindowToVram(0, 3);
     gTasks[taskId].func = Task_Hof_TrySaveData;
@@ -524,7 +497,7 @@ static void Task_Hof_InitTeamSaveData(u8 taskId)
 static void Task_Hof_TrySaveData(u8 taskId)
 {
     gGameContinueCallback = CB2_DoHallOfFameScreenDontSaveData;
-    if (TrySavingData(3) == 0xFF && gDamagedSaveSectors != 0)
+    if (TrySavingData(SAVE_HALL_OF_FAME) == 0xFF && gDamagedSaveSectors != 0)
     {
         UnsetBgTilemapBuffer(1);
         UnsetBgTilemapBuffer(3);
@@ -595,7 +568,7 @@ static void Task_Hof_DisplayMon(u8 taskId)
     gSprites[spriteId].tSpecies = currMon->species;
     gSprites[spriteId].callback = SpriteCB_GetOnScreenAndAnimate;
     gTasks[taskId].tMonSpriteId(currMonId) = spriteId;
-    sub_8197434(0, TRUE);
+    ClearDialogWindowAndFrame(0, TRUE);
     gTasks[taskId].func = Task_Hof_PrintMonInfoAfterAnimating;
 }
 
@@ -629,7 +602,7 @@ static void Task_Hof_TryDisplayAnotherMon(u8 taskId)
         if (gTasks[taskId].tDisplayedMonId <= 4 && currMon[1].species != SPECIES_NONE) // there is another pokemon to display
         {
             gTasks[taskId].tDisplayedMonId++;
-            BeginNormalPaletteFade(sUnknown_0203BCD4, 0, 12, 12, 0x63B0);
+            BeginNormalPaletteFade(sUnknown_0203BCD4, 0, 12, 12, RGB(16, 29, 24));
             gSprites[gTasks[taskId].tMonSpriteId(currPokeID)].oam.priority = 1;
             gTasks[taskId].func = Task_Hof_DisplayMon;
         }
@@ -644,8 +617,8 @@ static void Task_Hof_PaletteFadeAndPrintWelcomeText(u8 taskId)
 {
     u16 i;
 
-    BeginNormalPaletteFade(0xFFFF0000, 0, 0, 0, 0);
-    for (i = 0; i < 6; i++)
+    BeginNormalPaletteFade(0xFFFF0000, 0, 0, 0, RGB_BLACK);
+    for (i = 0; i < PARTY_SIZE; i++)
     {
         if (gTasks[taskId].tMonSpriteId(i) != 0xFF)
             gSprites[gTasks[taskId].tMonSpriteId(i)].oam.priority = 0;
@@ -668,13 +641,13 @@ static void sub_8173DC0(u8 taskId)
     else
     {
         u16 i;
-        for (i = 0; i < 6; i++)
+        for (i = 0; i < PARTY_SIZE; i++)
         {
             if (gTasks[taskId].tMonSpriteId(i) != 0xFF)
                 gSprites[gTasks[taskId].tMonSpriteId(i)].oam.priority = 1;
         }
-        BeginNormalPaletteFade(sUnknown_0203BCD4, 0, 12, 12, 0x63B0);
-        FillWindowPixelBuffer(0, 0);
+        BeginNormalPaletteFade(sUnknown_0203BCD4, 0, 12, 12, RGB(16, 29, 24));
+        FillWindowPixelBuffer(0, PIXEL_FILL(0));
         CopyWindowToVram(0, 3);
         gTasks[taskId].tFrameCount = 7;
         gTasks[taskId].func = sub_8173EA4;
@@ -722,7 +695,7 @@ static void Task_Hof_WaitAndPrintPlayerInfo(u8 taskId)
     {
         FillBgTilemapBufferRect_Palette0(0, 0, 0, 0, 0x20, 0x20);
         HallOfFame_PrintPlayerInfo(1, 2);
-        NewMenuHelpers_DrawDialogueFrame(0, 0);
+        DrawDialogueFrame(0, 0);
         AddTextPrinterParameterized2(0, 1, gText_LeagueChamp, 0, NULL, 2, 1, 3);
         CopyWindowToVram(0, 3);
         gTasks[taskId].func = Task_Hof_ExitOnKeyPressed;
@@ -741,7 +714,7 @@ static void Task_Hof_ExitOnKeyPressed(u8 taskId)
 static void Task_Hof_HandlePaletteOnExit(u8 taskId)
 {
     CpuCopy16(gPlttBufferFaded, gPlttBufferUnfaded, 0x400);
-    BeginNormalPaletteFade(0xFFFFFFFF, 8, 0, 0x10, 0);
+    BeginNormalPaletteFade(0xFFFFFFFF, 8, 0, 0x10, RGB_BLACK);
     gTasks[taskId].func = Task_Hof_HandleExit;
 }
 
@@ -751,7 +724,7 @@ static void Task_Hof_HandleExit(u8 taskId)
     {
         s32 i;
 
-        for (i = 0; i < 6; i++)
+        for (i = 0; i < PARTY_SIZE; i++)
         {
             u8 spriteId = gTasks[taskId].tMonSpriteId(i);
             if (spriteId != 0xFF)
@@ -842,12 +815,12 @@ void CB2_DoHallOfFamePC(void)
         {
             u8 taskId, i;
 
-            SetGpuReg(REG_OFFSET_BLDCNT, 0x3F42);
-            SetGpuReg(REG_OFFSET_BLDALPHA, 0x710);
+            SetGpuReg(REG_OFFSET_BLDCNT, BLDCNT_TGT1_BG1 | BLDCNT_EFFECT_BLEND | BLDCNT_TGT2_ALL);
+            SetGpuReg(REG_OFFSET_BLDALPHA, BLDALPHA_BLEND(16, 7));
             SetGpuReg(REG_OFFSET_BLDY, 0);
             taskId = CreateTask(Task_HofPC_CopySaveData, 0);
 
-            for (i = 0; i < 6; i++)
+            for (i = 0; i < PARTY_SIZE; i++)
             {
                 gTasks[taskId].tMonSpriteId(i) = 0xFF;
             }
@@ -904,7 +877,7 @@ static void Task_HofPC_DrawSpritesPrintText(u8 taskId)
     gTasks[taskId].tCurrMonId = 0;
     gTasks[taskId].tMonNo = 0;
 
-    for (i = 0; i < 6; i++, currMon++)
+    for (i = 0; i < PARTY_SIZE; i++, currMon++)
     {
         if (currMon->species != 0)
             gTasks[taskId].tMonNo++;
@@ -912,7 +885,7 @@ static void Task_HofPC_DrawSpritesPrintText(u8 taskId)
 
     currMon = &savedTeams->mon[0];
 
-    for (i = 0; i < 6; i++, currMon++)
+    for (i = 0; i < PARTY_SIZE; i++, currMon++)
     {
         if (currMon->species != 0)
         {
@@ -943,7 +916,7 @@ static void Task_HofPC_DrawSpritesPrintText(u8 taskId)
         }
     }
 
-    BlendPalettes(0xFFFF0000, 0xC, 0x63B0);
+    BlendPalettes(0xFFFF0000, 0xC, RGB(16, 29, 24));
 
     ConvertIntToDecimalStringN(gStringVar1, gTasks[taskId].tCurrPageNo, STR_CONV_MODE_RIGHT_ALIGN, 3);
     StringExpandPlaceholders(gStringVar4, gText_HOFNumber);
@@ -966,7 +939,7 @@ static void Task_HofPC_PrintMonInfo(u8 taskId)
     for (i = 0; i < gTasks[taskId].tCurrTeamNo; i++)
         savedTeams++;
 
-    for (i = 0; i < 6; i++)
+    for (i = 0; i < PARTY_SIZE; i++)
     {
         u16 spriteId = gTasks[taskId].tMonSpriteId(i);
         if (spriteId != 0xFF)
@@ -976,7 +949,7 @@ static void Task_HofPC_PrintMonInfo(u8 taskId)
     currMonID = gTasks[taskId].tMonSpriteId(gTasks[taskId].tCurrMonId);
     gSprites[currMonID].oam.priority = 0;
     sUnknown_0203BCD4 = (0x10000 << gSprites[currMonID].oam.paletteNum) ^ 0xFFFF0000;
-    BlendPalettesUnfaded(sUnknown_0203BCD4, 0xC, 0x63B0);
+    BlendPalettesUnfaded(sUnknown_0203BCD4, 0xC, RGB(16, 29, 24));
 
     currMon = &savedTeams->mon[gTasks[taskId].tCurrMonId];
     if (currMon->species != SPECIES_EGG)
@@ -1059,7 +1032,7 @@ static void Task_HofPC_HandleExit(u8 taskId)
     {
         u8 i;
 
-        for (i = 0; i < 6; i++)
+        for (i = 0; i < PARTY_SIZE; i++)
         {
             u16 spriteId = gTasks[taskId].tMonSpriteId(i);
             if (spriteId != 0xFF)
@@ -1090,8 +1063,8 @@ static void Task_HofPC_HandleExit(u8 taskId)
 
 static void Task_HofPC_PrintDataIsCorrupted(u8 taskId)
 {
-    sub_8198180(gText_UnkCtrlF800Exit, 8, 1);
-    NewMenuHelpers_DrawDialogueFrame(0, 0);
+    sub_8198180(gText_UnkCtrlF800Exit, 8, TRUE);
+    DrawDialogueFrame(0, 0);
     AddTextPrinterParameterized2(0, 1, gText_HOFCorrupted, 0, NULL, 2, 1, 3);
     CopyWindowToVram(0, 3);
     gTasks[taskId].func = Task_HofPC_ExitOnButtonPress;
@@ -1111,7 +1084,7 @@ static void Task_HofPC_ExitOnButtonPress(u8 taskId)
 
 static void HallOfFame_PrintWelcomeText(u8 unusedPossiblyWindowId, u8 unused2)
 {
-    FillWindowPixelBuffer(0, 0);
+    FillWindowPixelBuffer(0, PIXEL_FILL(0));
     PutWindowTilemap(0);
     AddTextPrinterParameterized3(0, 1, GetStringCenterAlignXOffset(1, gText_WelcomeToHOF, 0xD0), 1, sUnknown_085E5388, 0, gText_WelcomeToHOF);
     CopyWindowToVram(0, 3);
@@ -1124,7 +1097,7 @@ static void HallOfFame_PrintMonInfo(struct HallofFameMon* currMon, u8 unused1, u
     s32 dexNumber;
     s32 width;
 
-    FillWindowPixelBuffer(0, 0);
+    FillWindowPixelBuffer(0, PIXEL_FILL(0));
     PutWindowTilemap(0);
 
     // dex number
@@ -1205,9 +1178,9 @@ static void HallOfFame_PrintPlayerInfo(u8 unused1, u8 unused2)
     u32 width;
     u16 trainerId;
 
-    FillWindowPixelBuffer(1, 0x11);
+    FillWindowPixelBuffer(1, PIXEL_FILL(1));
     PutWindowTilemap(1);
-    SetWindowBorderStyle(1, FALSE, 0x21D, 0xD);
+    DrawStdFrameWithCustomTileAndPalette(1, FALSE, 0x21D, 0xD);
     AddTextPrinterParameterized3(1, 1, 0, 1, sUnknown_085E538C, -1, gText_Name);
 
     width = GetStringRightAlignXOffset(1, gSaveBlock2Ptr->playerName, 0x70);
@@ -1285,8 +1258,8 @@ static void sub_8174F70(void)
     ResetAllPicSprites();
     FreeAllSpritePalettes();
     gReservedSpritePaletteCount = 8;
-    LoadCompressedObjectPic(sHallOfFame_ConfettiSpriteSheet);
-    LoadCompressedObjectPalette(sHallOfFame_ConfettiSpritePalette);
+    LoadCompressedSpriteSheet(sHallOfFame_ConfettiSpriteSheet);
+    LoadCompressedSpritePalette(sHallOfFame_ConfettiSpritePalette);
 }
 
 static void sub_8174FAC(void)
@@ -1324,7 +1297,7 @@ static bool8 sub_8175024(void)
         CopyBgTilemapBufferToVram(3);
         break;
     case 3:
-        sub_81971D0();
+        InitStandardTextBoxWindows();
         sub_8197200();
         break;
     case 4:
@@ -1477,8 +1450,8 @@ static void sub_8175364(u8 taskId)
             gSpecialVar_0x8004 = var;
             gSpecialVar_0x8005 = 0xFFFF;
         }
-        LoadCompressedObjectPic(sHallOfFame_ConfettiSpriteSheet);
-        LoadCompressedObjectPalette(sHallOfFame_ConfettiSpritePalette);
+        LoadCompressedSpriteSheet(sHallOfFame_ConfettiSpriteSheet);
+        LoadCompressedSpritePalette(sHallOfFame_ConfettiSpritePalette);
         data[0]++;
         break;
     case 1:

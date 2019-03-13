@@ -1,7 +1,7 @@
 #include "global.h"
 #include "sprite.h"
 #include "window.h"
-#include "malloc.h"
+#include "alloc.h"
 #include "constants/species.h"
 #include "palette.h"
 #include "decompress.h"
@@ -109,26 +109,26 @@ static void LoadPicPaletteByTagOrSlot(u16 species, u32 otId, u32 personality, u8
     {
         if (paletteTag == 0xFFFF)
         {
-            sCreatingSpriteTemplate.paletteTag |= 0xFFFF;
+            sCreatingSpriteTemplate.paletteTag = 0xFFFF;
             LoadCompressedPalette(GetFrontSpritePalFromSpeciesAndPersonality(species, otId, personality), 0x100 + paletteSlot * 0x10, 0x20);
         }
         else
         {
             sCreatingSpriteTemplate.paletteTag = paletteTag;
-            LoadCompressedObjectPalette(GetMonSpritePalStructFromOtIdPersonality(species, otId, personality));
+            LoadCompressedSpritePalette(GetMonSpritePalStructFromOtIdPersonality(species, otId, personality));
         }
     }
     else
     {
         if (paletteTag == 0xFFFF)
         {
-            sCreatingSpriteTemplate.paletteTag |= 0xFFFF;
+            sCreatingSpriteTemplate.paletteTag = 0xFFFF;
             LoadCompressedPalette(gTrainerFrontPicPaletteTable[species].data, 0x100 + paletteSlot * 0x10, 0x20);
         }
         else
         {
             sCreatingSpriteTemplate.paletteTag = paletteTag;
-            LoadCompressedObjectPalette(&gTrainerFrontPicPaletteTable[species]);
+            LoadCompressedSpritePalette(&gTrainerFrontPicPaletteTable[species]);
         }
     }
 }
@@ -404,9 +404,9 @@ u16 PlayerGenderToFrontTrainerPicId_Debug(u8 gender, bool8 getClass)
         switch (gender)
         {
         default:
-            return gFacilityClassToPicIndex[FACILITY_CLASS_PKMN_TRAINER_MAY];
+            return gFacilityClassToPicIndex[FACILITY_CLASS_MAY];
         case MALE:
-            return gFacilityClassToPicIndex[FACILITY_CLASS_PKMN_TRAINER_BRENDAN];
+            return gFacilityClassToPicIndex[FACILITY_CLASS_BRENDAN];
         }
     }
     return gender;

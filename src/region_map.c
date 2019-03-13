@@ -2,7 +2,7 @@
 #include "main.h"
 #include "text.h"
 #include "menu.h"
-#include "malloc.h"
+#include "alloc.h"
 #include "gpu_regs.h"
 #include "palette.h"
 #include "party_menu.h"
@@ -11,7 +11,6 @@
 #include "overworld.h"
 #include "constants/flags.h"
 #include "event_data.h"
-#include "rom6.h"
 #include "secret_base.h"
 #include "string_util.h"
 #include "international_string_util.h"
@@ -20,10 +19,13 @@
 #include "constants/songs.h"
 #include "m4a.h"
 #include "field_effect.h"
+#include "field_specials.h"
+#include "fldeff.h"
 #include "region_map.h"
 #include "constants/region_map_sections.h"
 #include "heal_location.h"
 #include "constants/heal_locations.h"
+#include "constants/map_types.h"
 
 #define MAP_WIDTH 28
 #define MAP_HEIGHT 15
@@ -33,15 +35,6 @@
 #define MAPCURSOR_Y_MAX (MAPCURSOR_Y_MIN + MAP_HEIGHT - 1)
 
 // Static type declarations
-
-struct RegionMapLocation
-{
-    u8 x;
-    u8 y;
-    u8 width;
-    u8 height;
-    const u8 *name;
-};
 
 // Static RAM declarations
 
@@ -99,11 +92,11 @@ static void sub_8124E0C(void);
 // .rodata
 
 static const u16 sRegionMapCursorPal[] = INCBIN_U16("graphics/pokenav/cursor.gbapal");
-static const u8 sRegionMapCursorSmallGfxLZ[] = INCBIN_U8("graphics/pokenav/cursor_small.4bpp.lz");
-static const u8 sRegionMapCursorLargeGfxLZ[] = INCBIN_U8("graphics/pokenav/cursor_large.4bpp.lz");
+static const u32 sRegionMapCursorSmallGfxLZ[] = INCBIN_U32("graphics/pokenav/cursor_small.4bpp.lz");
+static const u32 sRegionMapCursorLargeGfxLZ[] = INCBIN_U32("graphics/pokenav/cursor_large.4bpp.lz");
 static const u16 sRegionMapBkgnd_Pal[] = INCBIN_U16("graphics/pokenav/region_map.gbapal");
-static const u8 sRegionMapBkgnd_GfxLZ[] = INCBIN_U8("graphics/pokenav/region_map.8bpp.lz");
-static const u8 sRegionMapBkgnd_TilemapLZ[] = INCBIN_U8("graphics/pokenav/region_map_map.bin.lz");
+static const u32 sRegionMapBkgnd_GfxLZ[] = INCBIN_U32("graphics/pokenav/region_map.8bpp.lz");
+static const u32 sRegionMapBkgnd_TilemapLZ[] = INCBIN_U32("graphics/pokenav/region_map_map.bin.lz");
 static const u16 sRegionMapPlayerIcon_BrendanPal[] = INCBIN_U16("graphics/pokenav/brendan_icon.gbapal");
 static const u8 sRegionMapPlayerIcon_BrendanGfx[] = INCBIN_U8("graphics/pokenav/brendan_icon.4bpp");
 static const u16 sRegionMapPlayerIcon_MayPal[] = INCBIN_U16("graphics/pokenav/may_icon.gbapal");
@@ -236,13 +229,13 @@ static const u8 sRegionMapEventSectionIds[] = {
 
 static const u16 sRegionMapFramePal[] = INCBIN_U16("graphics/pokenav/map_frame.gbapal");
 
-static const u8 sRegionMapFrameGfxLZ[] = INCBIN_U8("graphics/pokenav/map_frame.4bpp.lz");
+static const u32 sRegionMapFrameGfxLZ[] = INCBIN_U32("graphics/pokenav/map_frame.4bpp.lz");
 
-static const u8 sRegionMapFrameTilemapLZ[] = INCBIN_U8("graphics/pokenav/map_frame.bin.lz");
+static const u32 sRegionMapFrameTilemapLZ[] = INCBIN_U32("graphics/pokenav/map_frame.bin.lz");
 
 static const u16 Unknown_085A1D48[] = INCBIN_U16("graphics/pokenav/fly_target_icons.gbapal");
 
-static const u8 sUnknown_085A1D68[] = INCBIN_U8("graphics/pokenav/fly_target_icons.4bpp.lz");
+static const u32 sUnknown_085A1D68[] = INCBIN_U32("graphics/pokenav/fly_target_icons.4bpp.lz");
 
 static const u8 sMapHealLocations[][3] = {
     {MAP_GROUP(LITTLEROOT_TOWN), MAP_NUM(LITTLEROOT_TOWN), HEAL_LOCATION_LITTLEROOT_TOWN_BRENDANS_HOUSE_2F},
@@ -435,82 +428,82 @@ bool8 sub_8122DB0(void)
 {
     switch (gRegionMap->initStep)
     {
-        case 0:
-            if (gRegionMap->bgManaged)
-            {
-                decompress_and_copy_tile_data_to_vram(gRegionMap->bgNum, sRegionMapBkgnd_GfxLZ, 0, 0, 0);
-            }
-            else
-            {
-                LZ77UnCompVram(sRegionMapBkgnd_GfxLZ, (u16 *)BG_CHAR_ADDR(2));
-            }
-            break;
-        case 1:
-            if (gRegionMap->bgManaged)
-            {
-                if (!free_temp_tile_data_buffers_if_possible())
-                {
-                    decompress_and_copy_tile_data_to_vram(gRegionMap->bgNum, sRegionMapBkgnd_TilemapLZ, 0, 0, 1);
-                }
-            }
-            else
-            {
-                LZ77UnCompVram(sRegionMapBkgnd_TilemapLZ, (u16 *)BG_SCREEN_ADDR(28));
-            }
-            break;
-        case 2:
+    case 0:
+        if (gRegionMap->bgManaged)
+        {
+            decompress_and_copy_tile_data_to_vram(gRegionMap->bgNum, sRegionMapBkgnd_GfxLZ, 0, 0, 0);
+        }
+        else
+        {
+            LZ77UnCompVram(sRegionMapBkgnd_GfxLZ, (u16 *)BG_CHAR_ADDR(2));
+        }
+        break;
+    case 1:
+        if (gRegionMap->bgManaged)
+        {
             if (!free_temp_tile_data_buffers_if_possible())
             {
-                LoadPalette(sRegionMapBkgnd_Pal, 0x70, 0x60);
+                decompress_and_copy_tile_data_to_vram(gRegionMap->bgNum, sRegionMapBkgnd_TilemapLZ, 0, 0, 1);
             }
-            break;
-        case 3:
-            LZ77UnCompWram(sRegionMapCursorSmallGfxLZ, gRegionMap->cursorSmallImage);
-            break;
-        case 4:
-            LZ77UnCompWram(sRegionMapCursorLargeGfxLZ, gRegionMap->cursorLargeImage);
-            break;
-        case 5:
-            RegionMap_InitializeStateBasedOnPlayerLocation();
-            gRegionMap->playerIconSpritePosX = gRegionMap->cursorPosX;
-            gRegionMap->playerIconSpritePosY = gRegionMap->cursorPosY;
-            gRegionMap->mapSecId = CorrectSpecialMapSecId_Internal(gRegionMap->mapSecId);
-            gRegionMap->iconDrawType = get_flagnr_blue_points(gRegionMap->mapSecId);
-            GetMapName(gRegionMap->mapSecName, gRegionMap->mapSecId, 16);
-            break;
-        case 6:
-            if (gRegionMap->zoomed == FALSE)
-            {
-                CalcZoomScrollParams(0, 0, 0, 0, 0x100, 0x100, 0);
-            }
-            else
-            {
-                gRegionMap->scrollX = gRegionMap->cursorPosX * 8 - 0x34;
-                gRegionMap->scrollY = gRegionMap->cursorPosY * 8 - 0x44;
-                gRegionMap->zoomedCursorPosX = gRegionMap->cursorPosX;
-                gRegionMap->zoomedCursorPosY = gRegionMap->cursorPosY;
-                CalcZoomScrollParams(gRegionMap->scrollX, gRegionMap->scrollY, 0x38, 0x48, 0x80, 0x80, 0);
-            }
-            break;
-        case 7:
-            RegionMap_GetPositionOfCursorWithinMapSection();
-            UpdateRegionMapVideoRegs();
-            gRegionMap->cursorSprite = NULL;
-            gRegionMap->playerIconSprite = NULL;
-            gRegionMap->cursorMovementFrameCounter = 0;
-            gRegionMap->blinkPlayerIcon = FALSE;
-            if (gRegionMap->bgManaged)
-            {
-                SetBgAttribute(gRegionMap->bgNum, BG_CTRL_ATTR_MAPBASEINDEX, 2);
-                SetBgAttribute(gRegionMap->bgNum, BG_CTRL_ATTR_VISIBLE, gRegionMap->charBaseIdx);
-                SetBgAttribute(gRegionMap->bgNum, BG_CTRL_ATTR_CHARBASEINDEX, gRegionMap->mapBaseIdx);
-                SetBgAttribute(gRegionMap->bgNum, BG_CTRL_ATTR_PRIORITY, 1);
-                SetBgAttribute(gRegionMap->bgNum, BG_CTRL_ATTR_SCREENSIZE, 1);
-            }
-            gRegionMap->initStep++;
-            return FALSE;
-        default:
-            return FALSE;
+        }
+        else
+        {
+            LZ77UnCompVram(sRegionMapBkgnd_TilemapLZ, (u16 *)BG_SCREEN_ADDR(28));
+        }
+        break;
+    case 2:
+        if (!free_temp_tile_data_buffers_if_possible())
+        {
+            LoadPalette(sRegionMapBkgnd_Pal, 0x70, 0x60);
+        }
+        break;
+    case 3:
+        LZ77UnCompWram(sRegionMapCursorSmallGfxLZ, gRegionMap->cursorSmallImage);
+        break;
+    case 4:
+        LZ77UnCompWram(sRegionMapCursorLargeGfxLZ, gRegionMap->cursorLargeImage);
+        break;
+    case 5:
+        RegionMap_InitializeStateBasedOnPlayerLocation();
+        gRegionMap->playerIconSpritePosX = gRegionMap->cursorPosX;
+        gRegionMap->playerIconSpritePosY = gRegionMap->cursorPosY;
+        gRegionMap->mapSecId = CorrectSpecialMapSecId_Internal(gRegionMap->mapSecId);
+        gRegionMap->iconDrawType = get_flagnr_blue_points(gRegionMap->mapSecId);
+        GetMapName(gRegionMap->mapSecName, gRegionMap->mapSecId, 16);
+        break;
+    case 6:
+        if (gRegionMap->zoomed == FALSE)
+        {
+            CalcZoomScrollParams(0, 0, 0, 0, 0x100, 0x100, 0);
+        }
+        else
+        {
+            gRegionMap->scrollX = gRegionMap->cursorPosX * 8 - 0x34;
+            gRegionMap->scrollY = gRegionMap->cursorPosY * 8 - 0x44;
+            gRegionMap->zoomedCursorPosX = gRegionMap->cursorPosX;
+            gRegionMap->zoomedCursorPosY = gRegionMap->cursorPosY;
+            CalcZoomScrollParams(gRegionMap->scrollX, gRegionMap->scrollY, 0x38, 0x48, 0x80, 0x80, 0);
+        }
+        break;
+    case 7:
+        RegionMap_GetPositionOfCursorWithinMapSection();
+        UpdateRegionMapVideoRegs();
+        gRegionMap->cursorSprite = NULL;
+        gRegionMap->playerIconSprite = NULL;
+        gRegionMap->cursorMovementFrameCounter = 0;
+        gRegionMap->blinkPlayerIcon = FALSE;
+        if (gRegionMap->bgManaged)
+        {
+            SetBgAttribute(gRegionMap->bgNum, BG_ATTR_SCREENSIZE, 2);
+            SetBgAttribute(gRegionMap->bgNum, BG_ATTR_CHARBASEINDEX, gRegionMap->charBaseIdx);
+            SetBgAttribute(gRegionMap->bgNum, BG_ATTR_MAPBASEINDEX, gRegionMap->mapBaseIdx);
+            SetBgAttribute(gRegionMap->bgNum, BG_ATTR_WRAPAROUND, 1);
+            SetBgAttribute(gRegionMap->bgNum, BG_ATTR_PALETTEMODE, 1);
+        }
+        gRegionMap->initStep++;
+        return FALSE;
+    default:
+        return FALSE;
     }
     gRegionMap->initStep++;
     return TRUE;
@@ -872,7 +865,7 @@ static void RegionMap_InitializeStateBasedOnPlayerLocation(void)
     u16 y;
     u16 dimensionScale;
     u16 xOnMap;
-    struct WarpData *storedWarp;
+    struct WarpData *warp;
 
     if (gSaveBlock1Ptr->location.mapGroup == MAP_GROUP(SS_TIDAL_CORRIDOR)
         && (gSaveBlock1Ptr->location.mapNum == MAP_NUM(SS_TIDAL_CORRIDOR)
@@ -886,11 +879,11 @@ static void RegionMap_InitializeStateBasedOnPlayerLocation(void)
     switch (GetMapTypeByGroupAndId(gSaveBlock1Ptr->location.mapGroup, gSaveBlock1Ptr->location.mapNum))
     {
         default:
-        case 1:
-        case 2:
-        case 3:
-        case 5:
-        case 6:
+        case MAP_TYPE_TOWN:
+        case MAP_TYPE_CITY:
+        case MAP_TYPE_ROUTE:
+        case MAP_TYPE_UNDERWATER:
+        case MAP_TYPE_OCEAN_ROUTE:
             gRegionMap->mapSecId = gMapHeader.regionMapSectionId;
             gRegionMap->playerIsInCave = FALSE;
             mapWidth = gMapHeader.mapLayout->width;
@@ -902,17 +895,17 @@ static void RegionMap_InitializeStateBasedOnPlayerLocation(void)
                 gRegionMap->playerIsInCave = TRUE;
             }
             break;
-        case 4:
-        case 7:
+        case MAP_TYPE_UNDERGROUND:
+        case MAP_TYPE_UNUSED_2:
             if (gMapHeader.flags & 0x02)
             {
-                mapHeader = Overworld_GetMapHeaderByGroupAndId(gSaveBlock1Ptr->warp4.mapGroup, gSaveBlock1Ptr->warp4.mapNum);
+                mapHeader = Overworld_GetMapHeaderByGroupAndId(gSaveBlock1Ptr->escapeWarp.mapGroup, gSaveBlock1Ptr->escapeWarp.mapNum);
                 gRegionMap->mapSecId = mapHeader->regionMapSectionId;
                 gRegionMap->playerIsInCave = TRUE;
                 mapWidth = mapHeader->mapLayout->width;
                 mapHeight = mapHeader->mapLayout->height;
-                x = gSaveBlock1Ptr->warp4.x;
-                y = gSaveBlock1Ptr->warp4.y;
+                x = gSaveBlock1Ptr->escapeWarp.x;
+                y = gSaveBlock1Ptr->escapeWarp.y;
             }
             else
             {
@@ -924,27 +917,26 @@ static void RegionMap_InitializeStateBasedOnPlayerLocation(void)
                 y = 1;
             }
             break;
-        case 9:
-            mapHeader = Overworld_GetMapHeaderByGroupAndId((u16)gSaveBlock1Ptr->warp2.mapGroup, (u16)gSaveBlock1Ptr->warp2.mapNum);
+        case MAP_TYPE_SECRET_BASE:
+            mapHeader = Overworld_GetMapHeaderByGroupAndId((u16)gSaveBlock1Ptr->dynamicWarp.mapGroup, (u16)gSaveBlock1Ptr->dynamicWarp.mapNum);
             gRegionMap->mapSecId = mapHeader->regionMapSectionId;
             gRegionMap->playerIsInCave = TRUE;
             mapWidth = mapHeader->mapLayout->width;
             mapHeight = mapHeader->mapLayout->height;
-            x = gSaveBlock1Ptr->warp2.x;
-            y = gSaveBlock1Ptr->warp2.y;
+            x = gSaveBlock1Ptr->dynamicWarp.x;
+            y = gSaveBlock1Ptr->dynamicWarp.y;
             break;
-        case 8:
-
+        case MAP_TYPE_INDOOR:
             gRegionMap->mapSecId = gMapHeader.regionMapSectionId;
             if (gRegionMap->mapSecId != MAPSEC_DYNAMIC)
             {
-                storedWarp = &gSaveBlock1Ptr->warp4;
-                mapHeader = Overworld_GetMapHeaderByGroupAndId(storedWarp->mapGroup, storedWarp->mapNum);
+                warp = &gSaveBlock1Ptr->escapeWarp;
+                mapHeader = Overworld_GetMapHeaderByGroupAndId(warp->mapGroup, warp->mapNum);
             }
             else
             {
-                storedWarp = &gSaveBlock1Ptr->warp2;
-                mapHeader = Overworld_GetMapHeaderByGroupAndId(storedWarp->mapGroup, storedWarp->mapNum);
+                warp = &gSaveBlock1Ptr->dynamicWarp;
+                mapHeader = Overworld_GetMapHeaderByGroupAndId(warp->mapGroup, warp->mapNum);
                 gRegionMap->mapSecId = mapHeader->regionMapSectionId;
             }
             if (RegionMap_IsPlayerInCave(gRegionMap->mapSecId))
@@ -957,8 +949,8 @@ static void RegionMap_InitializeStateBasedOnPlayerLocation(void)
             }
             mapWidth = mapHeader->mapLayout->width;
             mapHeight = mapHeader->mapLayout->height;
-            x = storedWarp->x;
-            y = storedWarp->y;
+            x = warp->x;
+            y = warp->y;
             break;
     }
 
@@ -1167,7 +1159,7 @@ static u16 RegionMap_GetTerraCaveMapSecId(void)
 {
     s16 idx;
 
-    idx = VarGet(VAR_0x4037) - 1;
+    idx = VarGet(VAR_UNUSUAL_WEATHER_LOCATION) - 1;
     if (idx < 0 || idx > 15)
     {
         idx = 0;
@@ -1179,7 +1171,7 @@ static void RegionMap_GetMarineCaveCoords(u16 *x, u16 *y)
 {
     u16 idx;
 
-    idx = VarGet(VAR_0x4037);
+    idx = VarGet(VAR_UNUSUAL_WEATHER_LOCATION);
     if (idx < 9 || idx > 16)
     {
         idx = 9;
@@ -1630,7 +1622,7 @@ void MCB2_FlyMap(void)
         case 7:
             LoadPalette(sRegionMapFramePal, 0x10, 0x20);
             PutWindowTilemap(2);
-            FillWindowPixelBuffer(2, 0x00);
+            FillWindowPixelBuffer(2, PIXEL_FILL(0));
             AddTextPrinterParameterized(2, 1, gText_FlyToWhere, 0, 1, 0, NULL);
             schedule_bg_copy_tilemap_to_vram(0);
             gMain.state++;
@@ -1695,8 +1687,8 @@ static void sub_8124904(void)
                 {
                     StringLength(gUnknown_085A1EDC[i].name[sFlyMap->regionMap.posWithinMapSec]);
                     flag = TRUE;
-                    sub_8198070(0, FALSE);
-                    SetWindowBorderStyle(1, FALSE, 0x65, 0x0d);
+                    ClearStdWindowAndFrameToTransparent(0, FALSE);
+                    DrawStdFrameWithCustomTileAndPalette(1, FALSE, 0x65, 0x0d);
                     AddTextPrinterParameterized(1, 1, sFlyMap->regionMap.mapSecName, 0, 1, 0, NULL);
                     name = gUnknown_085A1EDC[i].name[sFlyMap->regionMap.posWithinMapSec];
                     AddTextPrinterParameterized(1, 1, name, GetStringRightAlignXOffset(1, name, 0x60), 0x11, 0, NULL);
@@ -1710,12 +1702,12 @@ static void sub_8124904(void)
         {
             if (gUnknown_03001180 == TRUE)
             {
-                sub_8198070(1, FALSE);
-                SetWindowBorderStyle(0, FALSE, 0x65, 0x0d);
+                ClearStdWindowAndFrameToTransparent(1, FALSE);
+                DrawStdFrameWithCustomTileAndPalette(0, FALSE, 0x65, 0x0d);
             }
             else
             {
-                FillWindowPixelBuffer(0, 0x11);
+                FillWindowPixelBuffer(0, PIXEL_FILL(1));
             }
             AddTextPrinterParameterized(0, 1, sFlyMap->regionMap.mapSecName, 0, 1, 0, NULL);
             schedule_bg_copy_tilemap_to_vram(0);
@@ -1726,10 +1718,10 @@ static void sub_8124904(void)
     {
         if (gUnknown_03001180 == TRUE)
         {
-            sub_8198070(1, FALSE);
-            SetWindowBorderStyle(0, FALSE, 0x65, 0x0d);
+            ClearStdWindowAndFrameToTransparent(1, FALSE);
+            DrawStdFrameWithCustomTileAndPalette(0, FALSE, 0x65, 0x0d);
         }
-        FillWindowPixelBuffer(0, 0x11);
+        FillWindowPixelBuffer(0, PIXEL_FILL(1));
         CopyWindowToVram(0, 2);
         schedule_bg_copy_tilemap_to_vram(0);
         gUnknown_03001180 = FALSE;
@@ -1910,25 +1902,25 @@ static void sub_8124E0C(void)
                     switch (sFlyMap->regionMap.mapSecId)
                     {
                         case MAPSEC_SOUTHERN_ISLAND:
-                            sub_8084CCC(HEAL_LOCATION_SOUTHERN_ISLAND_EXTERIOR);
+                            SetWarpDestinationToHealLocation(HEAL_LOCATION_SOUTHERN_ISLAND_EXTERIOR);
                             break;
                         case MAPSEC_BATTLE_FRONTIER:
-                            sub_8084CCC(HEAL_LOCATION_BATTLE_FRONTIER_OUTSIDE_EAST);
+                            SetWarpDestinationToHealLocation(HEAL_LOCATION_BATTLE_FRONTIER_OUTSIDE_EAST);
                             break;
                         case MAPSEC_LITTLEROOT_TOWN:
-                            sub_8084CCC(gSaveBlock2Ptr->playerGender == MALE ? HEAL_LOCATION_LITTLEROOT_TOWN_1 : HEAL_LOCATION_LITTLEROOT_TOWN_2);
+                            SetWarpDestinationToHealLocation(gSaveBlock2Ptr->playerGender == MALE ? HEAL_LOCATION_LITTLEROOT_TOWN_1 : HEAL_LOCATION_LITTLEROOT_TOWN_2);
                             break;
                         case MAPSEC_EVER_GRANDE_CITY:
-                            sub_8084CCC(FlagGet(FLAG_LANDMARK_POKEMON_LEAGUE) && sFlyMap->regionMap.posWithinMapSec == 0 ? HEAL_LOCATION_EVER_GRANDE_CITY_2 : HEAL_LOCATION_EVER_GRANDE_CITY_1);
+                            SetWarpDestinationToHealLocation(FlagGet(FLAG_LANDMARK_POKEMON_LEAGUE) && sFlyMap->regionMap.posWithinMapSec == 0 ? HEAL_LOCATION_EVER_GRANDE_CITY_2 : HEAL_LOCATION_EVER_GRANDE_CITY_1);
                             break;
                         default:
                             if (sMapHealLocations[sFlyMap->regionMap.mapSecId][2] != 0)
                             {
-                                sub_8084CCC(sMapHealLocations[sFlyMap->regionMap.mapSecId][2]);
+                                SetWarpDestinationToHealLocation(sMapHealLocations[sFlyMap->regionMap.mapSecId][2]);
                             }
                             else
                             {
-                                warp1_set_2(sMapHealLocations[sFlyMap->regionMap.mapSecId][0], sMapHealLocations[sFlyMap->regionMap.mapSecId][1], -1);
+                                SetWarpDestinationToMapWarp(sMapHealLocations[sFlyMap->regionMap.mapSecId][0], sMapHealLocations[sFlyMap->regionMap.mapSecId][1], -1);
                             }
                             break;
                     }

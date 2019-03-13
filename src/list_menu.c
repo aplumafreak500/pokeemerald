@@ -8,7 +8,7 @@
 #include "trig.h"
 #include "decompress.h"
 #include "palette.h"
-#include "malloc.h"
+#include "alloc.h"
 #include "strings.h"
 #include "sound.h"
 #include "constants/songs.h"
@@ -302,9 +302,9 @@ static const struct SpriteTemplate sSpriteTemplate_RedArrowCursor =
 };
 
 static const u16 sRedArrowPal[] = INCBIN_U16("graphics/interface/red_arrow.gbapal");
-static const u8 sRedArrowOtherGfx[] = INCBIN_U8("graphics/interface/red_arrow_other.4bpp.lz");
-static const u8 sSelectorOutlineGfx[] = INCBIN_U8("graphics/interface/selector_outline.4bpp.lz");
-static const u8 sRedArrowGfx[] = INCBIN_U8("graphics/interface/red_arrow.4bpp.lz");
+static const u32 sRedArrowOtherGfx[] = INCBIN_U32("graphics/interface/red_arrow_other.4bpp.lz");
+static const u32 sSelectorOutlineGfx[] = INCBIN_U32("graphics/interface/selector_outline.4bpp.lz");
+static const u32 sRedArrowGfx[] = INCBIN_U32("graphics/interface/red_arrow.4bpp.lz");
 
 // code
 static void ListMenuDummyTask(u8 taskId)
@@ -334,7 +334,7 @@ s32 DoMysteryGiftListMenu(struct WindowTemplate *windowTemplate, struct ListMenu
         sMysteryGiftLinkMenu.state = 1;
         break;
     case 1:
-        sMysteryGiftLinkMenu.currItemId = ListMenuHandleInputGetItemId(sMysteryGiftLinkMenu.listTaskId);
+        sMysteryGiftLinkMenu.currItemId = ListMenu_ProcessInput(sMysteryGiftLinkMenu.listTaskId);
         if (gMain.newKeys & A_BUTTON)
         {
             sMysteryGiftLinkMenu.state = 2;
@@ -355,11 +355,11 @@ s32 DoMysteryGiftListMenu(struct WindowTemplate *windowTemplate, struct ListMenu
                 switch (arg2)
                 {
                 case 0: // can never be reached, because of the if statement above
-                    sub_819746C(sMysteryGiftLinkMenu.windowId, FALSE);
+                    ClearStdWindowAndFrame(sMysteryGiftLinkMenu.windowId, FALSE);
                     break;
                 case 2:
                 case 1:
-                    sub_819746C(sMysteryGiftLinkMenu.windowId, FALSE);
+                    ClearStdWindowAndFrame(sMysteryGiftLinkMenu.windowId, FALSE);
                     break;
                 }
             }
@@ -406,7 +406,7 @@ u8 ListMenuInitInRect(struct ListMenuTemplate *listMenuTemplate, struct ListMenu
     return taskId;
 }
 
-s32 ListMenuHandleInputGetItemId(u8 listTaskId)
+s32 ListMenu_ProcessInput(u8 listTaskId)
 {
     struct ListMenu *list = (void*) gTasks[listTaskId].data;
 
@@ -486,7 +486,7 @@ void RedrawListMenu(u8 listTaskId)
 {
     struct ListMenu *list = (void*) gTasks[listTaskId].data;
 
-    FillWindowPixelBuffer(list->template.windowId, (list->template.fillValue << 4) | (list->template.fillValue));
+    FillWindowPixelBuffer(list->template.windowId, PIXEL_FILL(list->template.fillValue));
     ListMenuPrintEntries(list, list->scrollOffset, 0, list->template.maxShowed);
     ListMenuDrawCursor(list);
     CopyWindowToVram(list->template.windowId, 2);
@@ -584,7 +584,7 @@ static u8 ListMenuInitInternal(struct ListMenuTemplate *listMenuTemplate, u16 sc
     if (list->template.totalItems < list->template.maxShowed)
         list->template.maxShowed = list->template.totalItems;
 
-    FillWindowPixelBuffer(list->template.windowId, (list->template.fillValue << 4) | (list->template.fillValue));
+    FillWindowPixelBuffer(list->template.windowId, PIXEL_FILL(list->template.fillValue));
     ListMenuPrintEntries(list, list->scrollOffset, 0, list->template.maxShowed);
     ListMenuDrawCursor(list);
     ListMenuCallSelectionChangedCallback(list, TRUE);
@@ -698,7 +698,7 @@ static void ListMenuErasePrintedCursor(struct ListMenu *list, u16 selectedRow)
         u8 width  = GetMenuCursorDimensionByFont(list->template.fontId, 0);
         u8 height = GetMenuCursorDimensionByFont(list->template.fontId, 1);
         FillWindowPixelRect(list->template.windowId,
-                            (list->template.fillValue << 4) | (list->template.fillValue),
+                            PIXEL_FILL(list->template.fillValue),
                             list->template.cursor_X,
                             selectedRow * yMultiplier + list->template.upText_Y,
                             width,
@@ -795,7 +795,7 @@ static void ListMenuScroll(struct ListMenu *list, u8 count, bool8 movingDown)
 {
     if (count >= list->template.maxShowed)
     {
-        FillWindowPixelBuffer(list->template.windowId, (list->template.fillValue << 4) | (list->template.fillValue));
+        FillWindowPixelBuffer(list->template.windowId, PIXEL_FILL(list->template.fillValue));
         ListMenuPrintEntries(list, list->scrollOffset, 0, list->template.maxShowed);
     }
     else
@@ -806,26 +806,26 @@ static void ListMenuScroll(struct ListMenu *list, u8 count, bool8 movingDown)
         {
             u16 y, width, height;
 
-            ScrollWindow(list->template.windowId, 1, count * yMultiplier, (list->template.fillValue << 4) | (list->template.fillValue));
+            ScrollWindow(list->template.windowId, 1, count * yMultiplier, PIXEL_FILL(list->template.fillValue));
             ListMenuPrintEntries(list, list->scrollOffset, 0, count);
 
             y = (list->template.maxShowed * yMultiplier) + list->template.upText_Y;
             width = GetWindowAttribute(list->template.windowId, WINDOW_WIDTH) * 8;
             height = (GetWindowAttribute(list->template.windowId, WINDOW_HEIGHT) * 8) - y;
             FillWindowPixelRect(list->template.windowId,
-                                (list->template.fillValue << 4) | (list->template.fillValue),
+                                PIXEL_FILL(list->template.fillValue),
                                 0, y, width, height);
         }
         else
         {
             u16 width;
 
-            ScrollWindow(list->template.windowId, 0, count * yMultiplier, (list->template.fillValue << 4) | (list->template.fillValue));
+            ScrollWindow(list->template.windowId, 0, count * yMultiplier, PIXEL_FILL(list->template.fillValue));
             ListMenuPrintEntries(list, list->scrollOffset + (list->template.maxShowed - count), list->template.maxShowed - count, count);
 
             width = GetWindowAttribute(list->template.windowId, WINDOW_WIDTH) * 8;
             FillWindowPixelRect(list->template.windowId,
-                                (list->template.fillValue << 4) | (list->template.fillValue),
+                                PIXEL_FILL(list->template.fillValue),
                                 0, 0, width, list->template.upText_Y);
         }
     }
@@ -953,52 +953,52 @@ void ListMenuSetUnkIndicatorsStructField(u8 taskId, u8 field, s32 value)
     case 0:
     case 1:
         data->field_4 = (void*)(value);
-		break;
+        break;
     case 2:
         data->field_C = value;
-		break;
+        break;
     case 3:
         data->field_E = value;
-		break;
+        break;
     case 4:
         data->field_10 = value;
-		break;
+        break;
     case 5:
         data->field_11 = value;
-		break;
+        break;
     case 6:
         data->field_12 = value;
-		break;
+        break;
     case 7:
         data->field_13 = value;
-		break;
+        break;
     case 8:
         data->field_14_0 = value;
-		break;
+        break;
     case 9:
         data->field_14_1 = value;
-		break;
+        break;
     case 10:
         data->field_15_0 = value;
-		break;
+        break;
     case 11:
         data->field_15_1 = value;
-		break;
+        break;
     case 12:
         data->field_16_0 = value;
-		break;
+        break;
     case 13:
         data->field_16_1 = value;
-		break;
+        break;
     case 14:
         data->field_16_2 = value;
-		break;
+        break;
     case 15:
         data->field_17_0 = value;
-		break;
+        break;
     case 16:
         data->field_17_1 = value;
-		break;
+        break;
     }
 }
 
@@ -1074,7 +1074,7 @@ u8 AddScrollIndicatorArrowPair(const struct ScrollArrowsTemplate *arrowInfo, u16
     spriteSheet.data = sRedArrowOtherGfx;
     spriteSheet.size = 0x100;
     spriteSheet.tag = arrowInfo->tileTag;
-    LoadCompressedObjectPic(&spriteSheet);
+    LoadCompressedSpriteSheet(&spriteSheet);
 
     if (arrowInfo->palTag == SPRITE_INVALID_TAG)
     {
@@ -1320,7 +1320,7 @@ static u8 ListMenuAddRedOutlineCursorObject(struct CursorStruct *cursor)
     spriteSheet.data = sSelectorOutlineGfx;
     spriteSheet.size = 0x100;
     spriteSheet.tag = cursor->tileTag;
-    LoadCompressedObjectPic(&spriteSheet);
+    LoadCompressedSpriteSheet(&spriteSheet);
 
     if (cursor->palTag == SPRITE_INVALID_TAG)
     {
@@ -1405,7 +1405,7 @@ static u8 ListMenuAddRedArrowCursorObject(struct CursorStruct *cursor)
     spriteSheet.data = sRedArrowGfx;
     spriteSheet.size = 0x80;
     spriteSheet.tag = cursor->tileTag;
-    LoadCompressedObjectPic(&spriteSheet);
+    LoadCompressedSpriteSheet(&spriteSheet);
 
     if (cursor->palTag == SPRITE_INVALID_TAG)
     {
