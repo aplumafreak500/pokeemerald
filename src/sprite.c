@@ -91,21 +91,21 @@ typedef void (*AnimFunc)(struct Sprite *);
 typedef void (*AnimCmdFunc)(struct Sprite *);
 typedef void (*AffineAnimCmdFunc)(u8 matrixNum, struct Sprite *);
 
-#define DUMMY_OAM_DATA        \
-{                             \
-    160, /* Y (off-screen) */ \
-    0,                        \
-    0,                        \
-    0,                        \
-    0,                        \
-    0,                        \
-    304, /* X */              \
-    0,                        \
-    0,                        \
-    0,                        \
-    3, /* lowest priority */  \
-    0,                        \
-    0                         \
+#define DUMMY_OAM_DATA                      \
+{                                           \
+    .y = 160,                               \
+    .affineMode = 0,                        \
+    .objMode = 0,                           \
+    .mosaic = 0,                            \
+    .bpp = 0,                               \
+    .shape = SPRITE_SHAPE(8x8),             \
+    .x = 304,                               \
+    .matrixNum = 0,                         \
+    .size = SPRITE_SIZE(8x8),               \
+    .tileNum = 0,                           \
+    .priority = 3, /* lowest priority */    \
+    .paletteNum = 0,                        \
+    .affineParam = 0                        \
 }
 
 #define ANIM_END        0xFFFF
@@ -285,10 +285,10 @@ static const struct OamDimensions sOamDimensions[3][4] =
 };
 
 // iwram bss
-IWRAM_DATA static u16 sSpriteTileRangeTags[MAX_SPRITES];
-IWRAM_DATA static u16 sSpriteTileRanges[MAX_SPRITES * 2];
-IWRAM_DATA static struct AffineAnimState sAffineAnimStates[OAM_MATRIX_COUNT];
-IWRAM_DATA static u16 sSpritePaletteTags[16];
+static u16 sSpriteTileRangeTags[MAX_SPRITES];
+static u16 sSpriteTileRanges[MAX_SPRITES * 2];
+static struct AffineAnimState sAffineAnimStates[OAM_MATRIX_COUNT];
+static u16 sSpritePaletteTags[16];
 
 // iwram common
 u32 gOamMatrixAllocBitmap;

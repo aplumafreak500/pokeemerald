@@ -1,6 +1,6 @@
 SealedChamber_OuterRoom_MapScripts:: @ 8239106
 	map_script MAP_SCRIPT_ON_RESUME, SealedChamber_OuterRoom_MapScript1_239116
-	map_script MAP_SCRIPT_ON_TRANSITION, SealedChamber_OuterRoom_MapScript1_239127
+	map_script MAP_SCRIPT_ON_TRANSITION, SealedChamber_OuterRoom_OnTransition
 	map_script MAP_SCRIPT_ON_LOAD, SealedChamber_OuterRoom_MapScript1_23912B
 	.byte 0
 
@@ -9,7 +9,7 @@ SealedChamber_OuterRoom_MapScript1_239116: @ 8239116
 	setescapewarp MAP_UNDERWATER_SEALED_CHAMBER, 255, 12, 44
 	end
 
-SealedChamber_OuterRoom_MapScript1_239127: @ 8239127
+SealedChamber_OuterRoom_OnTransition: @ 8239127
 	setflag FLAG_LANDMARK_SEALED_CHAMBER
 	end
 
@@ -18,12 +18,12 @@ SealedChamber_OuterRoom_MapScript1_23912B: @ 823912B
 	end
 
 SealedChamber_OuterRoom_EventScript_239135:: @ 8239135
-	setmetatile 9, 1, 553, 1
-	setmetatile 10, 1, 553, 1
-	setmetatile 11, 1, 553, 1
-	setmetatile 9, 2, 565, 1
-	setmetatile 10, 2, 565, 1
-	setmetatile 11, 2, 565, 1
+	setmetatile 9, 1, METATILE_Cave_EntranceCover, 1
+	setmetatile 10, 1, METATILE_Cave_EntranceCover, 1
+	setmetatile 11, 1, METATILE_Cave_EntranceCover, 1
+	setmetatile 9, 2, METATILE_Cave_SealedChamberBraille_Mid, 1
+	setmetatile 10, 2, METATILE_Cave_SealedChamberBraille_Mid, 1
+	setmetatile 11, 2, METATILE_Cave_SealedChamberBraille_Mid, 1
 	return
 
 SealedChamber_OuterRoom_EventScript_23916C:: @ 823916C

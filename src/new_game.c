@@ -37,16 +37,14 @@
 #include "contest.h"
 #include "item_menu.h"
 #include "pokemon_storage_system.h"
+#include "pokemon_jump.h"
 #include "decoration_inventory.h"
 #include "secret_base.h"
 #include "player_pc.h"
 #include "field_specials.h"
-
-
-extern void copy_strings_to_sav1(void);
-extern void sub_801AFD8(void);
-extern void ResetPokeJumpResults(void);
-extern void SetBerryPowder(u32* powder, u32 newValue);
+#include "berry_powder.h"
+#include "mevent.h"
+#include "union_room_chat.h"
 
 extern const u8 EventScript_ResetAllMapFlags[];
 
@@ -57,7 +55,7 @@ static void ResetMiniGamesResults(void);
 
 // EWRAM vars
 EWRAM_DATA bool8 gDifferentSaveFile = FALSE;
-EWRAM_DATA bool8 gUnknown_020322D5 = FALSE;
+EWRAM_DATA bool8 gEnableContestDebugging = FALSE;
 
 // const rom data
 static const struct ContestWinner sContestWinnerPicDummy =
@@ -171,7 +169,7 @@ void NewGameInitData(void)
     InitEventData();
     ClearTVShowData();
     ResetGabbyAndTy();
-    ResetSecretBases();
+    ClearSecretBases();
     ClearBerryTrees();
     SetMoney(&gSaveBlock1Ptr->money, 3000);
     SetCoins(0);
@@ -200,7 +198,7 @@ void NewGameInitData(void)
     ScriptContext2_RunNewScript(EventScript_ResetAllMapFlags);
     ResetMiniGamesResults();
     copy_strings_to_sav1();
-    SetLilycoveLady();
+    InitLilycoveLady();
     ResetAllApprenticeData();
     ClearRankingHallRecords();
     InitMatchCallCounters();

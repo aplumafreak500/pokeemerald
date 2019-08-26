@@ -1,12 +1,12 @@
 SlateportCity_MapScripts:: @ 81DCC61
-	map_script MAP_SCRIPT_ON_TRANSITION, SlateportCity_MapScript1_1DCC6C
+	map_script MAP_SCRIPT_ON_TRANSITION, SlateportCity_OnTransition
 	map_script MAP_SCRIPT_ON_FRAME_TABLE, SlateportCity_MapScript2_1DCD12
 	.byte 0
 
-SlateportCity_MapScript1_1DCC6C: @ 81DCC6C
+SlateportCity_OnTransition: @ 81DCC6C
 	setvar VAR_SLATEPORT_MUSEUM_1F_STATE, 0
 	call SlateportCity_EventScript_1DCC8D
-	compare VAR_SLATEPORT_STATE, 1
+	compare VAR_SLATEPORT_CITY_STATE, 1
 	call_if_eq SlateportCity_EventScript_1DCC99
 	compare VAR_SLATEPORT_OUTSIDE_MUSEUM_STATE, 1
 	call_if_eq SlateportCity_EventScript_1DCCE7
@@ -170,7 +170,7 @@ SlateportCity_EventScript_1DCE38:: @ 81DCE38
 SlateportCity_EventScript_1DCE42:: @ 81DCE42
 	lock
 	faceplayer
-	compare VAR_SLATEPORT_STATE, 1
+	compare VAR_SLATEPORT_CITY_STATE, 1
 	call_if_eq SlateportCity_EventScript_1DCE59
 	msgbox SlateportCity_Text_1DD81A, MSGBOX_DEFAULT
 	release
@@ -184,7 +184,7 @@ SlateportCity_EventScript_1DCE59:: @ 81DCE59
 SlateportCity_EventScript_1DCE63:: @ 81DCE63
 	lock
 	faceplayer
-	compare VAR_SLATEPORT_STATE, 1
+	compare VAR_SLATEPORT_CITY_STATE, 1
 	call_if_eq SlateportCity_EventScript_1DCE7A
 	msgbox SlateportCity_Text_1DD8A6, MSGBOX_DEFAULT
 	release
@@ -198,7 +198,7 @@ SlateportCity_EventScript_1DCE7A:: @ 81DCE7A
 SlateportCity_EventScript_1DCE84:: @ 81DCE84
 	lock
 	faceplayer
-	compare VAR_SLATEPORT_STATE, 1
+	compare VAR_SLATEPORT_CITY_STATE, 1
 	call_if_eq SlateportCity_EventScript_1DCEA4
 	goto_if_set FLAG_RECEIVED_SECRET_POWER, SlateportCity_EventScript_1DCEAE
 	msgbox SlateportCity_Text_1DD93D, MSGBOX_DEFAULT
@@ -218,7 +218,7 @@ SlateportCity_EventScript_1DCEAE:: @ 81DCEAE
 SlateportCity_EventScript_1DCEB8:: @ 81DCEB8
 	lock
 	faceplayer
-	compare VAR_SLATEPORT_STATE, 1
+	compare VAR_SLATEPORT_CITY_STATE, 1
 	call_if_eq SlateportCity_EventScript_1DCECF
 	msgbox SlateportCity_Text_1DDA34, MSGBOX_DEFAULT
 	release
@@ -230,7 +230,7 @@ SlateportCity_EventScript_1DCECF:: @ 81DCECF
 	end
 
 SlateportCity_EventScript_1DCED9:: @ 81DCED9
-	compare VAR_SLATEPORT_STATE, 1
+	compare VAR_SLATEPORT_CITY_STATE, 1
 	goto_if_eq SlateportCity_EventScript_1DCEED
 	msgbox SlateportCity_Text_1DDA9A, MSGBOX_NPC
 	end
@@ -242,7 +242,7 @@ SlateportCity_EventScript_1DCEED:: @ 81DCEED
 SlateportCity_EventScript_1DCEF6:: @ 81DCEF6
 	lock
 	faceplayer
-	compare VAR_SLATEPORT_STATE, 1
+	compare VAR_SLATEPORT_CITY_STATE, 1
 	call_if_eq SlateportCity_EventScript_1DCF0D
 	msgbox SlateportCity_Text_1DDB21, MSGBOX_DEFAULT
 	release
@@ -323,7 +323,7 @@ SlateportCity_EventScript_1DCFB2:: @ 81DCFB2
 SlateportCity_EventScript_1DCFBB:: @ 81DCFBB
 	lock
 	faceplayer
-	compare VAR_SLATEPORT_STATE, 1
+	compare VAR_SLATEPORT_CITY_STATE, 1
 	call_if_eq SlateportCity_EventScript_1DCFD2
 	msgbox SlateportCity_Text_1DE10E, MSGBOX_DEFAULT
 	release
@@ -491,17 +491,17 @@ SlateportCity_EventScript_1DD16A:: @ 81DD16A
 	faceplayer
 	message gUnknown_08272A21
 	waitmessage
-	pokemartdecoration SlateportCity_PokemartDecor_1DD184
+	pokemartdecoration SlateportCity_PokemartDecor_Dolls
 	msgbox gUnknown_08272A3F, MSGBOX_DEFAULT
 	release
 	end
 
 	.align 2
-SlateportCity_PokemartDecor_1DD184: @ 81DD184
-	.2byte 95
-	.2byte 78
-	.2byte 96
-	.2byte 0
+SlateportCity_PokemartDecor_Dolls: @ 81DD184
+	.2byte DECOR_AZURILL_DOLL
+	.2byte DECOR_MARILL_DOLL
+	.2byte DECOR_SKITTY_DOLL
+	.2byte DECOR_NONE
 	release
 	end
 
@@ -522,21 +522,21 @@ SlateportCity_EventScript_1DD198:: @ 81DD198
 	end
 
 SlateportCity_PokemartDecor_1DD1B8: @ 81DD1B8
-	.2byte 25
-	.2byte 27
-	.2byte 26
-	.2byte 28
-	.2byte 29
-	.2byte 30
-	.2byte 51
-	.2byte 52
-	.2byte 53
-	.2byte 54
-	.2byte 55
-	.2byte 56
-	.2byte 57
-	.2byte 58
-	.2byte 0
+	.2byte DECOR_RED_BRICK
+	.2byte DECOR_BLUE_BRICK
+	.2byte DECOR_YELLOW_BRICK
+	.2byte DECOR_RED_BALLOON
+	.2byte DECOR_BLUE_BALLOON
+	.2byte DECOR_YELLOW_BALLOON
+	.2byte DECOR_C_LOW_NOTE_MAT
+	.2byte DECOR_D_NOTE_MAT
+	.2byte DECOR_E_NOTE_MAT
+	.2byte DECOR_F_NOTE_MAT
+	.2byte DECOR_G_NOTE_MAT
+	.2byte DECOR_A_NOTE_MAT
+	.2byte DECOR_B_NOTE_MAT
+	.2byte DECOR_C_HIGH_NOTE_MAT
+	.2byte DECOR_NONE
 	release
 	end
 
@@ -609,7 +609,7 @@ SlateportCity_EventScript_1DD1F8:: @ 81DD1F8
 	clearflag FLAG_HIDE_SLATEPORT_CITY_HARBOR_SUBMARINE_SHADOW
 	clearflag FLAG_HIDE_SLATEPORT_CITY_HARBOR_AQUA_GRUNT
 	clearflag FLAG_HIDE_SLATEPORT_CITY_HARBOR_ARCHIE
-	setvar VAR_SLATEPORT_STATE, 2
+	setvar VAR_SLATEPORT_CITY_STATE, 2
 	warp MAP_SLATEPORT_CITY_HARBOR, 255, 11, 14
 	waitstate
 	releaseall
@@ -732,11 +732,11 @@ SlateportCity_EventScript_1DD36E:: @ 81DD36E
 
 SlateportCity_EventScript_1DD39A:: @ 81DD39A
 	setvar VAR_0x8004, 1
-	specialvar VAR_RESULT, sub_80246D4
+	specialvar VAR_RESULT, HasEnoughBerryPowder
 	compare VAR_RESULT, 0
 	goto_if_eq SlateportCity_EventScript_1DD3C0
 	msgbox SlateportCity_Text_1DEE40, MSGBOX_DEFAULT
-	special sub_80248B0
+	special DisplayBerryPowderVendorMenu
 	goto SlateportCity_EventScript_1DD3CA
 	end
 
@@ -846,7 +846,7 @@ SlateportCity_EventScript_1DD536:: @ 81DD536
 
 SlateportCity_EventScript_1DD54A:: @ 81DD54A
 	msgbox SlateportCity_Text_1DEFBC, MSGBOX_DEFAULT
-	special sub_8024918
+	special RemoveBerryPowderVendorMenu
 	release
 	end
 
@@ -855,26 +855,26 @@ SlateportCity_EventScript_1DD557:: @ 81DD557
 	compare VAR_RESULT, 0
 	goto_if_eq SlateportCity_EventScript_1DD3CA
 	copyvar VAR_0x8004, VAR_0x8009
-	specialvar VAR_RESULT, sub_80246D4
+	specialvar VAR_RESULT, HasEnoughBerryPowder
 	compare VAR_RESULT, 0
 	goto_if_eq SlateportCity_EventScript_1DD5CE
 	giveitem_std VAR_0x8008
 	compare VAR_RESULT, 0
 	goto_if_eq SlateportCity_EventScript_1DD5C1
 	copyvar VAR_0x8004, VAR_0x8009
-	special sub_802477C
-	special sub_802488C
+	special TakeBerryPowder
+	special PrintPlayerBerryPowderAmount
 	msgbox SlateportCity_Text_1DEEF7, MSGBOX_YESNO
 	compare VAR_RESULT, 1
 	goto_if_eq SlateportCity_EventScript_1DD3CA
 	msgbox SlateportCity_Text_1DEF79, MSGBOX_DEFAULT
-	special sub_8024918
+	special RemoveBerryPowderVendorMenu
 	release
 	end
 
 SlateportCity_EventScript_1DD5C1:: @ 81DD5C1
 	msgbox gUnknown_08272A89, MSGBOX_DEFAULT
-	special sub_8024918
+	special RemoveBerryPowderVendorMenu
 	release
 	end
 

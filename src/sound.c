@@ -19,11 +19,11 @@ EWRAM_DATA struct MusicPlayerInfo* gMPlay_PokemonCry = NULL;
 EWRAM_DATA u8 gPokemonCryBGMDuckingCounter = 0;
 
 // iwram bss
-IWRAM_DATA static u16 sCurrentMapMusic;
-IWRAM_DATA static u16 sNextMapMusic;
-IWRAM_DATA static u8 sMapMusicState;
-IWRAM_DATA static u8 sMapMusicFadeInSpeed;
-IWRAM_DATA static u16 sFanfareCounter;
+static u16 sCurrentMapMusic;
+static u16 sNextMapMusic;
+static u8 sMapMusicState;
+static u8 sMapMusicFadeInSpeed;
+static u16 sFanfareCounter;
 
 // iwram common
 bool8 gDisableMusic;
@@ -264,7 +264,7 @@ void FadeInNewBGM(u16 songNum, u8 speed)
 {
     if (gDisableMusic)
         songNum = 0;
-    if (songNum == 0xFFFF)
+    if (songNum == MUS_NONE)
         songNum = 0;
     m4aSongNumStart(songNum);
     m4aMPlayImmInit(&gMPlayInfo_BGM);
@@ -561,7 +561,7 @@ void PlayBGM(u16 songNum)
 {
     if (gDisableMusic)
         songNum = 0;
-    if (songNum == 0xFFFF)
+    if (songNum == MUS_NONE)
         songNum = 0;
     m4aSongNumStart(songNum);
 }

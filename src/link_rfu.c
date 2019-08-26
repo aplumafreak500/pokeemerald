@@ -11,23 +11,23 @@
 #include "overworld.h"
 #include "random.h"
 #include "palette.h"
-#include "rom_8011DC0.h"
+#include "union_room.h"
 #include "string_util.h"
 #include "task.h"
 #include "text.h"
 #include "constants/species.h"
 #include "save.h"
-#include "rom_8011DC0.h"
+#include "mystery_gift.h"
 
 extern u16 gHeldKeyCodeToSend;
 
 struct UnkRfuStruct_1 gUnknown_03004140;
 struct UnkRfuStruct_2 gUnknown_03005000;
 
-IWRAM_DATA u8 gUnknown_03000D74;
-ALIGNED(4) IWRAM_DATA u8 gUnknown_03000D78[8];
-IWRAM_DATA u8 gUnknown_03000D80[16];
-IWRAM_DATA u16 gUnknown_03000D90[8];
+BSS_DATA u8 gUnknown_03000D74;
+ALIGNED(4) BSS_DATA u8 gUnknown_03000D78[8];
+BSS_DATA u8 gUnknown_03000D80[16];
+BSS_DATA u16 gUnknown_03000D90[8];
 
 EWRAM_DATA u8 gWirelessStatusIndicatorSpriteId = 0;
 EWRAM_DATA ALIGNED(4) struct UnkLinkRfuStruct_02022B14 gUnknown_02022B14 = {};
@@ -154,8 +154,18 @@ const u8 sWireless_RSEtoASCIITable[] = {
     0x20, 0x2b, 0x5b, 0x5c, 0x5d, 0x5e, 0x5f, 0x20,
     0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x00
 };
-const struct OamData sWirelessStatusIndicatorOamData = {
-    .size = 1
+const struct OamData sWirelessStatusIndicatorOamData =
+{
+    .y = 0,
+    .affineMode = ST_OAM_AFFINE_OFF,
+    .objMode = ST_OAM_OBJ_NORMAL,
+    .bpp = ST_OAM_4BPP,
+    .shape = SPRITE_SHAPE(16x16),
+    .x = 0,
+    .size = SPRITE_SIZE(16x16),
+    .tileNum = 0,
+    .priority = 0,
+    .paletteNum = 0,
 };
 static const union AnimCmd sWirelessStatusIndicatorAnim0[] = {
     // 3 bars
@@ -309,10 +319,22 @@ const char gUnknown_082ED7EC[] = "PokemonSioInfo";
 const char gUnknown_082ED7FC[] = "LINK LOSS DISCONNECT!";
 const char gUnknown_082ED814[] = "LINK LOSS RECOVERY NOW";
 
-extern const char gUnknown_082ED82C[];
-extern const char gUnknown_082ED84B[];
-extern const char gUnknown_082ED85B[];
-extern const char gUnknown_082ED868[];
+ALIGNED(4) const char gUnknown_082ED82C[31] = {' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',0x00};
+const char gUnknown_082ED84B[16] = {' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',0x00};
+const char gUnknown_082ED85B[9] = {' ',' ',' ',' ',' ',' ',' ',' ',0x00};
+ALIGNED(4) const char gUnknown_082ED864[2] = {' ',0x00};
+const char gUnknown_082ED866[2] = {'*',0x00};
+const char gUnknown_082ED868[8] = "NOWSLOT";
+const char gUnknown_082ED870[12] = "           ";
+const char gUnknown_082ED87C[12] = "CLOCK DRIFT";
+const char gUnknown_082ED888[12] = "BUSY SEND  ";
+const char gUnknown_082ED894[12] = "CMD REJECT ";
+const char gUnknown_082ED8A0[12] = "CLOCK SLAVE";
+const char gUnknown_082ED8A8[3][8] = {
+    "CHILD ",
+    "PARENT",
+    "SEARCH"
+};
 
 // .text
 
@@ -1999,6 +2021,8 @@ void sub_800DBF8(u8 *q1, u8 mode)
     }
 }
 
+// File boundary here maybe?
+
 void PkmnStrToASCII(u8 *q1, const u8 *q2)
 {
     s32 i;
@@ -2230,7 +2254,7 @@ void CreateWirelessStatusIndicatorSprite(u8 x, u8 y)
     }
 }
 
-void sub_800E084(void)
+void DestroyWirelessStatusIndicatorSprite(void)
 {
     if (gSprites[gWirelessStatusIndicatorSpriteId].data[7] == 0x1234)
     {
@@ -2241,7 +2265,7 @@ void sub_800E084(void)
     }
 }
 
-void sub_800E0E8(void)
+void LoadWirelessStatusIndicatorSpriteGfx(void)
 {
     if (GetSpriteTileStartByTag(sWirelessStatusIndicatorSpriteSheet.tag) == 0xFFFF)
     {
@@ -2343,7 +2367,7 @@ void sub_800E174(void)
         CpuCopy16(gMain.oamBuffer + 125, (struct OamData *)OAM + 125, sizeof(struct OamData));
         if (sub_8011A74() == 1)
         {
-            sub_800E084();
+            DestroyWirelessStatusIndicatorSprite();
         }
     }
 }
@@ -2391,7 +2415,7 @@ void RecordMixTrainerNames(void)
                 }
             }
         }
-        
+
         // Save the connected trainers first, at the top of the list.
         nextSpace = 0;
         for (i = 0; i < GetLinkPlayerCount(); i++)
@@ -2422,7 +2446,7 @@ void RecordMixTrainerNames(void)
                 }
             }
         }
-        
+
         // Finalize the new list, and clean up.
         memcpy(gSaveBlock1Ptr->trainerNameRecords, newRecords, 20 * sizeof(struct TrainerNameRecord));
         free(newRecords);
@@ -2458,7 +2482,7 @@ void WipeTrainerNameRecords(void)
     }
 }
 
-void nullsub_5(const char *unused_0, u8 unused_1, u8 unused_2)
+void nullsub_5(const void *unused_0, u8 unused_1, u8 unused_2)
 {
     // debug?
 }
@@ -2488,7 +2512,7 @@ void sub_800E604(void)
     sub_800D724(&gUnknown_03005000.unk_9e8);
     CpuFill16(0, gSendCmd, sizeof gSendCmd);
     CpuFill16(0, gRecvCmds, sizeof gRecvCmds);
-    CpuFill16(0, gLinkPlayers, sizeof gLinkPlayers)
+    CpuFill16(0, gLinkPlayers, sizeof gLinkPlayers);
 }
 
 void sub_800E6D0(void)
@@ -2892,70 +2916,21 @@ void sub_800EF88(u8 a0)
     }
 }
 
-#ifdef NONMATCHING
-// FIXME: gUnknown_03005000.unk_c87 should be in r5
-// FIXME: gRecvCmds should be in r6 and r7
 void sub_800EFB0(void)
 {
     s32 i, j;
+
     for (i = 0; i < 5; i++)
     {
+        struct UnkRfuStruct_2 *ptr = &gUnknown_03005000;
         for (j = 0; j < 7; j++)
         {
-            gUnknown_03005000.unk_c87[i][j][1] = gRecvCmds[i][j] >> 8;
-            gUnknown_03005000.unk_c87[i][j][0] = gRecvCmds[i][j];
+            ptr->unk_c87[i][j][1] = gRecvCmds[i][j] >> 8;
+            ptr->unk_c87[i][j][0] = gRecvCmds[i][j];
         }
     }
     CpuFill16(0, gRecvCmds, sizeof gRecvCmds);
 }
-#else
-NAKED void sub_800EFB0(void)
-{
-    asm_unified("\tpush {r4-r7,lr}\n"
-                    "\tsub sp, 0x4\n"
-                    "\tmovs r2, 0\n"
-                    "\tldr r7, =gRecvCmds\n"
-                    "\tldr r0, =gUnknown_03005000\n"
-                    "\tadds r6, r7, 0\n"
-                    "\tldr r1, =0x00000c87\n"
-                    "\tadds r5, r0, r1\n"
-                    "_0800EFC0:\n"
-                    "\tmovs r3, 0\n"
-                    "\tlsls r0, r2, 3\n"
-                    "\tlsls r1, r2, 4\n"
-                    "\tadds r4, r2, 0x1\n"
-                    "\tsubs r0, r2\n"
-                    "\tlsls r0, 1\n"
-                    "\tadds r2, r0, r5\n"
-                    "\tadds r1, r6\n"
-                    "_0800EFD0:\n"
-                    "\tldrh r0, [r1]\n"
-                    "\tlsrs r0, 8\n"
-                    "\tstrb r0, [r2, 0x1]\n"
-                    "\tldrh r0, [r1]\n"
-                    "\tstrb r0, [r2]\n"
-                    "\tadds r2, 0x2\n"
-                    "\tadds r1, 0x2\n"
-                    "\tadds r3, 0x1\n"
-                    "\tcmp r3, 0x6\n"
-                    "\tble _0800EFD0\n"
-                    "\tadds r2, r4, 0\n"
-                    "\tcmp r2, 0x4\n"
-                    "\tble _0800EFC0\n"
-                    "\tmovs r0, 0\n"
-                    "\tmov r1, sp\n"
-                    "\tstrh r0, [r1]\n"
-                    "\tldr r2, =0x01000028\n"
-                    "\tmov r0, sp\n"
-                    "\tadds r1, r7, 0\n"
-                    "\tbl CpuSet\n"
-                    "\tadd sp, 0x4\n"
-                    "\tpop {r4-r7}\n"
-                    "\tpop {r0}\n"
-                    "\tbx r0\n"
-                    "\t.pool");
-}
-#endif
 
 void sub_800F014(void)
 {
@@ -3520,7 +3495,7 @@ void sub_800FD14(u16 command)
     }
 }
 
-void sub_800FE50(u16 *a0)
+void sub_800FE50(void *a0)
 {
     if (gSendCmd[0] == 0 && !sub_8011A80())
     {
@@ -3652,7 +3627,7 @@ void sub_8010168(void)
         gUnknown_03005000.unk_00 = sub_8010148;
 }
 
-void sub_8010198(void)
+void LinkRfu_FatalError(void)
 {
     sub_800D630();
     gUnknown_03005000.unk_ce4 = 1;
@@ -4196,7 +4171,7 @@ void sub_8010DB4(void)
 {
     if (gUnknown_03005000.unk_ee == 1 && gUnknown_03004140.unk_02 == 0)
     {
-        if (gMain.callback2 == sub_8018438 || gUnknown_03004140.unk_3c->unk_04)
+        if (gMain.callback2 == c2_mystery_gift_e_reader_run || gUnknown_03004140.unk_3c->unk_04)
             gWirelessCommType = 2;
         SetMainCallback2(CB2_LinkError);
         gMain.savedCallback = CB2_LinkError;
@@ -4728,7 +4703,7 @@ bool32 sub_8011A80(void)
         return FALSE;
 }
 
-u8 sub_8011A9C(void)
+bool32 sub_8011A9C(void)
 {
     return gUnknown_03005000.unk_ce8;
 }

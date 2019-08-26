@@ -40,8 +40,8 @@ SeafloorCavern_Room9_EventScript_234DC9:: @ 8234DC9
 	setfieldeffectargument 0, 16
 	setfieldeffectargument 1, 42
 	setfieldeffectargument 2, 0
-	dofieldeffect 54
-	waitfieldeffect 54
+	dofieldeffect FLDEFF_SPARKLE
+	waitfieldeffect FLDEFF_SPARKLE
 	closemessage
 	setvar VAR_RESULT, 0
 	playfanfare MUS_ME_TAMA
@@ -119,7 +119,7 @@ SeafloorCavern_Room9_EventScript_234DC9:: @ 8234DC9
 	waitmovement 0
 	msgbox SeafloorCavern_Room9_Text_235723, MSGBOX_DEFAULT
 	setvar VAR_ROUTE128_STATE, 1
-	setvar VAR_RAYQUAZA_STATE, 1
+	setvar VAR_SOOTOPOLIS_CITY_STATE, 1
 	clearflag FLAG_HIDE_SOOTOPOLIS_CITY_STEVEN
 	clearflag FLAG_HIDE_SOOTOPOLIS_CITY_ARCHIE
 	clearflag FLAG_HIDE_SOOTOPOLIS_CITY_MAXIE

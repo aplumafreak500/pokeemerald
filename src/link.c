@@ -27,6 +27,7 @@
 #include "battle.h"
 #include "link.h"
 #include "link_rfu.h"
+#include "constants/rgb.h"
 
 extern u16 gHeldKeyCodeToSend;
 
@@ -51,22 +52,21 @@ struct LinkTestBGInfo
 
 // Static RAM declarations
 
-IWRAM_DATA struct BlockTransfer sBlockSend;
-IWRAM_DATA u32 link_c_unused_03000d1c;
-IWRAM_DATA struct BlockTransfer sBlockRecv[MAX_LINK_PLAYERS];
-IWRAM_DATA u32 sBlockSendDelayCounter;
-IWRAM_DATA u32 gUnknown_03000D54;
-IWRAM_DATA u8 gUnknown_03000D58;
-IWRAM_DATA u32 sPlayerDataExchangeStatus;
-IWRAM_DATA u32 gUnknown_03000D60;
-IWRAM_DATA u8 sLinkTestLastBlockSendPos;
-ALIGNED() IWRAM_DATA u8 sLinkTestLastBlockRecvPos[MAX_LINK_PLAYERS];
-IWRAM_DATA u8 sNumVBlanksWithoutSerialIntr;
-IWRAM_DATA bool8 sSendBufferEmpty;
-IWRAM_DATA u16 sSendNonzeroCheck;
-IWRAM_DATA u16 sRecvNonzeroCheck;
-IWRAM_DATA u8 sChecksumAvailable;
-IWRAM_DATA u8 sHandshakePlayerCount;
+static struct BlockTransfer sBlockSend;
+static struct BlockTransfer sBlockRecv[MAX_LINK_PLAYERS];
+static u32 sBlockSendDelayCounter;
+static u32 gUnknown_03000D54;
+static u8 gUnknown_03000D58;
+static u32 sPlayerDataExchangeStatus;
+static u32 gUnknown_03000D60;
+static u8 sLinkTestLastBlockSendPos;
+static u8 sLinkTestLastBlockRecvPos[MAX_LINK_PLAYERS];
+static u8 sNumVBlanksWithoutSerialIntr;
+static bool8 sSendBufferEmpty;
+static u16 sSendNonzeroCheck;
+static u16 sRecvNonzeroCheck;
+static u8 sChecksumAvailable;
+static u8 sHandshakePlayerCount;
 
 u16 gLinkPartnersHeldKeys[6];
 u32 gLinkDebugSeed;
@@ -444,7 +444,7 @@ static void LinkTestProcessKeyInput(void)
     }
     if (gMain.newKeys & L_BUTTON)
     {
-        BeginNormalPaletteFade(0xFFFFFFFF, 0, 16, 0, 2);
+        BeginNormalPaletteFade(0xFFFFFFFF, 0, 16, 0, RGB(2, 0, 0));
     }
     if (gMain.newKeys & START_BUTTON)
     {

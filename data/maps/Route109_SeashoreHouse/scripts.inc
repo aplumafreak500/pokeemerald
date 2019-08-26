@@ -1,8 +1,8 @@
 Route109_SeashoreHouse_MapScripts:: @ 82693F4
-	map_script MAP_SCRIPT_ON_TRANSITION, Route109_SeashoreHouse_MapScript1_2693FA
+	map_script MAP_SCRIPT_ON_TRANSITION, Route109_SeashoreHouse_OnTransition
 	.byte 0
 
-Route109_SeashoreHouse_MapScript1_2693FA: @ 82693FA
+Route109_SeashoreHouse_OnTransition: @ 82693FA
 	setflag FLAG_LANDMARK_SEASHORE_HOUSE
 	end
 
@@ -58,7 +58,6 @@ Route109_SeashoreHouse_EventScript_269484:: @ 8269484
 	msgbox Route109_SeashoreHouse_Text_2697C8, MSGBOX_DEFAULT
 	takemoney 0x12c, 0
 	updatemoneybox 0, 0
-	nop
 	giveitem_std ITEM_SODA_POP
 	hidemoneybox
 	nop

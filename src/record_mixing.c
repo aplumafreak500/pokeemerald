@@ -47,7 +47,7 @@ struct RecordMixingHallRecords
 
 struct PlayerRecordsRS
 {
-    struct SecretBaseRecord secretBases[SECRET_BASES_COUNT];
+    struct SecretBase secretBases[SECRET_BASES_COUNT];
     TVShow tvShows[TV_SHOWS_COUNT];
     PokeNews pokeNews[POKE_NEWS_COUNT];
     OldMan oldMan;
@@ -60,7 +60,7 @@ struct PlayerRecordsRS
 
 struct PlayerRecordsEmerald
 {
-    /* 0x0000 */ struct SecretBaseRecord secretBases[SECRET_BASES_COUNT];
+    /* 0x0000 */ struct SecretBase secretBases[SECRET_BASES_COUNT];
     /* 0x0c80 */ TVShow tvShows[TV_SHOWS_COUNT];
     /* 0x1004 */ PokeNews pokeNews[POKE_NEWS_COUNT];
     /* 0x1044 */ OldMan oldMan;
@@ -82,21 +82,21 @@ union PlayerRecords
 
 // Static RAM declarations
 
-static IWRAM_DATA bool8 gUnknown_03001130;
-static IWRAM_DATA struct SecretBaseRecord *sSecretBasesSave;
-static IWRAM_DATA TVShow *sTvShowsSave;
-static IWRAM_DATA PokeNews *sPokeNewsSave;
-static IWRAM_DATA OldMan *sOldManSave;
-static IWRAM_DATA struct EasyChatPair *sEasyChatPairsSave;
-static IWRAM_DATA struct RecordMixingDayCareMail *gUnknown_03001148;
-static IWRAM_DATA void *sBattleTowerSave;
-static IWRAM_DATA LilycoveLady *sLilycoveLadySave;
-static IWRAM_DATA void *sApprenticesSave;
-static IWRAM_DATA void *sBattleTowerSave_Duplicate;
-static IWRAM_DATA u32 sRecordStructSize;
-static IWRAM_DATA u8 gUnknown_03001160;
-static IWRAM_DATA u32 filler_03001164;
-static IWRAM_DATA struct PlayerHallRecords *gUnknown_03001168[3];
+static bool8 gUnknown_03001130;
+static struct SecretBase *sSecretBasesSave;
+static TVShow *sTvShowsSave;
+static PokeNews *sPokeNewsSave;
+static OldMan *sOldManSave;
+static struct EasyChatPair *sEasyChatPairsSave;
+static struct RecordMixingDayCareMail *gUnknown_03001148;
+static void *sBattleTowerSave;
+static LilycoveLady *sLilycoveLadySave;
+static void *sApprenticesSave;
+static void *sBattleTowerSave_Duplicate;
+static u32 sRecordStructSize;
+static u8 gUnknown_03001160;
+static u32 filler_03001164;
+static struct PlayerHallRecords *gUnknown_03001168[3];
 
 static EWRAM_DATA struct RecordMixingDayCareMail gUnknown_02039F9C = {0};
 static EWRAM_DATA union PlayerRecords *sReceivedRecords = NULL;
@@ -208,7 +208,7 @@ static void PrepareUnknownExchangePacket(struct PlayerRecordsRS *dest)
 static void PrepareExchangePacketForRubySapphire(struct PlayerRecordsRS *dest)
 {
     memcpy(dest->secretBases, sSecretBasesSave, sizeof(dest->secretBases));
-    sub_80EB18C(dest->secretBases);
+    ClearJapaneseSecretBases(dest->secretBases);
     memcpy(dest->tvShows, sTvShowsSave, sizeof(dest->tvShows));
     sub_80F1208(dest->tvShows);
     memcpy(dest->pokeNews, sPokeNewsSave, sizeof(dest->pokeNews));
@@ -226,7 +226,7 @@ static void PrepareExchangePacketForRubySapphire(struct PlayerRecordsRS *dest)
 
 static void PrepareExchangePacket(void)
 {
-    sub_80E9914();
+    SetPlayerSecretBaseParty();
     sub_80F0BB8();
     SetSrcLookupPointers();
 
@@ -701,10 +701,10 @@ static void ReceiveLilycoveLadyData(LilycoveLady *lilycoveLady, size_t recordSiz
     }
 
     memcpy(sLilycoveLadySave, (void *)lilycoveLady + recordSize * mixIndices[which], sizeof(LilycoveLady));
-    sub_818DA78();
+    ResetLilycoveLadyForRecordMix();
     if (dest != NULL)
     {
-        sub_818E570(dest);
+        QuizLadyClearQuestionForRecordMix(dest);
         free(dest);
     }
 }

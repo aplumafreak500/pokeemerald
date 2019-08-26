@@ -12,8 +12,8 @@ MagmaHideout_4F_EventScript_23A560:: @ 823A560
 	setfieldeffectargument 0, 18
 	setfieldeffectargument 1, 42
 	setfieldeffectargument 2, 0
-	dofieldeffect 54
-	waitfieldeffect 54
+	dofieldeffect FLDEFF_SPARKLE
+	waitfieldeffect FLDEFF_SPARKLE
 	setvar VAR_RESULT, 1
 	playfanfare MUS_ME_TAMA
 	playse SE_TAMA
@@ -62,7 +62,7 @@ MagmaHideout_4F_EventScript_23A560:: @ 823A560
 	closemessage
 	clearflag FLAG_HIDE_SLATEPORT_CITY_CAPTAIN_STERN
 	clearflag FLAG_HIDE_SLATEPORT_CITY_GABBY_AND_TY
-	setvar VAR_SLATEPORT_STATE, 1
+	setvar VAR_SLATEPORT_CITY_STATE, 1
 	setflag FLAG_GROUDON_AWAKENED_MAGMA_HIDEOUT
 	setvar VAR_SLATEPORT_HARBOR_STATE, 1
 	fadescreen 1

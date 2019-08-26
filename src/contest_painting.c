@@ -1,11 +1,12 @@
 #include "global.h"
 #include "alloc.h"
 #include "battle.h"
+#include "battle_gfx_sfx_util.h"
 #include "bg.h"
 #include "contest.h"
 #include "contest_painting.h"
 #include "contest_painting_effects.h"
-#include "battle_gfx_sfx_util.h"
+#include "data.h"
 #include "decompress.h"
 #include "gpu_regs.h"
 #include "international_string_util.h"
@@ -27,11 +28,11 @@ struct ContestWinner *gUnknown_030061C0;
 u16 *gContestPaintingMonPalette;
 
 // IWRAM bss
-IWRAM_DATA u8 gContestPaintingState;
-IWRAM_DATA u16 gContestPaintingMosaicVal;
-IWRAM_DATA u16 gContestPaintingFadeCounter;
-IWRAM_DATA bool8 gUnknown_030011F6;
-IWRAM_DATA u8 gContestPaintingWindowId;
+static u8 gContestPaintingState;
+static u16 gContestPaintingMosaicVal;
+static u16 gContestPaintingFadeCounter;
+static bool8 gUnknown_030011F6;
+static u8 gContestPaintingWindowId;
 
 static void ShowContestPainting(void);
 static void HoldContestPainting(void);
@@ -44,8 +45,6 @@ static void VBlankCB_ContestPainting(void);
 static void sub_8130380(u8 *spritePixels, u16 *palette, u16 (*destColorBuffer)[64][64]);
 
 extern const u8 gUnknown_0827EA0C[];
-extern const struct CompressedSpriteSheet gMonFrontPicTable[];
-extern const struct CompressedSpriteSheet gMonBackPicTable[];
 extern const u8 gContestCoolness[];
 extern const u8 gContestBeauty[];
 extern const u8 gContestCuteness[];
@@ -152,16 +151,14 @@ const struct OamData gUnknown_085B0830 =
     .y = 0,
     .affineMode = ST_OAM_AFFINE_OFF,
     .objMode = ST_OAM_OBJ_NORMAL,
-    .mosaic = 1,
+    .mosaic = TRUE,
     .bpp = ST_OAM_8BPP,
-    .shape = ST_OAM_SQUARE,
+    .shape = SPRITE_SHAPE(64x64),
     .x = 0,
-    .matrixNum = 0,
-    .size = 3,
+    .size = SPRITE_SIZE(64x64),
     .tileNum = 0,
     .priority = 0,
     .paletteNum = 0,
-    .affineParam = 0,
 };
 
 const u16 gUnknown_085B0838[] = {RGB(0, 0, 0), RGB(0, 0, 0)};
@@ -253,8 +250,7 @@ static void HoldContestPainting(void)
     case 1:
         if ((gMain.newKeys & A_BUTTON) || (gMain.newKeys & B_BUTTON))
         {
-            u8 two = 2;  //needed to make the asm match
-            gContestPaintingState = two;
+            gContestPaintingState++;
             BeginNormalPaletteFade(0xFFFFFFFF, 0, 0, 16, RGB(0, 0, 0));
         }
 
@@ -296,7 +292,7 @@ static void PrintContestPaintingCaption(u8 contestType, u8 arg1)
     category = gUnknown_030061C0->contestCategory;
     if (contestType < 8)
     {
-        sub_818E868(gStringVar1, category);
+        BufferContestName(gStringVar1, category);
         StringAppend(gStringVar1, gText_Space);
         StringAppend(gStringVar1, gContestRankTextPointers[gUnknown_030061C0->contestRank]);
         StringCopy(gStringVar2, gUnknown_030061C0->trainerName);
@@ -366,7 +362,7 @@ static void VBlankCB_ContestPainting(void)
 
 void sub_81302E8(u16 species, u8 arg1)
 {
-    const void *pal = GetFrontSpritePalFromSpeciesAndPersonality(species, gUnknown_030061C0->trainerId, gUnknown_030061C0->personality);
+    const void *pal = GetMonSpritePalFromSpeciesAndPersonality(species, gUnknown_030061C0->trainerId, gUnknown_030061C0->personality);
     LZDecompressVram(pal, gContestPaintingMonPalette);
     if (!arg1)
     {
@@ -688,7 +684,7 @@ static void sub_8130760(u8 contestResult)
 
     gUnknown_030061A0.var_16 = 2;
     gUnknown_030061A0.var_0 = contestResult;
-    gUnknown_030061A0.var_10 = 0x6010000;
+    gUnknown_030061A0.var_10 = OBJ_VRAM0;
 
     sub_8124F2C(&gUnknown_030061A0);
     sub_81261A4(&gUnknown_030061A0);
@@ -705,3 +701,4 @@ static void sub_8130884(u8 arg0, u8 arg1)
     sub_8130688(arg0);
     sub_8130430(arg0, arg1);
 }
+

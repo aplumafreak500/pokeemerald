@@ -186,15 +186,15 @@ static u8 GetAdjustedInitialDirection(struct InitialPlayerAvatarState *playerStr
 static u16 GetCenterScreenMetatileBehavior(void);
 
 // IWRAM bss vars
-IWRAM_DATA static void *sUnusedOverworldCallback;
-IWRAM_DATA static u8 sPlayerTradingStates[4];
+static void *sUnusedOverworldCallback;
+static u8 sPlayerTradingStates[4];
 // This callback is called with a player's key code. It then returns an
 // adjusted key code, effectively intercepting the input before anything
 // can process it.
-IWRAM_DATA static u16 (*sPlayerKeyInterceptCallback)(u32);
-IWRAM_DATA static bool8 sUnknown_03000E18;
-IWRAM_DATA static u8 sRfuKeepAliveTimer;
-IWRAM_DATA static u32 sUnusedVar;
+static u16 (*sPlayerKeyInterceptCallback)(u32);
+static bool8 sUnknown_03000E18;
+static u8 sRfuKeepAliveTimer;
+static u32 sUnusedVar;
 
 // IWRAM common
 u16 *gBGTilemapBuffers1;
@@ -889,7 +889,7 @@ static void mli0_load_map(u32 a1)
     if (a1 != 1 && isIndoors)
     {
         UpdateTVScreensOnMap(gBackupMapLayout.width, gBackupMapLayout.height);
-        sub_80E9238(1);
+        InitSecretBaseAppearance(TRUE);
     }
 }
 
@@ -1040,7 +1040,7 @@ static bool16 ShouldLegendaryMusicPlayAtLocation(struct WarpData *warp)
         case MAP_NUM(ROUTE128):
             return TRUE;
         default:
-            if (VarGet(VAR_RAYQUAZA_STATE) < 4)
+            if (VarGet(VAR_SOOTOPOLIS_CITY_STATE) < 4)
                 return FALSE;
             switch (warp->mapNum)
             {
@@ -1081,9 +1081,9 @@ static bool16 IsInfiltratedWeatherInstitute(struct WarpData *warp)
 
 static bool16 IsInflitratedSpaceCenter(struct WarpData *warp)
 {
-    if (VarGet(VAR_MOSSDEEP_STATE) == 0)
+    if (VarGet(VAR_MOSSDEEP_CITY_STATE) == 0)
         return FALSE;
-    else if (VarGet(VAR_MOSSDEEP_STATE) > 2)
+    else if (VarGet(VAR_MOSSDEEP_CITY_STATE) > 2)
         return FALSE;
     else if (warp->mapGroup != MAP_GROUP(MOSSDEEP_CITY_SPACE_CENTER_1F))
         return FALSE;
@@ -1508,7 +1508,7 @@ void SetUnusedCallback(void *func)
 
 static bool8 map_post_load_hook_exec(void)
 {
-    if (gFieldCallback2 != NULL)
+    if (gFieldCallback2)
     {
         if (!gFieldCallback2())
         {
@@ -1522,7 +1522,7 @@ static bool8 map_post_load_hook_exec(void)
     }
     else
     {
-        if (gFieldCallback != NULL)
+        if (gFieldCallback)
             gFieldCallback();
         else
             mapldr_default();
@@ -1688,7 +1688,7 @@ void CB2_ReturnToFieldContinueScript(void)
 void CB2_ReturnToFieldContinueScriptPlayMapMusic(void)
 {
     FieldClearVBlankHBlankCallbacks();
-    gFieldCallback = sub_80AF168;
+    gFieldCallback = FieldCallback_ReturnToEventScript2;
     CB2_ReturnToField();
 }
 
@@ -1701,7 +1701,7 @@ void sub_80861E8(void)
 
 static void sub_8086204(void)
 {
-    if ((gMapHeader.flags & 0xF8) == 8 && sub_80E909C() == TRUE)
+    if ((gMapHeader.flags & 0xF8) == 8 && SecretBaseMapPopupEnabled() == TRUE)
         ShowMapNamePopup();
     sub_80AF3C8();
 }
@@ -1874,7 +1874,7 @@ static bool32 map_loading_iteration_3(u8 *state)
     case 11:
         if (gWirelessCommType != 0)
         {
-            sub_800E0E8();
+            LoadWirelessStatusIndicatorSpriteGfx();
             CreateWirelessStatusIndicatorSprite(0, 0);
         }
         (*state)++;
@@ -1947,7 +1947,7 @@ static bool32 load_map_stuff(u8 *state, u32 a2)
         (*state)++;
         break;
     case 11:
-        if ((gMapHeader.flags & 0xF8) == 8 && sub_80E909C() == 1)
+        if ((gMapHeader.flags & 0xF8) == 8 && SecretBaseMapPopupEnabled() == TRUE)
             ShowMapNamePopup();
         (*state)++;
         break;
@@ -2046,7 +2046,7 @@ static bool32 map_loading_iteration_2_link(u8 *state)
     case 11:
         if (gWirelessCommType != 0)
         {
-            sub_800E0E8();
+            LoadWirelessStatusIndicatorSpriteGfx();
             CreateWirelessStatusIndicatorSprite(0, 0);
         }
         (*state)++;
@@ -2287,7 +2287,7 @@ static void SetKeyInterceptCallback(u16 (*func)(u32))
 static void CheckRfuKeepAliveTimer(void)
 {
     if (gWirelessCommType != 0 && ++sRfuKeepAliveTimer > 60)
-        sub_8010198();
+        LinkRfu_FatalError();
 }
 
 static void ResetAllTradingStates(void)
@@ -2960,7 +2960,7 @@ static void InitLinkPlayerEventObjectPos(struct EventObject *eventObj, s16 x, s1
     eventObj->currentCoords.y = y;
     eventObj->previousCoords.x = x;
     eventObj->previousCoords.y = y;
-    sub_8093038(x, y, &eventObj->initialCoords.x, &eventObj->initialCoords.y);
+    SetSpritePosToMapCoords(x, y, &eventObj->initialCoords.x, &eventObj->initialCoords.y);
     eventObj->initialCoords.x += 8;
     EventObjectUpdateZCoord(eventObj);
 }

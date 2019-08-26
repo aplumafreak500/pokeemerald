@@ -1,9 +1,9 @@
 MtChimney_MapScripts:: @ 822EDC1
 	map_script MAP_SCRIPT_ON_RESUME, MtChimney_MapScript1_22EDD2
-	map_script MAP_SCRIPT_ON_TRANSITION, MtChimney_MapScript1_22EDCC
+	map_script MAP_SCRIPT_ON_TRANSITION, MtChimney_OnTransition
 	.byte 0
 
-MtChimney_MapScript1_22EDCC: @ 822EDCC
+MtChimney_OnTransition: @ 822EDCC
 	setvar VAR_JAGGED_PASS_ASH_WEATHER, 1
 	end
 
@@ -131,7 +131,6 @@ MtChimney_EventScript_22EF51:: @ 822EF51
 MtChimney_EventScript_22EF5E:: @ 822EF5E
 	takemoney 0xc8, 0
 	updatemoneybox 0, 0
-	nop
 	return
 
 MtChimney_EventScript_22EF69:: @ 822EF69

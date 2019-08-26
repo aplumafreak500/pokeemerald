@@ -4,7 +4,7 @@
 #include "battle_anim.h"
 #include "bg.h"
 #include "contest.h"
-#include "data2.h"
+#include "data.h"
 #include "decompress.h"
 #include "dma3.h"
 #include "gpu_regs.h"
@@ -25,8 +25,6 @@
 #include "constants/weather.h"
 
 extern const struct SpriteTemplate gUnknown_08593114;
-extern const union AffineAnimCmd *const gUnknown_082FF6C0[];
-extern const union AffineAnimCmd *const gUnknown_082FF694[];
 
 void sub_815A0D4(struct Sprite *);
 void sub_815A1B0(struct Sprite *);
@@ -1620,7 +1618,7 @@ void sub_815AAA4(struct Sprite *sprite)
 
     if (gBattleAnimArgs[2] == 0)
     {
-        sprite->oam.matrixNum = 8;
+        sprite->oam.matrixNum = ST_OAM_HFLIP;
         sprite->pos2.x = -12;
         sprite->data[1] = 2;
     }
@@ -2506,13 +2504,10 @@ void sub_815BE04(struct Sprite *sprite)
 
 static void sub_815BF44(struct Sprite *sprite)
 {
-    int var0;
-    s8 var1;
-
-    var0 = (u16)sprite->data[2] + (u16)sprite->data[3];
-    var1 = var0 >> 8;
-    sprite->pos2.y -= var1;
-    sprite->data[3] = var0 & 0xFF;
+    s16 delta = sprite->data[3] + sprite->data[2];
+    sprite->pos2.y -= delta >> 8;
+    sprite->data[3] += sprite->data[2];
+    sprite->data[3] &= 0xFF;
     if (sprite->data[4] == 0 && sprite->pos2.y < -8)
     {
         gSprites[sprite->data[6]].invisible = 0;
@@ -2545,19 +2540,12 @@ static void sub_815BFF4(struct Sprite *sprite)
 
 static void sub_815C050(struct Sprite *sprite)
 {
-    u16 d2;
-    register u16 d3 asm("r1");
-    int var0;
-    s8 var1;
-
     if (!sprite->invisible)
     {
-        d2 = sprite->data[2];
-        d3 = sprite->data[3];
-        var0 = d2 + d3;
-        var1 = var0 >> 8;
-        sprite->pos2.y -= var1;
-        sprite->data[3] = var0 & 0xFF;
+        s16 delta = sprite->data[3] + sprite->data[2];
+        sprite->pos2.y -= delta >> 8;
+        sprite->data[3] += sprite->data[2];
+        sprite->data[3] &= 0xFF;
         if (--sprite->data[1] == -1)
         {
             sprite->invisible = 1;
@@ -4179,7 +4167,7 @@ void AnimSmellingSaltsHand(struct Sprite *sprite)
     sprite->pos1.y = GetBattlerSpriteCoord(battler, 3);
     if (gBattleAnimArgs[1] == 0)
     {
-        sprite->oam.matrixNum |= 0x8;
+        sprite->oam.matrixNum |= ST_OAM_HFLIP;
         sprite->pos1.x = GetBattlerSpriteCoordAttr(battler, BATTLER_COORD_ATTR_LEFT) - 8;
     }
     else
@@ -4324,12 +4312,12 @@ static void AnimSmellingSaltExclamationStep(struct Sprite *sprite)
 
 // Claps a hand several times.
 // arg 0: which hand
-// arg 1: 
+// arg 1:
 void AnimHelpingHandClap(struct Sprite *sprite)
 {
     if (gBattleAnimArgs[0] == 0)
     {
-        sprite->oam.matrixNum |= 0x8; // horizontal flip
+        sprite->oam.matrixNum |= ST_OAM_HFLIP;
         sprite->pos1.x = 100;
         sprite->data[7] = 1;
     }
@@ -4557,7 +4545,7 @@ void AnimForesightMagnifyingGlass(struct Sprite *sprite)
     }
 
     if (GetBattlerSide(sprite->data[7]) == B_SIDE_OPPONENT)
-        sprite->oam.matrixNum = 8; // horizontal flip
+        sprite->oam.matrixNum = ST_OAM_HFLIP;
 
     sprite->oam.priority = GetBattlerSpriteBGPriority(sprite->data[7]);
     sprite->oam.objMode = ST_OAM_OBJ_BLEND;

@@ -1,6 +1,6 @@
 JaggedPass_MapScripts:: @ 8230656
 	map_script MAP_SCRIPT_ON_RESUME, JaggedPass_MapScript1_230666
-	map_script MAP_SCRIPT_ON_TRANSITION, JaggedPass_MapScript1_23068B
+	map_script MAP_SCRIPT_ON_TRANSITION, JaggedPass_OnTransition
 	map_script MAP_SCRIPT_ON_LOAD, JaggedPass_MapScript1_23069C
 	.byte 0
 
@@ -20,7 +20,7 @@ JaggedPass_EventScript_230685:: @ 8230685
 	setvar VAR_JAGGED_PASS_STATE, 1
 	return
 
-JaggedPass_MapScript1_23068B: @ 823068B
+JaggedPass_OnTransition: @ 823068B
 	compare VAR_JAGGED_PASS_ASH_WEATHER, 1
 	call_if_eq JaggedPass_EventScript_230697
 	end
@@ -36,8 +36,8 @@ JaggedPass_MapScript1_23069C: @ 823069C
 	end
 
 JaggedPass_EventScript_2306A8:: @ 82306A8
-	setmetatile 16, 17, 628, 1
-	setmetatile 16, 18, 628, 1
+	setmetatile 16, 17, METATILE_Lavaridge_RockWall, 1
+	setmetatile 16, 18, METATILE_Lavaridge_RockWall, 1
 	end
 
 JaggedPass_EventScript_2306BB:: @ 82306BB
@@ -57,8 +57,8 @@ JaggedPass_EventScript_2306BB:: @ 82306BB
 	special sub_8139560
 	waitstate
 	playse SE_KOUKA_M
-	setmetatile 16, 17, 598, 1
-	setmetatile 16, 18, 606, 0
+	setmetatile 16, 17, METATILE_Lavaridge_CaveEntrance_Top, 1
+	setmetatile 16, 18, METATILE_Lavaridge_CaveEntrance_Bottom, 0
 	special DrawWholeMapView
 	delay 30
 	setvar VAR_JAGGED_PASS_STATE, 2

@@ -1,9 +1,9 @@
 LilycoveCity_MapScripts:: @ 81E2B3C
-	map_script MAP_SCRIPT_ON_TRANSITION, LilycoveCity_MapScript1_1E2B47
+	map_script MAP_SCRIPT_ON_TRANSITION, LilycoveCity_OnTransition
 	map_script MAP_SCRIPT_ON_LOAD, LilycoveCity_MapScript1_1E2B61
 	.byte 0
 
-LilycoveCity_MapScript1_1E2B47: @ 81E2B47
+LilycoveCity_OnTransition: @ 81E2B47
 	setflag FLAG_VISITED_LILYCOVE_CITY
 	setvar VAR_LINK_CONTEST_ROOM_STATE, 0
 	setflag FLAG_HIDE_LILYCOVE_CONTEST_HALL_REPORTER
@@ -16,18 +16,18 @@ LilycoveCity_MapScript1_1E2B61: @ 81E2B61
 	end
 
 LilycoveCity_EventScript_1E2B6B:: @ 81E2B6B
-	setmetatile 76, 12, 656, 1
-	setmetatile 77, 12, 657, 1
-	setmetatile 76, 13, 672, 1
-	setmetatile 77, 13, 673, 1
-	setmetatile 76, 14, 664, 1
-	setmetatile 77, 14, 665, 1
-	setmetatile 76, 15, 672, 1
-	setmetatile 77, 15, 673, 1
-	setmetatile 77, 16, 664, 1
-	setmetatile 78, 16, 665, 1
-	setmetatile 77, 17, 672, 1
-	setmetatile 78, 17, 673, 1
+	setmetatile 76, 12, METATILE_Lilycove_Wailmer0, 1
+	setmetatile 77, 12, METATILE_Lilycove_Wailmer1, 1
+	setmetatile 76, 13, METATILE_Lilycove_Wailmer2, 1
+	setmetatile 77, 13, METATILE_Lilycove_Wailmer3, 1
+	setmetatile 76, 14, METATILE_Lilycove_Wailmer0_Alt, 1
+	setmetatile 77, 14, METATILE_Lilycove_Wailmer1_Alt, 1
+	setmetatile 76, 15, METATILE_Lilycove_Wailmer2, 1
+	setmetatile 77, 15, METATILE_Lilycove_Wailmer3, 1
+	setmetatile 77, 16, METATILE_Lilycove_Wailmer0_Alt, 1
+	setmetatile 78, 16, METATILE_Lilycove_Wailmer1_Alt, 1
+	setmetatile 77, 17, METATILE_Lilycove_Wailmer2, 1
+	setmetatile 78, 17, METATILE_Lilycove_Wailmer3, 1
 	return
 
 LilycoveCity_EventScript_1E2BD8:: @ 81E2BD8
@@ -391,10 +391,10 @@ LilycoveCity_EventScript_1E3006:: @ 81E3006
 	waitmovement 0
 	delay 50
 	setfieldeffectargument 0, 1
-	dofieldeffect 30
+	dofieldeffect FLDEFF_NPCFLY_OUT
 	delay 15
 	removeobject VAR_LAST_TALKED
-	waitfieldeffect 30
+	waitfieldeffect FLDEFF_NPCFLY_OUT
 	savebgm MUS_DUMMY
 	fadedefaultbgm
 	setflag FLAG_MET_RIVAL_LILYCOVE

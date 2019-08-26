@@ -1,8 +1,8 @@
 MossdeepCity_MapScripts:: @ 81E4A96
-	map_script MAP_SCRIPT_ON_TRANSITION, MossdeepCity_MapScript1_1E4A9C
+	map_script MAP_SCRIPT_ON_TRANSITION, MossdeepCity_OnTransition
 	.byte 0
 
-MossdeepCity_MapScript1_1E4A9C: @ 81E4A9C
+MossdeepCity_OnTransition: @ 81E4A9C
 	clearflag FLAG_MOSSDEEP_GYM_SWITCH_1
 	clearflag FLAG_MOSSDEEP_GYM_SWITCH_2
 	clearflag FLAG_MOSSDEEP_GYM_SWITCH_3
@@ -94,7 +94,7 @@ MossdeepCity_EventScript_1E4B41:: @ 81E4B41
 	removeobject 12
 	removeobject 13
 	delay 30
-	setvar VAR_MOSSDEEP_STATE, 2
+	setvar VAR_MOSSDEEP_CITY_STATE, 2
 	setflag FLAG_HIDE_MOSSDEEP_CITY_TEAM_MAGMA
 	releaseall
 	end

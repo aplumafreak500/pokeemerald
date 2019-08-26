@@ -37,7 +37,7 @@
 #include "decoration.h"
 #include "secret_base.h"
 #include "tv.h"
-#include "data2.h"
+#include "data.h"
 #include "constants/layouts.h"
 #include "constants/metatile_behaviors.h"
 
@@ -56,9 +56,9 @@ struct {
     u16 move;
 } sTV_SecretBaseVisitMonsTemp[10];
 
-IWRAM_DATA u8 sTVShowMixingNumPlayers;
-IWRAM_DATA u8 sTVShowNewsMixingNumPlayers;
-IWRAM_DATA s8 sTVShowMixingCurSlot;
+static u8 sTVShowMixingNumPlayers;
+static u8 sTVShowNewsMixingNumPlayers;
+static s8 sTVShowMixingCurSlot;
 
 EWRAM_DATA u16 sPokemonAnglerSpecies = 0;
 EWRAM_DATA u16 sPokemonAnglerAttemptCounters = 0;
@@ -69,10 +69,9 @@ EWRAM_DATA ALIGNED(4) u8 sTVShowState = 0;
 EWRAM_DATA u8 sTVSecretBaseSecretsRandomValues[3] = {};
 
 // Static ROM declarations
-
-extern const u8 *const sTVBravoTrainerTextGroup[];
-extern const u8 *const sTVBravoTrainerBattleTowerTextGroup[];
-
+#if !defined(NONMATCHING) && MODERN
+#define static
+#endif
 void ClearPokemonNews(void);
 u8 GetTVChannelByShowType(u8 kind);
 u8 FindFirstActiveTVShowThatIsNotAMassOutbreak(void);
@@ -1658,12 +1657,12 @@ void PutLilycoveContestLadyShowOnTheAir(void)
     if (gSpecialVar_Result != TRUE)
     {
         show = &gSaveBlock1Ptr->tvShows[sCurTVShowSlot];
-        sub_818E848(&show->contestLiveUpdates2.language);
+        BufferContestLadyLanguage(&show->contestLiveUpdates2.language);
         show->contestLiveUpdates2.pokemonNameLanguage = LANGUAGE_ENGLISH;
         show->contestLiveUpdates2.kind = TVSHOW_CONTEST_LIVE_UPDATES_2;
         show->contestLiveUpdates2.active = TRUE;
-        sub_818E81C(show->contestLiveUpdates2.playerName);
-        sub_818E7E0(&show->contestLiveUpdates2.contestCategory, show->contestLiveUpdates2.nickname);
+        BufferContestLadyPlayerName(show->contestLiveUpdates2.playerName);
+        BufferContestLadyMonName(&show->contestLiveUpdates2.contestCategory, show->contestLiveUpdates2.nickname);
         show->contestLiveUpdates2.pokeblockState = sub_818E880();
         tv_store_id_2x(show);
     }
@@ -2567,7 +2566,7 @@ void sub_80EEA70(void)
             show->secretBaseSecrets.active = FALSE;
             StringCopy(show->secretBaseSecrets.playerName, gSaveBlock2Ptr->playerName);
             show->secretBaseSecrets.stepsInBase = VarGet(VAR_SECRET_BASE_STEP_COUNTER);
-            sub_80E980C();
+            CopyCurSecretBaseOwnerName_StrVar1();
             StringCopy(strbuf, gStringVar1);
             StripExtCtrlCodes(strbuf);
             StringCopy(show->secretBaseSecrets.baseOwnersName, strbuf);
@@ -3434,7 +3433,7 @@ bool8 TV_IsScriptShowKindAlreadyInQueue(void)
     return FALSE;
 }
 
-bool8 TV_PutNameRaterShowOnTheAirIfNicnkameChanged(void)
+bool8 TV_PutNameRaterShowOnTheAirIfNicknameChanged(void)
 {
     GetMonData(&gPlayerParty[gSpecialVar_0x8004], MON_DATA_NICKNAME, gStringVar1);
     if (!StringCompare(gStringVar3, gStringVar1))
@@ -5601,7 +5600,7 @@ static void DoTVShowPokemonContestLiveUpdates(void)
     switch (state)
     {
         case  0:
-            sub_818E868(gStringVar1, show->contestLiveUpdates.category);
+            BufferContestName(gStringVar1, show->contestLiveUpdates.category);
             StringCopy(gStringVar2, gSpeciesNames[show->contestLiveUpdates.species]);
             TVShowConvertInternationalString(gStringVar3, show->contestLiveUpdates.playerName, show->contestLiveUpdates.language);
             if (show->contestLiveUpdates.round1Rank == show->contestLiveUpdates.round2Rank)
@@ -7366,7 +7365,7 @@ u8 TVShowGetFlagCount(TVShow *show)
     return tot;
 }
 
-u8 TVShowGetStateForFlagNumber(TVShow *show, u8 a1)
+static u8 SecretBaseSecrets_GetStateForFlagNumber(TVShow *show, u8 a1)
 {
     u8 i;
     u8 tot;
@@ -7409,7 +7408,7 @@ static void DoTVShowSecretBaseSecrets(void)
             {
                 show->secretBaseSecrets.savedState = 1;
                 sTVSecretBaseSecretsRandomValues[0] = Random() % bitCount;
-                sTVShowState = TVShowGetStateForFlagNumber(show, sTVSecretBaseSecretsRandomValues[0]);
+                sTVShowState = SecretBaseSecrets_GetStateForFlagNumber(show, sTVSecretBaseSecretsRandomValues[0]);
             }
             break;
         case 1:
@@ -7424,11 +7423,11 @@ static void DoTVShowSecretBaseSecrets(void)
                     show->secretBaseSecrets.savedState = 2;
                     if (sTVSecretBaseSecretsRandomValues[0] == 0)
                     {
-                        sTVShowState = TVShowGetStateForFlagNumber(show, 1);
+                        sTVShowState = SecretBaseSecrets_GetStateForFlagNumber(show, 1);
                     }
                     else
                     {
-                        sTVShowState = TVShowGetStateForFlagNumber(show, 0);
+                        sTVShowState = SecretBaseSecrets_GetStateForFlagNumber(show, 0);
                     }
                     break;
                 default:
@@ -7441,7 +7440,7 @@ static void DoTVShowSecretBaseSecrets(void)
                         }
                     }
                     show->secretBaseSecrets.savedState = 2;
-                    sTVShowState = TVShowGetStateForFlagNumber(show, sTVSecretBaseSecretsRandomValues[1]);
+                    sTVShowState = SecretBaseSecrets_GetStateForFlagNumber(show, sTVSecretBaseSecretsRandomValues[1]);
                     break;
             }
             break;
@@ -7463,7 +7462,7 @@ static void DoTVShowSecretBaseSecrets(void)
                     }
                 }
                 show->secretBaseSecrets.savedState = 3;
-                sTVShowState = TVShowGetStateForFlagNumber(show, sTVSecretBaseSecretsRandomValues[2]);
+                sTVShowState = SecretBaseSecrets_GetStateForFlagNumber(show, sTVSecretBaseSecretsRandomValues[2]);
             }
             break;
         case 3:
@@ -7721,7 +7720,7 @@ static void DoTVShowPokemonContestLiveUpdates2(void)
     switch (state)
     {
         case 0:
-            sub_818E868(gStringVar1, show->contestLiveUpdates2.contestCategory);
+            BufferContestName(gStringVar1, show->contestLiveUpdates2.contestCategory);
             if (show->contestLiveUpdates2.pokeblockState == 1)
             {
                 sTVShowState = 1;

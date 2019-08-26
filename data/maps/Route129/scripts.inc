@@ -1,5 +1,5 @@
 Route129_MapScripts:: @ 81F7284
-	map_script MAP_SCRIPT_ON_TRANSITION, Route129_MapScript1_1F72AB
+	map_script MAP_SCRIPT_ON_TRANSITION, Route129_OnTransition
 	map_script MAP_SCRIPT_ON_LOAD, Route129_MapScript1_1F7294
 	map_script MAP_SCRIPT_ON_FRAME_TABLE, Route129_MapScript2_1F72E2
 	.byte 0
@@ -11,10 +11,10 @@ Route129_MapScript1_1F7294: @ 81F7294
 	call_if_eq UnusualWeather_EventScript_PlaceTilesRoute129East
 	end
 
-Route129_MapScript1_1F72AB: @ 81F72AB
+Route129_OnTransition: @ 81F72AB
 	compare VAR_SHOULD_END_UNUSUAL_WEATHER, 1
 	call_if_eq Route129_EventScript_273D13
-	compare VAR_RAYQUAZA_STATE, 4
+	compare VAR_SOOTOPOLIS_CITY_STATE, 4
 	call_if_ge Route129_EventScript_1F72D8
 	compare VAR_UNUSUAL_WEATHER_LOCATION, UNUSUAL_WEATHER_ROUTE_129_WEST
 	call_if_eq UnusualWeather_StartKyogreWeather

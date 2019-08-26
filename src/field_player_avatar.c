@@ -336,14 +336,9 @@ void player_step(u8 direction, u16 newKeys, u16 heldKeys)
 
 static bool8 TryInterruptEventObjectSpecialAnim(struct EventObject *playerEventObj, u8 direction)
 {
-    #ifdef NONMATCHING
-        u8 r5 = direction;
-        u8 r6 = direction;
-    #else
-        u8 r5 = direction;
-        register u8 r6 asm("r6") = direction;
-    #endif
-    //a very bad HACK
+    u8 r5 = direction;
+    u8 r6 = direction;
+    r6++; r6--;
 
     if (EventObjectIsMovementOverridden(playerEventObj)
      && !EventObjectClearHeldMovementIfFinished(playerEventObj))
@@ -1188,9 +1183,9 @@ u8 PlayerGetZCoord(void)
     return gEventObjects[gPlayerAvatar.eventObjectId].previousElevation;
 }
 
-void sub_808BC90(s16 a, s16 b)
+void sub_808BC90(s16 x, s16 y)
 {
-    sub_808EB08(&gEventObjects[gPlayerAvatar.eventObjectId], a, b);
+    MoveEventObjectToMapCoords(&gEventObjects[gPlayerAvatar.eventObjectId], x, y);
 }
 
 u8 TestPlayerAvatarFlags(u8 a)
@@ -1337,13 +1332,13 @@ void SetPlayerAvatarStateMask(u8 flags)
     gPlayerAvatar.flags |= flags;
 }
 
-static u8 GetPlayerAvatarStateTransitionByGraphicsId(u8 a, u8 gender)
+static u8 GetPlayerAvatarStateTransitionByGraphicsId(u8 graphicsId, u8 gender)
 {
     u8 i;
 
     for (i = 0; i < 5; i++)
     {
-        if (gUnknown_0849750C[gender][i][0] == a)
+        if (gUnknown_0849750C[gender][i][0] == graphicsId)
             return gUnknown_0849750C[gender][i][1];
     }
     return 1;
@@ -1362,9 +1357,9 @@ u8 GetPlayerAvatarGraphicsIdByCurrentState(void)
     return 0;
 }
 
-void SetPlayerAvatarExtraStateTransition(u8 a, u8 b)
+void SetPlayerAvatarExtraStateTransition(u8 graphicsId, u8 b)
 {
-    u8 unk = GetPlayerAvatarStateTransitionByGraphicsId(a, gPlayerAvatar.gender);
+    u8 unk = GetPlayerAvatarStateTransitionByGraphicsId(graphicsId, gPlayerAvatar.gender);
 
     gPlayerAvatar.unk1 |= unk | b;
     DoPlayerAvatarTransition();

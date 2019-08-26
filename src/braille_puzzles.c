@@ -10,6 +10,7 @@
 #include "constants/maps.h"
 #include "constants/songs.h"
 #include "constants/species.h"
+#include "constants/metatile_labels.h"
 #include "fieldmap.h"
 #include "party_menu.h"
 #include "fldeff.h"
@@ -25,42 +26,42 @@ EWRAM_DATA static u8 sBraillePuzzleCallbackFlag = 0;
 
 static const u8 gRegicePathCoords[][2] =
 {
-    {0x04, 0x15},
-    {0x05, 0x15},
-    {0x06, 0x15},
-    {0x07, 0x15},
-    {0x08, 0x15},
-    {0x09, 0x15},
-    {0x0a, 0x15},
-    {0x0b, 0x15},
-    {0x0c, 0x15},
-    {0x0c, 0x16},
-    {0x0c, 0x17},
-    {0x0d, 0x17},
-    {0x0d, 0x18},
-    {0x0d, 0x19},
-    {0x0d, 0x1a},
-    {0x0d, 0x1b},
-    {0x0c, 0x1b},
-    {0x0c, 0x1c},
-    {0x04, 0x1d},
-    {0x05, 0x1d},
-    {0x06, 0x1d},
-    {0x07, 0x1d},
-    {0x08, 0x1d},
-    {0x09, 0x1d},
-    {0x0a, 0x1d},
-    {0x0b, 0x1d},
-    {0x0c, 0x1d},
-    {0x04, 0x1c},
-    {0x04, 0x1b},
-    {0x03, 0x1b},
-    {0x03, 0x1a},
-    {0x03, 0x19},
-    {0x03, 0x18},
-    {0x03, 0x17},
-    {0x04, 0x17},
-    {0x04, 0x16},
+    {4,  21},
+    {5,  21},
+    {6,  21},
+    {7,  21},
+    {8,  21},
+    {9,  21},
+    {10, 21},
+    {11, 21},
+    {12, 21},
+    {12, 22},
+    {12, 23},
+    {13, 23},
+    {13, 24},
+    {13, 25},
+    {13, 26},
+    {13, 27},
+    {12, 27},
+    {12, 28},
+    {4,  29},
+    {5,  29},
+    {6,  29},
+    {7,  29},
+    {8,  29},
+    {9,  29},
+    {10, 29},
+    {11, 29},
+    {12, 29},
+    {4,  28},
+    {4,  27},
+    {3,  27},
+    {3,  26},
+    {3,  25},
+    {3,  24},
+    {3,  23},
+    {4,  23},
+    {4,  22},
 };
 
 void SealedChamberShakingEffect(u8);
@@ -86,12 +87,12 @@ bool8 ShouldDoBrailleDigEffect(void)
 
 void DoBrailleDigEffect(void)
 {
-    MapGridSetMetatileIdAt(16, 8, 0x22A);
-    MapGridSetMetatileIdAt(17, 8, 0x22B);
-    MapGridSetMetatileIdAt(18, 8, 0x22C);
-    MapGridSetMetatileIdAt(16, 9, 0xE32);
-    MapGridSetMetatileIdAt(17, 9, 0x233);
-    MapGridSetMetatileIdAt(18, 9, 0xE34);
+    MapGridSetMetatileIdAt(16, 8, METATILE_ID(Cave, SealedChamberEntrance_TopLeft));
+    MapGridSetMetatileIdAt(17, 8, METATILE_ID(Cave, SealedChamberEntrance_TopMid));
+    MapGridSetMetatileIdAt(18, 8, METATILE_ID(Cave, SealedChamberEntrance_TopRight));
+    MapGridSetMetatileIdAt(16, 9, METATILE_ID(Cave, SealedChamberEntrance_BottomLeft) | METATILE_COLLISION_MASK);
+    MapGridSetMetatileIdAt(17, 9, METATILE_ID(Cave, SealedChamberEntrance_BottomMid));
+    MapGridSetMetatileIdAt(18, 9, METATILE_ID(Cave, SealedChamberEntrance_BottomRight) | METATILE_COLLISION_MASK);
     DrawWholeMapView();
     PlaySE(SE_BAN);
     FlagSet(FLAG_SYS_BRAILLE_DIG);
@@ -279,12 +280,12 @@ void UseRegirockHm_Callback(void)
 
 void DoBrailleRegirockEffect(void)
 {
-    MapGridSetMetatileIdAt(14, 26, 0x22A);
-    MapGridSetMetatileIdAt(15, 26, 0x22B);
-    MapGridSetMetatileIdAt(16, 26, 0x22C);
-    MapGridSetMetatileIdAt(14, 27, 0xE32);
-    MapGridSetMetatileIdAt(15, 27, 0x233);
-    MapGridSetMetatileIdAt(16, 27, 0xE34);
+    MapGridSetMetatileIdAt(14, 26, METATILE_ID(Cave, SealedChamberEntrance_TopLeft));
+    MapGridSetMetatileIdAt(15, 26, METATILE_ID(Cave, SealedChamberEntrance_TopMid));
+    MapGridSetMetatileIdAt(16, 26, METATILE_ID(Cave, SealedChamberEntrance_TopRight));
+    MapGridSetMetatileIdAt(14, 27, METATILE_ID(Cave, SealedChamberEntrance_BottomLeft) | METATILE_COLLISION_MASK);
+    MapGridSetMetatileIdAt(15, 27, METATILE_ID(Cave, SealedChamberEntrance_BottomMid));
+    MapGridSetMetatileIdAt(16, 27, METATILE_ID(Cave, SealedChamberEntrance_BottomRight) | METATILE_COLLISION_MASK);
     DrawWholeMapView();
     PlaySE(SE_BAN);
     FlagSet(FLAG_SYS_REGIROCK_PUZZLE_COMPLETED);
@@ -318,12 +319,12 @@ void UseRegisteelHm_Callback(void)
 
 void DoBrailleRegisteelEffect(void)
 {
-    MapGridSetMetatileIdAt(14, 26, 0x22A);
-    MapGridSetMetatileIdAt(15, 26, 0x22B);
-    MapGridSetMetatileIdAt(16, 26, 0x22C);
-    MapGridSetMetatileIdAt(14, 27, 0xE32);
-    MapGridSetMetatileIdAt(15, 27, 0x233);
-    MapGridSetMetatileIdAt(16, 27, 0xE34);
+    MapGridSetMetatileIdAt(14, 26, METATILE_ID(Cave, SealedChamberEntrance_TopLeft));
+    MapGridSetMetatileIdAt(15, 26, METATILE_ID(Cave, SealedChamberEntrance_TopMid));
+    MapGridSetMetatileIdAt(16, 26, METATILE_ID(Cave, SealedChamberEntrance_TopRight));
+    MapGridSetMetatileIdAt(14, 27, METATILE_ID(Cave, SealedChamberEntrance_BottomLeft) | METATILE_COLLISION_MASK);
+    MapGridSetMetatileIdAt(15, 27, METATILE_ID(Cave, SealedChamberEntrance_BottomMid));
+    MapGridSetMetatileIdAt(16, 27, METATILE_ID(Cave, SealedChamberEntrance_BottomRight) | METATILE_COLLISION_MASK);
     DrawWholeMapView();
     PlaySE(SE_BAN);
     FlagSet(FLAG_SYS_REGISTEEL_PUZZLE_COMPLETED);

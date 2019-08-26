@@ -350,7 +350,7 @@ static EWRAM_DATA struct SpriteSheet *sUnknown_0203AB30 = NULL;
 static EWRAM_DATA struct SlotMachineEwramStruct *sSlotMachine = NULL;
 
 // IWRAM bss
-static IWRAM_DATA struct SpriteFrameImage *gUnknown_03001188[26];
+static struct SpriteFrameImage *gUnknown_03001188[26];
 
 // Const rom data.
 extern const struct UnkStruct1 *const gUnknown_083ED048[];
@@ -658,7 +658,7 @@ static void Task_FadeToSlotMachine(u8 taskId)
     switch (gTasks[taskId].tState)
     {
     case 0:
-        BeginNormalPaletteFade(0xFFFFFFFF, 0, 0, 0x10, 0);
+        BeginNormalPaletteFade(0xFFFFFFFF, 0, 0, 0x10, RGB_BLACK);
         gTasks[taskId].tState++;
         break;
     case 1:
@@ -718,7 +718,7 @@ static void CB2_SlotMachineSetup(void)
             gMain.state++;
             break;
         case 7:
-            BeginNormalPaletteFade(-1, 0, 0x10, 0, 0);
+            BeginNormalPaletteFade(-1, 0, 0x10, 0, RGB_BLACK);
             ShowBg(0);
             ShowBg(1);
             ShowBg(2);

@@ -7,7 +7,7 @@
 #include "contest.h"
 #include "contest_link_80F57C4.h"
 #include "contest_painting.h"
-#include "data2.h"
+#include "data.h"
 #include "decoration.h"
 #include "decoration_inventory.h"
 #include "event_data.h"
@@ -62,7 +62,7 @@ static EWRAM_DATA u16 sMovingNpcMapBank = 0;
 static EWRAM_DATA u16 sMovingNpcMapId = 0;
 static EWRAM_DATA u16 sFieldEffectScriptId = 0;
 
-IWRAM_DATA u8 gUnknown_03000F30;
+static u8 gBrailleWindowId;
 
 extern const SpecialFunc gSpecials[];
 extern const u8 *gStdScripts[];
@@ -281,7 +281,7 @@ bool8 ScrCmd_callstd_if(struct ScriptContext *ctx)
     return FALSE;
 }
 
-bool8 ScrCmd_gotoram(struct ScriptContext *ctx)
+bool8 ScrCmd_returnram(struct ScriptContext *ctx)
 {
     ScriptJump(ctx, gUnknown_020375C0);
     return FALSE;
@@ -466,6 +466,9 @@ bool8 ScrCmd_addvar(struct ScriptContext *ctx)
 {
     u16 *ptr = GetVarPointer(ScriptReadHalfword(ctx));
     *ptr += ScriptReadHalfword(ctx);
+    // Note: addvar doesn't support adding from a variable in vanilla. If you were to 
+    // add a VarGet() to the above, make sure you change the `addvar VAR_0x8006, 65535`
+    // in the contest scripts to `subvar VAR_0x8006, 1`, else contests will break.
     return FALSE;
 }
 
@@ -1068,7 +1071,7 @@ bool8 ScrCmd_addobject(struct ScriptContext *ctx)
 {
     u16 objectId = VarGet(ScriptReadHalfword(ctx));
 
-    show_sprite(objectId, gSaveBlock1Ptr->location.mapNum, gSaveBlock1Ptr->location.mapGroup);
+    TrySpawnEventObject(objectId, gSaveBlock1Ptr->location.mapNum, gSaveBlock1Ptr->location.mapGroup);
     return FALSE;
 }
 
@@ -1078,7 +1081,7 @@ bool8 ScrCmd_addobject_at(struct ScriptContext *ctx)
     u8 mapGroup = ScriptReadByte(ctx);
     u8 mapNum = ScriptReadByte(ctx);
 
-    show_sprite(objectId, mapNum, mapGroup);
+    TrySpawnEventObject(objectId, mapNum, mapGroup);
     return FALSE;
 }
 
@@ -1088,7 +1091,7 @@ bool8 ScrCmd_setobjectxy(struct ScriptContext *ctx)
     u16 x = VarGet(ScriptReadHalfword(ctx));
     u16 y = VarGet(ScriptReadHalfword(ctx));
 
-    sub_808EBA8(localId, gSaveBlock1Ptr->location.mapNum, gSaveBlock1Ptr->location.mapGroup, x, y);
+    TryMoveEventObjectToMapCoords(localId, gSaveBlock1Ptr->location.mapNum, gSaveBlock1Ptr->location.mapGroup, x, y);
     return FALSE;
 }
 
@@ -1102,11 +1105,11 @@ bool8 ScrCmd_setobjectxyperm(struct ScriptContext *ctx)
     return FALSE;
 }
 
-bool8 ScrCmd_moveobjectoffscreen(struct ScriptContext *ctx)
+bool8 ScrCmd_copyobjectxytoperm(struct ScriptContext *ctx)
 {
     u16 localId = VarGet(ScriptReadHalfword(ctx));
 
-    sub_808F254(localId, gSaveBlock1Ptr->location.mapNum, gSaveBlock1Ptr->location.mapGroup);
+    TryOverrideEventObjectTemplateCoords(localId, gSaveBlock1Ptr->location.mapNum, gSaveBlock1Ptr->location.mapGroup);
     return FALSE;
 }
 
@@ -1515,13 +1518,13 @@ bool8 ScrCmd_braillemessage(struct ScriptContext *ctx)
     yText = (yText - yWindow - 1) * 8;
 
     winTemplate = CreateWindowTemplate(0, xWindow, yWindow + 1, width, height, 0xF, 0x1);
-    gUnknown_03000F30 = AddWindow(&winTemplate);
-    LoadUserWindowBorderGfx(gUnknown_03000F30, 0x214, 0xE0);
-    DrawStdWindowFrame(gUnknown_03000F30, 0);
-    PutWindowTilemap(gUnknown_03000F30);
-    FillWindowPixelBuffer(gUnknown_03000F30, PIXEL_FILL(1));
-    AddTextPrinterParameterized(gUnknown_03000F30, 6, gStringVar4, xText, yText, 0xFF, 0x0);
-    CopyWindowToVram(gUnknown_03000F30, 3);
+    gBrailleWindowId = AddWindow(&winTemplate);
+    LoadUserWindowBorderGfx(gBrailleWindowId, 0x214, 0xE0);
+    DrawStdWindowFrame(gBrailleWindowId, 0);
+    PutWindowTilemap(gBrailleWindowId);
+    FillWindowPixelBuffer(gBrailleWindowId, PIXEL_FILL(1));
+    AddTextPrinterParameterized(gBrailleWindowId, 6, gStringVar4, xText, yText, 0xFF, 0x0);
+    CopyWindowToVram(gBrailleWindowId, 3);
     return FALSE;
 }
 
@@ -1630,7 +1633,7 @@ bool8 ScrCmd_buffercontesttype(struct ScriptContext *ctx)
     u8 stringVarIndex = ScriptReadByte(ctx);
     u16 index = VarGet(ScriptReadHalfword(ctx));
 
-    sub_818E868(sScriptStringVars[stringVarIndex], index);
+    BufferContestName(sScriptStringVars[stringVarIndex], index);
     return FALSE;
 }
 
@@ -2215,9 +2218,9 @@ bool8 ScrCmd_checkmonobedience(struct ScriptContext *ctx)
     return FALSE;
 }
 
-bool8 ScrCmd_cmdCF(struct ScriptContext *ctx)
+bool8 ScrCmd_gotoram(struct ScriptContext *ctx)
 {
-    const u8* v1 = sub_8099244();
+    const u8* v1 = GetSavedRamScriptIfValid();
 
     if (v1)
     {
@@ -2254,8 +2257,8 @@ bool8 ScrCmd_setmonmetlocation(struct ScriptContext *ctx)
 
 void sub_809BDB4(void)
 {
-    ClearStdWindowAndFrame(gUnknown_03000F30, 1);
-    RemoveWindow(gUnknown_03000F30);
+    ClearStdWindowAndFrame(gBrailleWindowId, 1);
+    RemoveWindow(gBrailleWindowId);
 }
 
 bool8 ScrCmd_buffertrainerclassname(struct ScriptContext *ctx)

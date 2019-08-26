@@ -77,7 +77,7 @@
 	.endm
 
 	@ Executes a script stored in a default RAM location.
-	.macro gotoram
+	.macro returnram
 	.byte 0x0c
 	.endm
 
@@ -765,7 +765,8 @@
 	.2byte \y
 	.endm
 
-	.macro moveobjectoffscreen index:req
+	@ Copies a live event object's xy position to its template, so that if the sprite goes off screen, it'll still be there when it comes back on screen.
+	.macro copyobjectxytoperm index:req
 	.byte 0x64
 	.2byte \index
 	.endm
@@ -1089,6 +1090,7 @@
 	.byte 0x95
 	.byte \x
 	.byte \y
+	.byte 0 @ 1 = don't perform this command. Always 0 in vanilla. Why this is a thing is beyond me.
 	.endm
 
 	@ Gets the price reduction for the index given. In FireRed, this command is a nop.
@@ -1440,7 +1442,7 @@
 	.endm
 
 	@ Depending on factors I haven't managed to understand yet, this command may cause script execution to jump to the offset specified by the pointer at 0x020375C0.
-	.macro execram
+	.macro gotoram
 	.byte 0xcf
 	.endm
 

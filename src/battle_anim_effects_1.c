@@ -1093,7 +1093,7 @@ const struct SpriteTemplate gUnknown_085928D0 =
     .callback = sub_8100A50,
 };
 
-const struct SpriteTemplate gUnknown_085928E8 =
+const struct SpriteTemplate gVineWhipSpriteTemplate =
 {
     .tileTag = ANIM_TAG_WHIP_HIT,
     .paletteTag = ANIM_TAG_WHIP_HIT,
@@ -1121,8 +1121,8 @@ const union AnimCmd *const gUnknown_08592918[] =
 
 const struct SpriteTemplate gUnknown_0859291C =
 {
-    .tileTag = ANIM_TAG_UNUSED_HIT,
-    .paletteTag = ANIM_TAG_UNUSED_HIT,
+    .tileTag = ANIM_TAG_HIT,
+    .paletteTag = ANIM_TAG_HIT,
     .oam = &gUnknown_08524914,
     .anims = gUnknown_08592918,
     .images = NULL,
@@ -1132,8 +1132,8 @@ const struct SpriteTemplate gUnknown_0859291C =
 
 const struct SpriteTemplate gUnknown_08592934 =
 {
-    .tileTag = ANIM_TAG_UNUSED_HIT_2,
-    .paletteTag = ANIM_TAG_UNUSED_HIT_2,
+    .tileTag = ANIM_TAG_HIT_2,
+    .paletteTag = ANIM_TAG_HIT_2,
     .oam = &gUnknown_08524914,
     .anims = gUnknown_08592918,
     .images = NULL,
@@ -1442,8 +1442,8 @@ const union AnimCmd *const gUnknown_08592BF4[] =
 
 const struct SpriteTemplate gUnknown_08592BFC =
 {
-    .tileTag = ANIM_TAG_UNUSED_BUBBLE_BURST,
-    .paletteTag = ANIM_TAG_UNUSED_BUBBLE_BURST,
+    .tileTag = ANIM_TAG_BUBBLE_BURST,
+    .paletteTag = ANIM_TAG_BUBBLE_BURST,
     .oam = &gUnknown_0852490C,
     .anims = gUnknown_08592BF4,
     .images = NULL,
@@ -2336,7 +2336,7 @@ void AnimHyperBeamOrb(struct Sprite* sprite)
 {
     u16 speed;
     u16 animNum = Random2();
-    
+
     StartSpriteAnim(sprite, animNum % 8);
     sprite->pos1.x = GetBattlerSpriteCoord(gBattleAnimAttacker, BATTLER_COORD_X_2);
     sprite->pos1.y = GetBattlerSpriteCoord(gBattleAnimAttacker, BATTLER_COORD_Y_PIC_OFFSET);
@@ -2547,7 +2547,7 @@ static void AnimPetalDanceSmallFlowerStep(struct Sprite* sprite)
     {
         sprite->pos2.x += Sin(sprite->data[5], 8);
         if ((u16)(sprite->data[5] - 59) < 5 || (u16)(sprite->data[5] - 187) < 5)
-            sprite->oam.matrixNum ^= 0x8; // horizontal flip
+            sprite->oam.matrixNum ^= ST_OAM_HFLIP;
 
         sprite->data[5] += 5;
         sprite->data[5] &= 0xFF;
@@ -2660,7 +2660,7 @@ static void AnimTranslateLinearSingleSineWaveStep(struct Sprite* sprite)
     s16 a = sprite->data[0];
     s16 b = sprite->data[7];
     s16 r0;
-    
+
     sprite->data[0] = 1;
     TranslateAnimHorizontalArc(sprite);
     r0 = sprite->data[7];
@@ -2675,7 +2675,7 @@ static void AnimTranslateLinearSingleSineWaveStep(struct Sprite* sprite)
         if (sprite->oam.affineParam == 30)
             destroy = TRUE;
     }
-    
+
     if (sprite->pos1.x + sprite->pos2.x > 256
      || sprite->pos1.x + sprite->pos2.x < -16
      || sprite->pos1.y + sprite->pos2.y > 160
@@ -3748,7 +3748,7 @@ void sub_81009F8(struct Sprite* sprite)
 
 void sub_8100A50(struct Sprite* sprite)
 {
-    if (GetBattlerSide(gBattleAnimAttacker) == 0)
+    if (GetBattlerSide(gBattleAnimAttacker) == B_SIDE_PLAYER)
         StartSpriteAnim(sprite, 1);
 
     sprite->callback = sub_81009DC;
@@ -3770,7 +3770,7 @@ void sub_8100A94(struct Sprite* sprite)
 }
 
 // Moves the sprite in a diagonally slashing motion across the target mon.
-// Used by moves such as MOVE_CUT and MOVE_AERIAL_ACE. 
+// Used by moves such as MOVE_CUT and MOVE_AERIAL_ACE.
 // arg 0: initial x pixel offset
 // arg 1: initial y pixel offset
 // arg 2: slice direction; 0 = right-to-left, 1 = left-to-right
@@ -4380,19 +4380,19 @@ void sub_8101898(struct Sprite* sprite)
     {
         sprite->pos1.x -= 0x18;
         sprite->pos1.y += 0x18;
-        sprite->oam.matrixNum = 16;
+        sprite->oam.matrixNum = ST_OAM_VFLIP;
     }
     else if ((s16)sprite->oam.affineParam == 3)
     {
         sprite->pos1.x += 0x18;
         sprite->pos1.y -= 0x18;
-        sprite->oam.matrixNum = 8;
+        sprite->oam.matrixNum = ST_OAM_HFLIP;
     }
     else
     {
         sprite->pos1.x += 0x18;
         sprite->pos1.y += 0x18;
-        sprite->oam.matrixNum = 24;
+        sprite->oam.matrixNum = ST_OAM_HFLIP | ST_OAM_VFLIP;
     }
 
     sprite->oam.tileNum = (sprite->oam.tileNum + 16);
@@ -5105,7 +5105,7 @@ void sub_8102844(struct Sprite* sprite)
     sprite->data[7] = sprite->pos1.y;
     if (IsContest())
     {
-        sprite->oam.matrixNum = 8;
+        sprite->oam.matrixNum = ST_OAM_HFLIP;
         sprite->pos1.x += 40;
         sprite->pos1.y += 20;
         sprite->data[2] = sprite->pos1.x << 7;
@@ -5130,7 +5130,7 @@ void sub_8102844(struct Sprite* sprite)
         sprite->data[3] = -0x1400 / sprite->data[1];
         sprite->data[4] = sprite->pos1.y << 7;
         sprite->data[5] = 0xA00 / sprite->data[1];
-        sprite->oam.matrixNum = 24;
+        sprite->oam.matrixNum = (ST_OAM_HFLIP | ST_OAM_VFLIP);
     }
 
     sprite->callback = sub_810296C;
@@ -5315,21 +5315,19 @@ static void sub_8102D8C(s16 a, s16 b, s16* c, s16* d, s8 e)
 
 static void sub_8102DE4(struct Sprite* sprite)
 {
-    int b;
-    s16 a;
-    int c;
+    s16 y, yDelta;
     u8 index;
+
     sprite->data[0]++;
-    b = sprite->data[0] * 5 - ((sprite->data[0] * 5 / 256) << 8);
+    yDelta = sprite->data[0] * 5 - ((sprite->data[0] * 5 / 256) << 8);
     sprite->data[4] += sprite->data[6];
     sprite->data[5] += sprite->data[7];
     sprite->pos1.x = sprite->data[4] >> 4;
     sprite->pos1.y = sprite->data[5] >> 4;
-    sprite->pos2.y = Sin(b, 15);
-    a = (u16)sprite->pos1.y;
-    c = (u16)sprite->pos1.x;
+    sprite->pos2.y = Sin(yDelta, 15);
 
-    if ((u32)((c + 16) << 16) > (0x110) << 16 || a < -16 || a > 0x80)
+    y = sprite->pos1.y;
+    if (sprite->pos1.x < -16 || sprite->pos1.x > 256 || y < -16 || y > 128)
     {
         DestroySpriteAndMatrix(sprite);
     }
@@ -5350,12 +5348,8 @@ static void sub_8102DE4(struct Sprite* sprite)
 
 void sub_8102EB0(struct Sprite* sprite)
 {
-    int a; 
     if (GetBattlerSide(gBattleAnimAttacker) == B_SIDE_OPPONENT)
-    {
-        a = gBattleAnimArgs[1]; 
-        (u16)gBattleAnimArgs[1] = -a;
-    }
+        gBattleAnimArgs[1] *= -1;
 
     sprite->pos1.x = GetBattlerSpriteCoord(gBattleAnimAttacker, 2) + gBattleAnimArgs[1];
     sprite->pos1.y = GetBattlerSpriteCoord(gBattleAnimAttacker, 3) + gBattleAnimArgs[2];
@@ -5393,7 +5387,7 @@ void sub_8102FB8(struct Sprite* sprite)
     s16 a;
     if (gBattleAnimArgs[0] == 1)
     {
-        sprite->oam.matrixNum = 8;
+        sprite->oam.matrixNum = ST_OAM_HFLIP;
         a = 16;
     }
     else
@@ -5541,8 +5535,8 @@ static void sub_8103300(struct Sprite* sprite)
 
 static void sub_8103320(struct Sprite* sprite)
 {
-    s16 temp;
-    s16 temp2;
+    s16 x1, x2;
+
     sprite->data[1] += 4;
     if (sprite->data[1] > 254)
     {
@@ -5564,20 +5558,21 @@ static void sub_8103320(struct Sprite* sprite)
     if (sprite->data[1] > 0x9F)
         sprite->subpriority = sprite->data[2];
 
-    temp = gSineTable[sprite->data[1]];
-    sprite->pos2.x = (temp2 = temp >> 3) + (temp2 >> 1);
+    x1 = gSineTable[sprite->data[1]];
+    x2 = x1 >> 3;
+    sprite->pos2.x = (x1 >> 3) + (x2 >> 1);
 }
 
 void sub_8103390(struct Sprite* sprite)
 {
-    u8 bank;
+    u8 battler;
     if (gBattleAnimArgs[0] == 0)
-        bank = gBattleAnimAttacker;
+        battler = gBattleAnimAttacker;
     else
-        bank = gBattleAnimTarget;
+        battler = gBattleAnimTarget;
 
-    sub_810310C(bank, sprite);
-    if (GetBattlerSide(bank) == B_SIDE_PLAYER)
+    sub_810310C(battler, sprite);
+    if (GetBattlerSide(battler) == B_SIDE_PLAYER)
     {
         StartSpriteAnim(sprite, 0);
         sprite->data[0] = 2;

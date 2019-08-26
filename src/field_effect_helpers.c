@@ -191,7 +191,7 @@ void ShowWarpArrowSprite(u8 spriteId, u8 direction, s16 x, s16 y)
     sprite = &gSprites[spriteId];
     if (sprite->invisible || sprite->data[0] != x || sprite->data[1] != y)
     {
-        sub_8093038(x, y, &x2, &y2);
+        SetSpritePosToMapCoords(x, y, &x2, &y2);
         sprite = &gSprites[spriteId];
         sprite->pos1.x = x2 + 8;
         sprite->pos1.y = y2 + 8;
@@ -868,13 +868,13 @@ u32 FldEff_Unknown22(void)
     return 0;
 }
 
-void StartAshFieldEffect(s16 x, s16 y, u16 c, s16 d)
+void StartAshFieldEffect(s16 x, s16 y, u16 metatileId, s16 d)
 {
     gFieldEffectArguments[0] = x;
     gFieldEffectArguments[1] = y;
     gFieldEffectArguments[2] = 0x52;
     gFieldEffectArguments[3] = 1;
-    gFieldEffectArguments[4] = c;
+    gFieldEffectArguments[4] = metatileId;
     gFieldEffectArguments[5] = d;
     FieldEffectStart(FLDEFF_ASH);
 }
@@ -1508,7 +1508,7 @@ void sub_8155F80(struct Sprite *sprite)
                 }
             }
             SetGpuReg(REG_OFFSET_BG0VOFS, 0);
-            FieldEffectStop(sprite, FLDEFF_64);
+            FieldEffectStop(sprite, FLDEFF_RAYQUAZA);
             break;
     }
 

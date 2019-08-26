@@ -1,8 +1,8 @@
 SlateportCity_Harbor_MapScripts:: @ 820C97D
-	map_script MAP_SCRIPT_ON_TRANSITION, SlateportCity_Harbor_MapScript1_20C983
+	map_script MAP_SCRIPT_ON_TRANSITION, SlateportCity_Harbor_OnTransition
 	.byte 0
 
-SlateportCity_Harbor_MapScript1_20C983: @ 820C983
+SlateportCity_Harbor_OnTransition: @ 820C983
 	setescapewarp MAP_SLATEPORT_CITY, 255, 28, 13
 	setvar VAR_TEMP_1, 0
 	compare VAR_SLATEPORT_HARBOR_STATE, 1
@@ -77,7 +77,7 @@ SlateportCity_Harbor_EventScript_20C9F5:: @ 820C9F5
 	closemessage
 	setflag FLAG_HIDE_AQUA_HIDEOUT_1F_GRUNT_1_BLOCKING_ENTRANCE
 	setflag FLAG_HIDE_AQUA_HIDEOUT_1F_GRUNT_2_BLOCKING_ENTRANCE
-	moveobjectoffscreen 4
+	copyobjectxytoperm 4
 	setobjectmovementtype 4, MOVEMENT_TYPE_FACE_RIGHT
 	releaseall
 	end

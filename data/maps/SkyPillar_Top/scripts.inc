@@ -1,6 +1,6 @@
 SkyPillar_Top_MapScripts:: @ 82396B8
 	map_script MAP_SCRIPT_ON_RESUME, SkyPillar_Top_MapScript1_2396C8
-	map_script MAP_SCRIPT_ON_TRANSITION, SkyPillar_Top_MapScript1_2396E6
+	map_script MAP_SCRIPT_ON_TRANSITION, SkyPillar_Top_OnTransition
 	map_script MAP_SCRIPT_ON_WARP_INTO_MAP_TABLE, SkyPillar_Top_MapScript2_239713
 	.byte 0
 
@@ -15,7 +15,7 @@ SkyPillar_Top_EventScript_2396D2:: @ 82396D2
 	removeobject VAR_LAST_TALKED
 	return
 
-SkyPillar_Top_MapScript1_2396E6: @ 82396E6
+SkyPillar_Top_OnTransition: @ 82396E6
 	compare VAR_SKY_PILLAR_STATE, 2
 	call_if_lt SkyPillar_Top_EventScript_2396FD
 	compare VAR_SKY_PILLAR_STATE, 2
@@ -87,7 +87,7 @@ SkyPillar_Top_EventScript_239785:: @ 8239785
 	removeobject VAR_LAST_TALKED
 	fadescreenswapbuffers 0
 	bufferspeciesname 0, VAR_0x8004
-	msgbox gUnknown_08273204, MSGBOX_DEFAULT
+	msgbox gText_LegendaryFlewAway, MSGBOX_DEFAULT
 	releaseall
 	end
 
@@ -130,7 +130,7 @@ SkyPillar_Top_EventScript_23979A:: @ 823979A
 	applymovement EVENT_OBJ_ID_CAMERA, SkyPillar_Top_Movement_23985C
 	waitmovement 0
 	special RemoveCameraObject
-	setvar VAR_RAYQUAZA_STATE, 5
+	setvar VAR_SOOTOPOLIS_CITY_STATE, 5
 	setvar VAR_SKY_PILLAR_STATE, 1
 	setvar VAR_SKY_PILLAR_RAQUAZA_CRY_DONE, 1
 	releaseall

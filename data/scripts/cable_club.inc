@@ -1,28 +1,12 @@
-BattleFrontier_PokemonCenter_2F_MapScript1_276ACF: @ 8276ACF
-DewfordTown_PokemonCenter_2F_MapScript1_276ACF: @ 8276ACF
-EverGrandeCity_PokemonCenter_2F_MapScript1_276ACF: @ 8276ACF
-EverGrandeCity_PokemonLeague_2F_MapScript1_276ACF: @ 8276ACF
-FallarborTown_PokemonCenter_2F_MapScript1_276ACF: @ 8276ACF
-FortreeCity_PokemonCenter_2F_MapScript1_276ACF: @ 8276ACF
-LavaridgeTown_PokemonCenter_2F_MapScript1_276ACF: @ 8276ACF
-LilycoveCity_PokemonCenter_2F_MapScript1_276ACF: @ 8276ACF
-MauvilleCity_PokemonCenter_2F_MapScript1_276ACF: @ 8276ACF
-MossdeepCity_PokemonCenter_2F_MapScript1_276ACF: @ 8276ACF
-OldaleTown_PokemonCenter_2F_MapScript1_276ACF: @ 8276ACF
-PacifidlogTown_PokemonCenter_2F_MapScript1_276ACF: @ 8276ACF
-PetalburgCity_PokemonCenter_2F_MapScript1_276ACF: @ 8276ACF
-RustboroCity_PokemonCenter_2F_MapScript1_276ACF: @ 8276ACF
-SlateportCity_PokemonCenter_2F_MapScript1_276ACF: @ 8276ACF
-SootopolisCity_PokemonCenter_2F_MapScript1_276ACF: @ 8276ACF
-VerdanturfTown_PokemonCenter_2F_MapScript1_276ACF: @ 8276ACF
-	call OldaleTown_PokemonCenter_2F_EventScript_276AD5
+PokemonCenter_2F_OnTransition: @ 8276ACF
+	call OldaleTown_PokemonCenter_2F_EventScript_OnTransitionCheckMysteryGift
 	end
 
-OldaleTown_PokemonCenter_2F_EventScript_276AD5:: @ 8276AD5
+OldaleTown_PokemonCenter_2F_EventScript_OnTransitionCheckMysteryGift:: @ 8276AD5
 	specialvar VAR_RESULT, sub_813B514
 	compare VAR_RESULT, 1
 	goto_if_eq OldaleTown_PokemonCenter_2F_EventScript_276AFB
-	specialvar VAR_RESULT, sub_801B27C
+	specialvar VAR_RESULT, ValidateReceivedWonderCard
 	compare VAR_RESULT, 0
 	goto_if_eq OldaleTown_PokemonCenter_2F_EventScript_276AFF
 	goto OldaleTown_PokemonCenter_2F_EventScript_276AFB
@@ -60,7 +44,7 @@ VerdanturfTown_PokemonCenter_2F_EventScript_276B03:: @ 8276B03
 	end
 
 OldaleTown_PokemonCenter_2F_EventScript_276B19:: @ 8276B19
-	execram
+	gotoram
 
 OldaleTown_PokemonCenter_2F_EventScript_276B1A:: @ 8276B1A
 	msgbox gUnknown_08273178, MSGBOX_NPC
@@ -1406,34 +1390,34 @@ EventScript_277BB4:: @ 8277BB4
 	end
 
 OldaleTown_PokemonCenter_2F_EventScript_277BBE:: @ 8277BBE
-	setmetatile 5, 2, 732, 0
-	setmetatile 5, 3, 740, 0
+	setmetatile 5, 2, METATILE_PokemonCenter_Floor_ShadowTop_Alt, 0
+	setmetatile 5, 3, METATILE_PokemonCenter_Floor_Plain_Alt, 0
 	return
 
 OldaleTown_PokemonCenter_2F_EventScript_277BD1:: @ 8277BD1
-	setmetatile 5, 2, 542, 1
-	setmetatile 5, 3, 605, 1
+	setmetatile 5, 2, METATILE_PokemonCenter_Floor_ShadowTop, 1
+	setmetatile 5, 3, METATILE_PokemonCenter_CounterBarrier, 1
 	return
 
 OldaleTown_PokemonCenter_2F_EventScript_277BE4:: @ 8277BE4
-	setmetatile 9, 2, 732, 0
-	setmetatile 9, 3, 740, 0
+	setmetatile 9, 2, METATILE_PokemonCenter_Floor_ShadowTop_Alt, 0
+	setmetatile 9, 3, METATILE_PokemonCenter_Floor_Plain_Alt, 0
 	return
 
 OldaleTown_PokemonCenter_2F_EventScript_277BF7:: @ 8277BF7
-	setmetatile 9, 2, 542, 1
-	setmetatile 9, 3, 605, 1
+	setmetatile 9, 2, METATILE_PokemonCenter_Floor_ShadowTop, 1
+	setmetatile 9, 3, METATILE_PokemonCenter_CounterBarrier, 1
 	return
 
 MossdeepCity_GameCorner_1F_EventScript_277C0A:: @ 8277C0A
 OldaleTown_PokemonCenter_2F_EventScript_277C0A:: @ 8277C0A
-	setmetatile 5, 2, 556, 0
-	setmetatile 5, 3, 564, 0
+	setmetatile 5, 2, METATILE_MossdeepGameCorner_CounterOpen_Top, 0
+	setmetatile 5, 3, METATILE_MossdeepGameCorner_CounterOpen_Bottom, 0
 	return
 
 OldaleTown_PokemonCenter_2F_EventScript_277C1D:: @ 8277C1D
-	setmetatile 5, 2, 554, 1
-	setmetatile 5, 3, 562, 1
+	setmetatile 5, 2, METATILE_MossdeepGameCorner_CounterClosed_Top, 1
+	setmetatile 5, 3, METATILE_MossdeepGameCorner_CounterClosed_Bottom, 1
 	return
 
 BattleFrontier_PokemonCenter_1F_MapScript1_277C30: @ 8277C30

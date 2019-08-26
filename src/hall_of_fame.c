@@ -32,7 +32,7 @@
 #include "menu.h"
 #include "fldeff_misc.h"
 #include "trainer_pokemon_sprites.h"
-#include "data2.h"
+#include "data.h"
 #include "rom_81520A8.h"
 #include "constants/rgb.h"
 
@@ -178,10 +178,10 @@ static const struct OamData sOamData_85E53FC =
     .objMode = 0,
     .mosaic = 0,
     .bpp = 0,
-    .shape = 0,
+    .shape = SPRITE_SHAPE(8x8),
     .x = 0,
     .matrixNum = 0,
-    .size = 0,
+    .size = SPRITE_SIZE(8x8),
     .tileNum = 0,
     .priority = 0,
     .paletteNum = 0,
@@ -755,7 +755,7 @@ static void Task_Hof_HandleExit(u8 taskId)
 
 static void SetCallback2AfterHallOfFameDisplay(void)
 {
-    SetMainCallback2(sub_8175620);
+    SetMainCallback2(CB2_StartCreditsSequence);
 }
 
 #undef tDontSaveData

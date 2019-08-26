@@ -282,10 +282,10 @@ static const struct OamData gOamData_861F378 =
     .objMode = 0,
     .mosaic = 0,
     .bpp = 0,
-    .shape = 0,
+    .shape = SPRITE_SHAPE(64x64),
     .x = 0,
     .matrixNum = 0,
-    .size = 3,
+    .size = SPRITE_SIZE(64x64),
     .tileNum = 0,
     .priority = 1,
     .paletteNum = 0,
@@ -324,7 +324,7 @@ static const union AffineAnimCmd * const gSpriteAffineAnimTable_861F3C4[] =
     gSpriteAffineAnim_861F39C,
 };
 
-static const struct CompressedSpriteSheet gUnknown_0861F3CC = {gBattleFrontierGfx_PyramidBag, 0x0800, 0x1024};
+static const struct CompressedSpriteSheet gPyramidBagSpriteSheet = {gBattleFrontierGfx_PyramidBag, 0x0800, 0x1024};
 
 static const struct SpriteTemplate gUnknown_0861F3D4 =
 {
@@ -538,7 +538,7 @@ static bool8 sub_81C5238(void)
     case 1:
         if (free_temp_tile_data_buffers_if_possible() != TRUE)
         {
-            LZDecompressWram(gUnknown_08D9AE04, gPyramidBagResources->tilemapBuffer);
+            LZDecompressWram(gBattleFrontierGfx_PyramidBagTileMap, gPyramidBagResources->tilemapBuffer);
             gPyramidBagResources->state++;
         }
         break;
@@ -547,7 +547,7 @@ static bool8 sub_81C5238(void)
         gPyramidBagResources->state++;
         break;
     case 3:
-        LoadCompressedSpriteSheet(&gUnknown_0861F3CC);
+        LoadCompressedSpriteSheet(&gPyramidBagSpriteSheet);
         gPyramidBagResources->state++;
         break;
     case 4:
@@ -576,7 +576,7 @@ static void SetBagItemsListTemplate(void)
     }
     StringCopy(gPyramidBagResources->itemStrings[i], gText_CloseBag);
     gPyramidBagResources->bagListItems[i].name = gPyramidBagResources->itemStrings[i];
-    gPyramidBagResources->bagListItems[i].id = LIST_B_PRESSED;
+    gPyramidBagResources->bagListItems[i].id = LIST_CANCEL;
     gMultiuseListMenuTemplate = gUnknown_0861F2C0;
     gMultiuseListMenuTemplate.totalItems = gPyramidBagResources->listMenuCount;
     gMultiuseListMenuTemplate.items = gPyramidBagResources->bagListItems;
@@ -607,7 +607,7 @@ static void PyramidBagMoveCursorFunc(s32 itemIndex, bool8 onInit, struct ListMen
     if (gPyramidBagResources->unk814 == 0xFF)
     {
         sub_81C6FF8(gPyramidBagResources->unk815 ^ 1);
-        if (itemIndex != LIST_B_PRESSED)
+        if (itemIndex != LIST_CANCEL)
             ShowItemImage(gSaveBlock2Ptr->frontier.pyramidBag.itemId[gSaveBlock2Ptr->frontier.lvlMode][itemIndex], gPyramidBagResources->unk815);
         else
             ShowItemImage(0xFFFF, gPyramidBagResources->unk815);
@@ -619,7 +619,7 @@ static void PyramidBagMoveCursorFunc(s32 itemIndex, bool8 onInit, struct ListMen
 static void PrintItemQuantity(u8 windowId, s32 itemIndex, u8 y)
 {
     s32 xAlign;
-    if (itemIndex == LIST_B_PRESSED)
+    if (itemIndex == LIST_CANCEL)
         return;
 
     if (gPyramidBagResources->unk814 != 0xFF)
@@ -641,7 +641,7 @@ static void PrintItemQuantity(u8 windowId, s32 itemIndex, u8 y)
 static void PrintItemDescription(s32 listMenuId)
 {
     const u8 *desc;
-    if (listMenuId != LIST_B_PRESSED)
+    if (listMenuId != LIST_CANCEL)
     {
         desc = ItemId_GetDescription(gSaveBlock2Ptr->frontier.pyramidBag.itemId[gSaveBlock2Ptr->frontier.lvlMode][listMenuId]);
     }
@@ -859,7 +859,7 @@ static void Task_HandlePyramidBagInput(u8 taskId)
             {
             case LIST_NOTHING_CHOSEN:
                 break;
-            case LIST_B_PRESSED:
+            case LIST_CANCEL:
                 PlaySE(SE_SELECT);
                 gSpecialVar_ItemId = 0;
                 sub_81C5B14(taskId);
@@ -1293,7 +1293,7 @@ static void Task_ItemSwapHandleInput(u8 taskId)
             {
             case LIST_NOTHING_CHOSEN:
                 break;
-            case LIST_B_PRESSED:
+            case LIST_CANCEL:
                 PlaySE(SE_SELECT);
                 if (gMain.newKeys & A_BUTTON)
                     PerformItemSwap(taskId);
@@ -1489,7 +1489,7 @@ static void sub_81C6E98(void)
     struct SpritePalette spritePalette;
     u16 *palPtr = Alloc(0x40);
 
-    LZDecompressWram(gUnknown_08D9ADD0, palPtr);
+    LZDecompressWram(gBattleFrontierGfx_PyramidBag_Pal, palPtr);
     spritePalette.data = palPtr + (gSaveBlock2Ptr->frontier.lvlMode * 16);
     spritePalette.tag = ITEM_IMAGE_TAG;
     LoadSpritePalette(&spritePalette);

@@ -1,6 +1,6 @@
 Route120_MapScripts:: @ 81F53EC
 	map_script MAP_SCRIPT_ON_RESUME, Route120_MapScript1_1F53FC
-	map_script MAP_SCRIPT_ON_TRANSITION, Route120_MapScript1_1F54CD
+	map_script MAP_SCRIPT_ON_TRANSITION, Route120_OnTransition
 	map_script MAP_SCRIPT_ON_LOAD, Route120_MapScript1_1F5474
 	.byte 0
 
@@ -45,22 +45,22 @@ Route120_MapScript1_1F5474: @ 81F5474
 	end
 
 Route120_EventScript_1F5490:: @ 81F5490
-	setmetatile 7, 54, 124, 1
-	setmetatile 7, 55, 145, 1
+	setmetatile 7, 54, METATILE_General_RockWall_RockBase, 1
+	setmetatile 7, 55, METATILE_General_RockWall_SandBase, 1
 	return
 
 Route120_EventScript_1F54A3:: @ 81F54A3
-	setmetatile 13, 15, 663, 0
-	setmetatile 12, 16, 671, 0
-	setmetatile 12, 17, 161, 0
-	setmetatile 13, 17, 161, 0
+	setmetatile 13, 15, METATILE_Fortree_WoodBridge_Kecleon0, 0
+	setmetatile 12, 16, METATILE_Fortree_WoodBridge_Kecleon1, 0
+	setmetatile 12, 17, METATILE_General_ReflectiveWater, 0
+	setmetatile 13, 17, METATILE_General_ReflectiveWater, 0
 	return
 
 Route120_EventScript_1F54C8:: @ 81F54C8
 	setobjectmovementtype 36, MOVEMENT_TYPE_FACE_RIGHT
 	return
 
-Route120_MapScript1_1F54CD: @ 81F54CD
+Route120_OnTransition: @ 81F54CD
 	call Route120_EventScript_28CCC7
 	call Route120_EventScript_1F54D8
 	end
@@ -245,14 +245,14 @@ Route120_EventScript_1F572C:: @ 81F572C
 	waitmovement 0
 	delay 50
 	setfieldeffectargument 0, 1
-	dofieldeffect 30
+	dofieldeffect FLDEFF_NPCFLY_OUT
 	delay 15
 	removeobject 31
-	waitfieldeffect 30
-	setmetatile 13, 15, 663, 0
-	setmetatile 12, 16, 671, 0
-	setmetatile 12, 17, 161, 0
-	setmetatile 13, 17, 161, 0
+	waitfieldeffect FLDEFF_NPCFLY_OUT
+	setmetatile 13, 15, METATILE_Fortree_WoodBridge_Kecleon0, 0
+	setmetatile 12, 16, METATILE_Fortree_WoodBridge_Kecleon1, 0
+	setmetatile 12, 17, METATILE_General_ReflectiveWater, 0
+	setmetatile 13, 17, METATILE_General_ReflectiveWater, 0
 	special DrawWholeMapView
 	release
 	end

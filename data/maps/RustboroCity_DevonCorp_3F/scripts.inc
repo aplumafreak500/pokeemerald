@@ -1,10 +1,10 @@
 RustboroCity_DevonCorp_3F_MapScripts:: @ 821242D
-	map_script MAP_SCRIPT_ON_TRANSITION, RustboroCity_DevonCorp_3F_MapScript1_21243D
+	map_script MAP_SCRIPT_ON_TRANSITION, RustboroCity_DevonCorp_3F_OnTransition
 	map_script MAP_SCRIPT_ON_WARP_INTO_MAP_TABLE, RustboroCity_DevonCorp_3F_MapScript2_212455
 	map_script MAP_SCRIPT_ON_FRAME_TABLE, RustboroCity_DevonCorp_3F_MapScript2_212464
 	.byte 0
 
-RustboroCity_DevonCorp_3F_MapScript1_21243D: @ 821243D
+RustboroCity_DevonCorp_3F_OnTransition: @ 821243D
 	compare VAR_DEVON_CORP_3F_STATE, 0
 	call_if_eq RustboroCity_DevonCorp_3F_EventScript_212449
 	end
@@ -68,7 +68,7 @@ RustboroCity_DevonCorp_3F_EventScript_21246E:: @ 821246E
 	setvar VAR_BRINEY_LOCATION, 1
 	clearflag FLAG_HIDE_RUSBORO_CITY_RIVAL
 	setvar VAR_DEVON_CORP_3F_STATE, 1
-	setvar VAR_RUSTBORO_STATE, 6
+	setvar VAR_RUSTBORO_CITY_STATE, 6
 	releaseall
 	end
 

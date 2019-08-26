@@ -18,6 +18,9 @@
 extern u16 gUnknown_0203CF30[];
 
 // this file's functions
+#if !defined(NONMATCHING) && MODERN
+#define static
+#endif
 static bool8 CheckPyramidBagHasItem(u16 itemId, u16 count);
 static bool8 CheckPyramidBagHasSpace(u16 itemId, u16 count);
 
@@ -537,7 +540,7 @@ bool8 RemoveBagItem(u16 itemId, u16 count)
         if (totalQuantity < count)
             return FALSE;   // We don't have enough of the item
 
-        if (CurrentMapIsSecretBase() == TRUE)
+        if (CurMapIsSecretBase() == TRUE)
         {
             VarSet(VAR_SECRET_BASE_LOW_TV_FLAGS, VarGet(VAR_SECRET_BASE_LOW_TV_FLAGS) | 0x200);
             VarSet(VAR_SECRET_BASE_LAST_ITEM_USED, itemId);

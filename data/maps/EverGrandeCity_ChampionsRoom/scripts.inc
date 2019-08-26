@@ -1,10 +1,10 @@
 EverGrandeCity_ChampionsRoom_MapScripts:: @ 82289EF
-	map_script MAP_SCRIPT_ON_TRANSITION, EverGrandeCity_ChampionsRoom_MapScript1_2289FF
+	map_script MAP_SCRIPT_ON_TRANSITION, EverGrandeCity_ChampionsRoom_OnTransition
 	map_script MAP_SCRIPT_ON_WARP_INTO_MAP_TABLE, EverGrandeCity_ChampionsRoom_MapScript2_228A05
 	map_script MAP_SCRIPT_ON_FRAME_TABLE, EverGrandeCity_ChampionsRoom_MapScript2_228A14
 	.byte 0
 
-EverGrandeCity_ChampionsRoom_MapScript1_2289FF: @ 82289FF
+EverGrandeCity_ChampionsRoom_OnTransition: @ 82289FF
 	call Common_EventScript_SetupRivalGender
 	end
 
@@ -46,8 +46,8 @@ EverGrandeCity_ChampionsRoom_EventScript_228A45:: @ 8228A45
 
 EverGrandeCity_ChampionsRoom_EventScript_228A61:: @ 8228A61
 	playse SE_DOOR
-	setmetatile 6, 1, 838, 0
-	setmetatile 6, 2, 839, 0
+	setmetatile 6, 1, METATILE_EliteFour_OpenDoorChampion_Frame, 0
+	setmetatile 6, 2, METATILE_EliteFour_OpenDoorChampion_Opening, 0
 	special DrawWholeMapView
 	msgbox EverGrandeCity_ChampionsRoom_Text_228F66, MSGBOX_DEFAULT
 	closemessage

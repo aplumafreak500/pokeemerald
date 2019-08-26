@@ -14,6 +14,7 @@
 #include "overworld.h"
 #include "menu.h"
 #include "pokedex.h"
+#include "constants/rgb.h"
 
 extern const u8 gText_DexNational[];
 extern const u8 gText_DexHoenn[];
@@ -83,7 +84,7 @@ void CB2_ShowDiploma(void)
     CopyBgTilemapBufferToVram(1);
     DisplayDiplomaText();
     BlendPalettes(-1, 16, 0);
-    BeginNormalPaletteFade(0xFFFFFFFF, 0, 16, 0, 0);
+    BeginNormalPaletteFade(0xFFFFFFFF, 0, 16, 0, RGB_BLACK);
     EnableInterrupts(1);
     SetVBlankCallback(VBlankCB);
     SetMainCallback2(MainCB2);
@@ -108,7 +109,7 @@ static void Task_DiplomaWaitForKeyPress(u8 taskId)
 {
     if (gMain.newKeys & (A_BUTTON | B_BUTTON))
     {
-        BeginNormalPaletteFade(0xFFFFFFFF, 0, 0, 16, 0);
+        BeginNormalPaletteFade(0xFFFFFFFF, 0, 0, 16, RGB_BLACK);
         gTasks[taskId].func = Task_DiplomaFadeOut;
     }
 }
@@ -126,7 +127,7 @@ static void Task_DiplomaFadeOut(u8 taskId)
 
 static void DisplayDiplomaText(void)
 {
-    if (sub_80C0944())
+    if (HasAllMons())
     {
         SetGpuReg(REG_OFFSET_BG1HOFS, DISPCNT_BG0_ON);
         StringCopy(gStringVar1, gText_DexNational);

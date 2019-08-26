@@ -1,8 +1,8 @@
 OldaleTown_MapScripts:: @ 81E8EA2
-	map_script MAP_SCRIPT_ON_TRANSITION, OldaleTown_MapScript1_1E8EA8
+	map_script MAP_SCRIPT_ON_TRANSITION, OldaleTown_OnTransition
 	.byte 0
 
-OldaleTown_MapScript1_1E8EA8: @ 81E8EA8
+OldaleTown_OnTransition: @ 81E8EA8
 	call Common_EventScript_SetupRivalGender
 	setflag FLAG_VISITED_OLDALE_TOWN
 	call_if_unset FLAG_ADVENTURE_STARTED, OldaleTown_EventScript_1E8ED2
@@ -11,7 +11,7 @@ OldaleTown_MapScript1_1E8EA8: @ 81E8EA8
 	end
 
 OldaleTown_EventScript_1E8ECC:: @ 81E8ECC
-	setvar VAR_ROUTE102_ACCESSIBLE, 1
+	setvar VAR_OLDALE_TOWN_STATE, 1
 	return
 
 OldaleTown_EventScript_1E8ED2:: @ 81E8ED2
@@ -280,7 +280,7 @@ OldaleTown_EventScript_1E911A:: @ 81E911A
 	applymovement 4, OldaleTown_Movement_1E9177
 	waitmovement 0
 	removeobject 4
-	setvar VAR_OLDALE_STATE, 2
+	setvar VAR_OLDALE_RIVAL_STATE, 2
 	setflag FLAG_HIDE_OLDALE_TOWN_RIVAL
 	releaseall
 	end
