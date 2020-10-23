@@ -1,23 +1,22 @@
 #include "constants/easy_chat.h"
 #include "constants/event_objects.h"
 #include "constants/items.h"
-#include "constants/species.h"
 #include "constants/moves.h"
 
 static const u16 sContestLadyMonGfxId[] =
 {
-    EVENT_OBJ_GFX_ZIGZAGOON_1,
-    EVENT_OBJ_GFX_SKITTY,
-    EVENT_OBJ_GFX_POOCHYENA,
-    EVENT_OBJ_GFX_KECLEON_1,
-    EVENT_OBJ_GFX_PIKACHU
+    OBJ_EVENT_GFX_ZIGZAGOON_1,
+    OBJ_EVENT_GFX_SKITTY,
+    OBJ_EVENT_GFX_POOCHYENA,
+    OBJ_EVENT_GFX_KECLEON_1,
+    OBJ_EVENT_GFX_PIKACHU
 };
 
 static const u16 sLilycoveLadyGfxId[] =
 {
-    EVENT_OBJ_GFX_WOMAN_4,
-    EVENT_OBJ_GFX_WOMAN_2,
-    EVENT_OBJ_GFX_GIRL_2
+    OBJ_EVENT_GFX_WOMAN_4,
+    OBJ_EVENT_GFX_WOMAN_2,
+    OBJ_EVENT_GFX_GIRL_2
 };
 
 // Quiz Lady data

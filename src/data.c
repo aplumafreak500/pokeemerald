@@ -1,11 +1,10 @@
 #include "global.h"
-#include "alloc.h"
+#include "malloc.h"
 #include "battle.h"
 #include "data.h"
 #include "graphics.h"
 #include "constants/items.h"
 #include "constants/moves.h"
-#include "constants/species.h"
 #include "constants/trainers.h"
 #include "constants/battle_ai.h"
 
