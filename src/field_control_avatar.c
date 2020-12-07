@@ -35,6 +35,7 @@
 #include "constants/maps.h"
 #include "constants/songs.h"
 #include "constants/trainer_hill.h"
+#include "debug.h"
 
 static EWRAM_DATA u8 sWildEncounterImmunitySteps = 0;
 static EWRAM_DATA u16 sPreviousPlayerMetatileBehavior = 0;
@@ -130,6 +131,30 @@ void FieldGetPlayerInput(struct FieldInput *input, u16 newKeys, u16 heldKeys)
         input->dpadDirection = DIR_WEST;
     else if (heldKeys & DPAD_RIGHT)
         input->dpadDirection = DIR_EAST;
+
+#if DEBUG
+	if ((heldKeys & R_BUTTON) && input->pressedStartButton) {
+		input->input_field_1_2 = TRUE;
+		input->pressedStartButton = FALSE;
+	}
+
+	if (DisableMovementCheck) {
+		if (heldKeys & R_BUTTON) {
+			input->input_field_1_1 = TRUE;
+			input->tookStep = FALSE;
+			input->checkStandardWildEncounter = FALSE;
+			input->input_field_0_4 = FALSE;
+			input->input_field_0_5 = FALSE;
+			if (newKeys & SELECT_BUTTON) {
+				input->input_field_1_0 = TRUE;
+				input->pressedSelectButton = FALSE;
+			}
+		}
+		if (heldKeys & L_BUTTON) {
+			input->input_field_1_3 = TRUE;
+		}
+	}
+#endif
 }
 
 int ProcessPlayerFieldInput(struct FieldInput *input)
@@ -145,10 +170,24 @@ int ProcessPlayerFieldInput(struct FieldInput *input)
     GetPlayerPosition(&position);
     metatileBehavior = MapGridGetMetatileBehaviorAt(position.x, position.y);
 
-    if (CheckForTrainersWantingBattle() == TRUE)
+#if DEBUG
+	if (input->input_field_1_3 && dive_warp(&position, metatileBehavior) == TRUE) {
+		return TRUE;
+	}
+#endif
+
+    if (
+#if DEBUG
+	!(input->input_field_1_1) &&
+#endif
+	CheckForTrainersWantingBattle() == TRUE)
         return TRUE;
 
-    if (TryRunOnFrameMapScript() == TRUE)
+    if (
+#if DEBUG
+	!(input->input_field_1_1) &&
+#endif
+	TryRunOnFrameMapScript() == TRUE)
         return TRUE;
 
     if (input->pressedBButton && TrySetupDiveEmergeScript() == TRUE)
@@ -188,6 +227,18 @@ int ProcessPlayerFieldInput(struct FieldInput *input)
     }
     if (input->pressedSelectButton && UseRegisteredKeyItemOnField() == TRUE)
         return TRUE;
+
+#if DEBUG
+	if (input->input_field_1_0) {
+		// R/S puts a debug warp thing here
+		return TRUE;
+	}
+	if (input->input_field_1_1) {
+		PlaySE(SE_WIN_OPEN);
+		OpenLumaDebugMenu();
+		return TRUE;
+	}
+#endif
 
     return FALSE;
 }
