@@ -6,6 +6,8 @@
 #include "list_menu.h"
 #include "map_name_popup.h"
 #include "script.h"
+#include "sound.h"
+#include "constants/songs.h"
 
 bool8 DisableMovementCheck;
 bool8 EnableBattleDebug;

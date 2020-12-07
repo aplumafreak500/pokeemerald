@@ -35,6 +35,7 @@
 #include "constants/maps.h"
 #include "constants/songs.h"
 #include "constants/trainer_hill.h"
+#include ""
 #include "debug.h"
 
 static EWRAM_DATA u8 sWildEncounterImmunitySteps = 0;
@@ -143,8 +144,8 @@ void FieldGetPlayerInput(struct FieldInput *input, u16 newKeys, u16 heldKeys)
 			input->input_field_1_1 = TRUE;
 			input->tookStep = FALSE;
 			input->checkStandardWildEncounter = FALSE;
-			input->input_field_0_4 = FALSE;
-			input->input_field_0_5 = FALSE;
+			input->heldDirection = FALSE;
+			input->heldDirection2 = FALSE;
 			if (newKeys & SELECT_BUTTON) {
 				input->input_field_1_0 = TRUE;
 				input->pressedSelectButton = FALSE;
@@ -171,7 +172,7 @@ int ProcessPlayerFieldInput(struct FieldInput *input)
     metatileBehavior = MapGridGetMetatileBehaviorAt(position.x, position.y);
 
 #if DEBUG
-	if (input->input_field_1_3 && dive_warp(&position, metatileBehavior) == TRUE) {
+	if (input->input_field_1_3 && TryDoDiveWarp(&position, metatileBehavior) == TRUE) {
 		return TRUE;
 	}
 #endif
