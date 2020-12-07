@@ -233,7 +233,7 @@ int ProcessPlayerFieldInput(struct FieldInput *input)
 		// R/S puts a debug warp thing here
 		return TRUE;
 	}
-	if (input->input_field_1_1) {
+	if (input->input_field_1_2) {
 		PlaySE(SE_WIN_OPEN);
 		OpenLumaDebugMenu();
 		return TRUE;
