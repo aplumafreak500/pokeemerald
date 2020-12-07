@@ -1,5 +1,4 @@
 TOOLCHAIN := $(DEVKITARM)
-COMPARE ?= 0
 
 ifeq ($(CC),)
 HOSTCC := gcc
@@ -84,7 +83,6 @@ LDFLAGS = -Map ../../$(MAP)
 
 LIB := $(LIBPATH) -lgcc -lc -L../../libagbsyscall -lagbsyscall
 
-SHA1 := $(shell { command -v sha1sum || command -v shasum; } 2>/dev/null) -c
 GFX := tools/gbagfx/gbagfx$(EXE)
 AIF := tools/aif2pcm/aif2pcm$(EXE)
 MID := tools/mid2agb/mid2agb$(EXE)
@@ -111,13 +109,13 @@ MAKEFLAGS += --no-print-directory
 # Secondary expansion is required for dependency variables in object rules.
 .SECONDEXPANSION:
 
-.PHONY: all rom clean compare tidy tools mostlyclean clean-tools $(TOOLDIRS) berry_fix libagbsyscall modern
+.PHONY: all rom clean tidy tools mostlyclean clean-tools $(TOOLDIRS) berry_fix libagbsyscall modern
 
 infoshell = $(foreach line, $(shell $1 | sed "s/ /__SPACE__/g"), $(info $(subst __SPACE__, ,$(line))))
 
 # Build tools when building the rom
 # Disable dependency scanning for clean/tidy/tools
-ifeq (,$(filter-out all rom compare modern berry_fix libagbsyscall,$(MAKECMDGOALS)))
+ifeq (,$(filter-out all rom modern berry_fix libagbsyscall,$(MAKECMDGOALS)))
 $(call infoshell, $(MAKE) tools)
 else
 NODEP := 1
@@ -165,12 +163,6 @@ $(TOOLDIRS):
 	@$(MAKE) -C $@ CC=$(HOSTCC) CXX=$(HOSTCXX)
 
 rom: $(ROM)
-ifeq ($(COMPARE),1)
-	@$(SHA1) rom.sha1
-endif
-
-# For contributors to make sure a change didn't affect the contents of the ROM.
-compare: ; @$(MAKE) COMPARE=1
 
 clean: mostlyclean clean-tools
 
@@ -248,7 +240,11 @@ $(C_BUILDDIR)/%.o: c_dep = $(shell [[ -f $(C_SUBDIR)/$*.c ]] && $(SCANINC) -I in
 endif
 
 ifeq ($(DINFO),1)
+ifeq ($(MODERN), 1)
+override CFLAGS += -g3
+else
 override CFLAGS += -g
+endif
 endif
 
 $(C_BUILDDIR)/%.o : $(C_SUBDIR)/%.c $$(c_dep)
@@ -308,24 +304,9 @@ endif
 $(SONG_BUILDDIR)/%.o: $(SONG_SUBDIR)/%.s
 	$(AS) $(ASFLAGS) -I sound -o $@ $<
 
-$(OBJ_DIR)/sym_bss.ld: sym_bss.txt
-	$(RAMSCRGEN) .bss $< ENGLISH > $@
-
-$(OBJ_DIR)/sym_common.ld: sym_common.txt $(C_OBJS) $(wildcard common_syms/*.txt)
-	$(RAMSCRGEN) COMMON $< ENGLISH -c $(C_BUILDDIR),common_syms > $@
-
-$(OBJ_DIR)/sym_ewram.ld: sym_ewram.txt
-	$(RAMSCRGEN) ewram_data $< ENGLISH > $@
-
-ifeq ($(MODERN),0)
 LD_SCRIPT := ld_script.txt
-LD_SCRIPT_DEPS := $(OBJ_DIR)/sym_bss.ld $(OBJ_DIR)/sym_common.ld $(OBJ_DIR)/sym_ewram.ld
-else
-LD_SCRIPT := ld_script_modern.txt
-LD_SCRIPT_DEPS := 
-endif
 
-$(OBJ_DIR)/ld_script.ld: $(LD_SCRIPT) $(LD_SCRIPT_DEPS)
+$(OBJ_DIR)/ld_script.ld: $(LD_SCRIPT)
 	cd $(OBJ_DIR) && sed "s#tools/#../../tools/#g" ../../$(LD_SCRIPT) > ld_script.ld
 
 $(ELF): $(OBJ_DIR)/ld_script.ld $(OBJS) berry_fix libagbsyscall
@@ -341,7 +322,7 @@ modern: ; @$(MAKE) MODERN=1
 berry_fix/berry_fix.gba: berry_fix
 
 berry_fix:
-	@$(MAKE) -C berry_fix COMPARE=$(COMPARE) TOOLCHAIN=$(TOOLCHAIN)
+	@$(MAKE) -C berry_fix TOOLCHAIN=$(TOOLCHAIN)
 
 libagbsyscall:
 	@$(MAKE) -C libagbsyscall TOOLCHAIN=$(TOOLCHAIN)
