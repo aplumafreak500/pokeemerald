@@ -35,7 +35,6 @@
 #include "constants/maps.h"
 #include "constants/songs.h"
 #include "constants/trainer_hill.h"
-#include ""
 #include "debug.h"
 
 static EWRAM_DATA u8 sWildEncounterImmunitySteps = 0;
