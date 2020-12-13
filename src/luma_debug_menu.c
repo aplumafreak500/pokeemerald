@@ -6,6 +6,7 @@
 #include "main.h"
 #include "menu.h"
 #include "palette.h"
+#include "random.h"
 #include "text.h"
 #include "string_util.h"
 #include "list_menu.h"
@@ -13,6 +14,7 @@
 #include "script.h"
 #include "sound.h"
 #include "field_weather.h"
+#include "data.h"
 #include "constants/rgb.h"
 #include "constants/songs.h"
 #include "constants/species.h"
@@ -25,6 +27,7 @@ bool8 DisableMovementCheck;
 bool8 EnableBattleDebug;
 
 // #include "data/git.h"
+const char AsciiStr_Buildstamp[] = "$ Luma Debug Menu for pokeemerald v0.0a built " __TIME__ " " __DATE__ " $";
 
 // Start Menu Debug
 static const u8 Str_Battle[] = _("Battle");
@@ -81,6 +84,7 @@ static const u8 Str_KeyEdit[] = _("XOR Key");
 static const u8 Str_NavEdit[] = _("{0x55}{0x56}Nav");
 static const u8 Str_BerryCrushEdit[] = _("Berry Crush");
 static const u8 Str_MysteryGiftEdit[] = _("Mystery Gift");
+static const u8 Str_QuickEditPKMN[] = _("Quick Edit {PKMN}");
 
 // Utils
 static const u8 Str_DebugBattle[] = _("Debug battle");
@@ -176,26 +180,141 @@ static void LumaDebugMenu_Close(u8);
 static void LumaDebugMenu_Cancel(u8);
 static void LumaDebugMenu_Nop(u8);
 static void LumaDebugMenu_AddPKMN(u8);
+static void LumaDebugMenu_EditPKMN(u8);
+static void LumaDebugMenu_AddItems(u8);
 static void LumaDebugMenu_AddEditPKMN_Init(u8);
 static void LumaDebugMenu_EditPKMN_SetDefaults();
 static void LumaDebugMenu_EditPKMN_PopulateData();
 static void LumaDebugMenu_EditPKMN_Redraw();
 static void LumaDebugMenu_AddEditPKMN_ProcessInput(u8);
+static void LumaDebugMenu_EditPKMN_EditModeProcessInput(u8);
+static void LumaDebugMenu_EditPKMN_EditModeRedraw(u32, u8);
+static u8 LumaDebugMenu_AddEditPKMN_GiveToPlayer();
+static void LumaDebugMenu_AddItems_Init();
+static void LumaDebugMenu_AddItems_ProcessInput(u8);
 
 static const struct ListMenuItem LumaDebugMenu_Items[] = {
 	{Str_CommonGroup, LIST_HEADER},
-	{Str_AddPKMN, 0},
+	{Str_AddPKMN, 2},
+	{Str_EditPKMN, 3},
+	{Str_AddItems, 0},
+	{Str_EditMoney, 0},
+	{Str_EditCoins, 0},
+	{Str_EditPokedex, 0},
+	{Str_EditRTC, 0},
 	{Str_InGameGroup, LIST_HEADER},
+	{Str_Weather, 0},
+	{Str_Safari, 0},
+	{Str_SafariBalls, 0},
+	{Str_SafariSteps, 0},
+	{Str_Encounters, 0},
+	{Str_WeatherField, 0},
+	{Str_Music, 0},
+	{Str_Music2, 0},
+	{Str_TrainerEncounters, 0},
+	{Str_Nameplates, 0},
+	{Str_Music3, 0},
+	{Str_RepelSteps, 0},
+	{Str_SaveStatus, 0},
+	{Str_MirageIsland, 0},
+	{Str_Lottery, 0},
+	{Str_EditTrainerID, 0},
+	{Str_EditSecretID, 0},
 	{Str_SaveFileGroup, LIST_HEADER},
+	{Str_FlagEdit, 0},
+	{Str_VarEdit, 0},
+	{Str_StatEdit, 0},
+	{Str_NameEdit, 0},
+	{Str_GenderEdit, 0},
+	{Str_QuickEditPKMN, 0},
+	{Str_BaseEdit, 0},
+	{Str_ECardEdit, 0},
+	{Str_BerryEdit, 0},
+	{Str_PokeblockEdit, 0},
+	{Str_TVEdit, 0},
+	{Str_SwarmEdit, 0},
+	{Str_MailEdit, 0},
+	{Str_TrendEdit, 0},
+	{Str_ContestWinnerEdit, 0},
+	{Str_BattleTowerEdit, 0},
+	{Str_RoamerEdit, 0},
+	{Str_EnigmaEdit, 0},
+	{Str_PlayTimeEdit, 0},
+	{Str_OptionEdit, 0},
+	{Str_HoFEdit, 0},
+	{Str_KeyEdit, 0},
+	{Str_NavEdit, 0},
+	{Str_BerryCrushEdit, 0},
+	{Str_MysteryGiftEdit, 0},
 	{Str_FunctionsGroup, LIST_HEADER},
+	{Str_DebugBattle, 0},
+	{Str_DebugContest, 0},
+	{Str_DebugBattle2, 0},
+	{Str_DebugGiddy, 0},
+	{Str_DebugTrickHouse, 0},
+	{Str_DebugWalda, 0},
+	{Str_DebugWarp, 0},
+	{Str_DebugMemoryEditor, 0},
+	{Str_DebugTownMap, 0},
+	{Str_DebugAllBadges, 0},
+	{Str_DebugClearBadges, 0},
+	{Str_DebugAllLandmarks, 0},
+	{Str_DebugClearLandmarks, 0},
+	{Str_DebugCredits, 0},
+	{Str_DebugHoF, 0},
+	{Str_DebugSafariFeeders, 0},
+	{Str_DebugScreen, 0},
+	{Str_DebugSaveFailTest, 0},
+	{Str_DebugPC, 0},
+	{Str_DebugPlayerPC, 0},
+	{Str_DebugTileInfo, 0},
+	{Str_DebugFixChecksums, 0},
+	{Str_DebugClearStorage, 0},
+	{Str_DebugFillStorage, 0},
+	{Str_DebugNickname, 0},
+	{Str_DebugEgg, 0},
+	{Str_DebugHM, 0},
+	{Str_DebugRNG, 0},
 	{Str_DataGroup, LIST_HEADER},
+	{Str_MonData, 0},
+	{Str_TrainerData, 0},
+	{Str_MoveData, 0},
+	{Str_ItemData, 0},
+	{Str_ContestOpponentData, 0},
+	{Str_TowerOpponentData, 0},
+	{Str_AbilityData, 0},
+	{Str_MapData, 0},
+	{Str_LocationData, 0},
+	{Str_BerryData, 0},
+	{Str_EncounterData, 0},
+	{Str_DecorData, 0},
+	{Str_TradeData, 0},
 	{Str_GFXGroup, LIST_HEADER},
+	{Str_MonGFX, 0},
+	{Str_TrainerGFX, 0},
+	{Str_ItemGFX, 0},
+	{Str_DecorGFX, 0},
+	{Str_OverworldGFX, 0},
+	{Str_FontGFX, 0},
 	{Str_DexGroup, LIST_HEADER},
+	{Str_NationalDex, 0},
+	{Str_NationalDexAllSeen, 0},
+	{Str_NationalDexClearSeen, 0},
+	{Str_RegionalDexAllSeen, 0},
+	{Str_RegionalDexClearSeen, 0},
+	{Str_NationalDexAllCaught, 0},
+	{Str_NationalDexClearCaught, 0},
+	{Str_RegionalDexAllCaught, 0},
+	{Str_RegionalDexClearCaught, 0},
+	{Str_Cancel, LIST_HEADER},
+	{Str_Cancel, 1},
 };
 
 static void(*const LumaDebugMenu_Actions[])(u8) = {
+	NULL,
+	LumaDebugMenu_Cancel,
 	LumaDebugMenu_AddPKMN,
-	NULL
+	LumaDebugMenu_EditPKMN,
 };
 
 static const struct ListMenuTemplate LumaDebugMenu_ListTemplate = {
@@ -295,7 +414,7 @@ static void LumaDebugMenu_Cancel(u8 taskid) {
 	EnableBothScriptContexts();
 }
 
-static void LumaDebugMenu_Nop(u8 taskid) {
+static UNUSED void LumaDebugMenu_Nop(UNUSED u8 taskid) {
 }
 
 static void LumaDebugMenu_AddPKMN(u8 taskid) {
@@ -303,9 +422,20 @@ static void LumaDebugMenu_AddPKMN(u8 taskid) {
 	LumaDebugMenu_AddEditPKMN_Init(0);
 }
 
+static void LumaDebugMenu_EditPKMN(u8 taskid) {
+	LumaDebugMenu_Close(taskid);
+	LumaDebugMenu_AddEditPKMN_Init(1);
+}
+
+static void LumaDebugMenu_AddItems(u8 taskid) {
+	LumaDebugMenu_Close(taskid);
+	// LumaDebugMenu_AddItems_Init();
+}
+
 static const u8 Str_Species[] = _("Species");
 static const u8 Str_Personality[] = _("PID");
 static const u8 Str_TrainerID[] = _("TID");
+static const u8 Str_SecretID[] = _("SID");
 static const u8 Str_OT[] = _("OT");
 static const u8 Str_Nick[] = _("Nickname");
 static const u8 Str_Gender[] = _("Gender");
@@ -355,6 +485,8 @@ static const u8 Str_ArtistRibbon[] = _("Artist");
 static const u8 Str_EffortRibbon[] = _("Effort");
 static const u8 Str_GiftRibbon[] = _("Gift");
 static const u8 Str_Move[] = _("Move");
+static const u8 Str_PP[] = _("PP");
+static const u8 Str_PPUp[] = _("PP Up");
 
 static const u8 Str_None[] = _("---");
 static const u8 Str_Psn[] = _("PSN");
@@ -363,6 +495,10 @@ static const u8 Str_Brn[] = _("BRN");
 static const u8 Str_Slp[] = _("SLP");
 static const u8 Str_Frz[] = _("FRZ");
 static const u8 Str_Psn2[] = _("PSN2");
+
+static const u8 Str_Genderless[] = _("-");
+static const u8 Str_Male[] = _("♂");
+static const u8 Str_Female[] = _("♀");
 
 struct EditPokemonStruct {
 	const u8* text;
@@ -384,22 +520,22 @@ enum {
 };
 
 static const struct EditPokemonStruct LumaDebugMenu_EditPKMN_Options[] = {
-	{Str_Species, LUMA_EDIT_NORMAL, 0, NUM_SPECIES - 1, SPECIES_TREECKO, MON_DATA_SPECIES, 3},
+	{Str_Species, LUMA_EDIT_NORMAL, 0, NUM_SPECIES, SPECIES_TREECKO, MON_DATA_SPECIES, 3},
 	{Str_Personality, LUMA_EDIT_HEX, 0, 0xffffffff, 0, MON_DATA_PERSONALITY, 8},
 	{Str_TrainerID, LUMA_EDIT_NORMAL, 0, 0xffff, 0, MON_DATA_OT_ID, 5},
-	{NULL, LUMA_EDIT_NORMAL, 0, 0xffff, 0, MON_DATA_OT_ID, 5}, // SID
+	{Str_SecretID, LUMA_EDIT_NORMAL, 0, 0xffff, 0, MON_DATA_OT_ID, 5}, // SID
 	{Str_OT, LUMA_EDIT_STRING, 0, 0, 0, MON_DATA_OT_NAME, PLAYER_NAME_LENGTH}, // We can't set a default here because the saveblock pointer cam change.
-	{NULL, LUMA_EDIT_NORMAL, 0, 1, 0, MON_DATA_OT_GENDER, 1},
+	{Str_Gender, LUMA_EDIT_NORMAL, 0, 1, 0, MON_DATA_OT_GENDER, 1},
 	{Str_Nick, LUMA_EDIT_STRING, 0, 0, 0, MON_DATA_NICKNAME, POKEMON_NAME_LENGTH},
 	{Str_Gender, LUMA_EDIT_READONLY, 0, 2, 0, MON_DATA_PERSONALITY, 1},
 	{Str_Nature, LUMA_EDIT_READONLY, 0, 24, 0, MON_DATA_PERSONALITY, 2},
 	{Str_Egg, LUMA_EDIT_BOOL, 0, 1, 0, MON_DATA_IS_EGG, 1},
 	{Str_Egg2, LUMA_EDIT_BOOL, 0, 1, 0, MON_DATA_SANITY_IS_EGG, 1},
-	{Str_HasSpecies, LUMA_EDIT_BOOL, 0, 1, 0, MON_DATA_SANITY_HAS_SPECIES, 1},
+	{Str_HasSpecies, LUMA_EDIT_BOOL, 0, 1, 1, MON_DATA_SANITY_HAS_SPECIES, 1},
 	{Str_Language, LUMA_EDIT_NORMAL, 0, NUM_LANGUAGES - 1, GAME_LANGUAGE, MON_DATA_LANGUAGE, 2},
-	{Str_Game, LUMA_EDIT_NORMAL, 0, 15, GAME_VERSION, MON_DATA_MET_GAME, 2},
+	{Str_Game, LUMA_EDIT_NORMAL, 1, 15, GAME_VERSION, MON_DATA_MET_GAME, 2},
 	{Str_Item, LUMA_EDIT_NORMAL, 0, ITEMS_COUNT - 1, 0, MON_DATA_HELD_ITEM, 3},
-	{Str_Level, LUMA_EDIT_READONLY, 1, 100, 10, MON_DATA_LEVEL, 3},
+	{Str_Level, LUMA_EDIT_NORMAL, 0, 100, 10, MON_DATA_LEVEL, 3},
 	{Str_EXP, LUMA_EDIT_NORMAL, 0, 1640000, 1000, MON_DATA_EXP, 7},
 	{Str_Ability, LUMA_EDIT_NORMAL, 0, 1, 0, MON_DATA_ABILITY_NUM, 1},
 	{Str_Friendship, LUMA_EDIT_NORMAL, 0, 255, 0, MON_DATA_FRIENDSHIP, 3},
@@ -407,23 +543,23 @@ static const struct EditPokemonStruct LumaDebugMenu_EditPKMN_Options[] = {
 	{Str_MetLocation, LUMA_EDIT_NORMAL, 0, 255, MAPSEC_LITTLEROOT_TOWN, MON_DATA_MET_LOCATION, 3},
 	{Str_Ball, LUMA_EDIT_NORMAL, ITEM_MASTER_BALL, LAST_BALL, ITEM_POKE_BALL, MON_DATA_POKEBALL, 2},
 	{Str_PKrus, LUMA_EDIT_NORMAL, 0, 3, 0, MON_DATA_POKERUS, 1}, // 4 different "strains"
-	{NULL, LUMA_EDIT_NORMAL, 1, 4, 1, MON_DATA_POKERUS, 1}, // "default" days until cured
-	{NULL, LUMA_EDIT_NORMAL, 0, 7, 0, MON_DATA_POKERUS, 1}, // Days until cured
+	{Str_PKrus, LUMA_EDIT_NORMAL, 1, 4, 1, MON_DATA_POKERUS, 1}, // "default" days until cured
+	{Str_PKrus, LUMA_EDIT_NORMAL, 0, 7, 0, MON_DATA_POKERUS, 1}, // Days until cured
 	// Current stats
-	{Str_HP, LUMA_EDIT_NORMAL, 0, 0x7fff, 0, MON_DATA_HP, 3},
-	{NULL, LUMA_EDIT_READONLY, 0, 0x7fff, 0, MON_DATA_MAX_HP, 3},
-	{Str_Atk, LUMA_EDIT_READONLY, 0, 0x7fff, 0, MON_DATA_ATK, 3},
-	{Str_Def, LUMA_EDIT_READONLY, 0, 0x7fff, 0, MON_DATA_DEF, 3},
-	{Str_Spe, LUMA_EDIT_READONLY, 0, 0x7fff, 0, MON_DATA_SPEED, 3},
-	{Str_SpA, LUMA_EDIT_READONLY, 0, 0x7fff, 0, MON_DATA_SPATK, 3},
-	{Str_SpD, LUMA_EDIT_READONLY, 0, 0x7fff, 0, MON_DATA_SPDEF, 3},
+	{Str_HP, LUMA_EDIT_NORMAL, 0, 999, 0, MON_DATA_HP, 3},
+	{Str_HP, LUMA_EDIT_READONLY, 0, 999, 0, MON_DATA_MAX_HP, 3},
+	{Str_Atk, LUMA_EDIT_READONLY, 0, 999, 0, MON_DATA_ATK, 3},
+	{Str_Def, LUMA_EDIT_READONLY, 0, 999, 0, MON_DATA_DEF, 3},
+	{Str_Spe, LUMA_EDIT_READONLY, 0, 999, 0, MON_DATA_SPEED, 3},
+	{Str_SpA, LUMA_EDIT_READONLY, 0, 999, 0, MON_DATA_SPATK, 3},
+	{Str_SpD, LUMA_EDIT_READONLY, 0, 999, 0, MON_DATA_SPDEF, 3},
 	// IVs
-	{Str_HP, LUMA_EDIT_NORMAL, 0, 15, 0, MON_DATA_HP_IV, 2},
-	{Str_Atk2, LUMA_EDIT_NORMAL, 0, 15, 0, MON_DATA_ATK_IV, 2},
-	{Str_Def2, LUMA_EDIT_NORMAL, 0, 15, 0, MON_DATA_DEF_IV, 2},
-	{Str_Spe2, LUMA_EDIT_NORMAL, 0, 15, 0, MON_DATA_SPEED_IV, 2},
-	{Str_SpA2, LUMA_EDIT_NORMAL, 0, 15, 0, MON_DATA_SPATK_IV, 2},
-	{Str_SpD2, LUMA_EDIT_NORMAL, 0, 15, 0, MON_DATA_SPDEF_IV, 2},
+	{Str_HP, LUMA_EDIT_NORMAL, 0, 31, 0, MON_DATA_HP_IV, 2},
+	{Str_Atk2, LUMA_EDIT_NORMAL, 0, 31, 0, MON_DATA_ATK_IV, 2},
+	{Str_Def2, LUMA_EDIT_NORMAL, 0, 31, 0, MON_DATA_DEF_IV, 2},
+	{Str_Spe2, LUMA_EDIT_NORMAL, 0, 31, 0, MON_DATA_SPEED_IV, 2},
+	{Str_SpA2, LUMA_EDIT_NORMAL, 0, 31, 0, MON_DATA_SPATK_IV, 2},
+	{Str_SpD2, LUMA_EDIT_NORMAL, 0, 31, 0, MON_DATA_SPDEF_IV, 2},
 	// EVs
 	{Str_HP, LUMA_EDIT_NORMAL, 0, 255, 0, MON_DATA_HP_EV, 3},
 	{Str_Atk2, LUMA_EDIT_NORMAL, 0, 255, 0, MON_DATA_ATK_EV, 3},
@@ -439,8 +575,8 @@ static const struct EditPokemonStruct LumaDebugMenu_EditPKMN_Options[] = {
 	{Str_Tough, LUMA_EDIT_NORMAL, 0, 255, 0, MON_DATA_TOUGH, 3},
 	{Str_Sheen, LUMA_EDIT_NORMAL, 0, 255, 0, MON_DATA_SHEEN, 3},
 	{Str_Status, LUMA_EDIT_NORMAL, 0, 6, 0, MON_DATA_STATUS, 1},
-	{NULL, LUMA_EDIT_NORMAL, 0, 7, 0, MON_DATA_STATUS, 1}, // sleep timer
-	{NULL, LUMA_EDIT_NORMAL, 0, 15, 0, MON_DATA_STATUS, 2}, // badly poisoned timer
+	{Str_Slp, LUMA_EDIT_NORMAL, 0, 7, 0, MON_DATA_STATUS, 1}, // sleep timer
+	{Str_Psn2, LUMA_EDIT_NORMAL, 0, 15, 0, MON_DATA_STATUS, 2}, // badly poisoned timer
 	// Ribbons
 	{Str_ChampRibbon, LUMA_EDIT_BOOL, 0, 1, 0, MON_DATA_CHAMPION_RIBBON, 1},
 	{Str_WinRibbon, LUMA_EDIT_BOOL, 0, 1, 0, MON_DATA_WINNING_RIBBON, 1},
@@ -452,21 +588,21 @@ static const struct EditPokemonStruct LumaDebugMenu_EditPKMN_Options[] = {
 	{Str_Beauty, LUMA_EDIT_NORMAL, 0, 3, 0, MON_DATA_BEAUTY_RIBBON, 1},
 	{Str_Smart, LUMA_EDIT_NORMAL, 0, 3, 0, MON_DATA_SMART_RIBBON, 1},
 	{Str_Tough, LUMA_EDIT_NORMAL, 0, 3, 0, MON_DATA_TOUGH_RIBBON, 1},
-	{Str_GiftRibbon, LUMA_EDIT_HEX, 0, 127, 0, MON_DATA_GIFT_RIBBON_1, 3},
+	{Str_GiftRibbon, LUMA_EDIT_HEX, 0, 127, 0, MON_DATA_GIFT_RIBBON_1, 2},
 	{Str_Fateful, LUMA_EDIT_BOOL, 0, 1, 0, MON_DATA_OBEDIENCE, 1},
 	{Str_Fateful2, LUMA_EDIT_NORMAL, 0, 15, 0, MON_DATA_FATEFUL_ENCOUNTER, 2},
 	{Str_Move, LUMA_EDIT_NORMAL, 0, MOVES_COUNT, MOVE_POUND, MON_DATA_MOVE1, 3},
 	{Str_Move, LUMA_EDIT_NORMAL, 0, MOVES_COUNT, 0, MON_DATA_MOVE2, 3},
 	{Str_Move, LUMA_EDIT_NORMAL, 0, MOVES_COUNT, 0, MON_DATA_MOVE3, 3},
 	{Str_Move, LUMA_EDIT_NORMAL, 0, MOVES_COUNT, 0, MON_DATA_MOVE4, 3},
-	{NULL, LUMA_EDIT_NORMAL, 0, 99, 40, MON_DATA_PP1, 2},
-	{NULL, LUMA_EDIT_NORMAL, 0, 99, 40, MON_DATA_PP2, 2},
-	{NULL, LUMA_EDIT_NORMAL, 0, 99, 40, MON_DATA_PP3, 2},
-	{NULL, LUMA_EDIT_NORMAL, 0, 99, 40, MON_DATA_PP4, 2},
-	{NULL, LUMA_EDIT_NORMAL, 0, 3, 0, MON_DATA_PP_BONUSES, 1},
-	{NULL, LUMA_EDIT_NORMAL, 0, 3, 0, MON_DATA_PP_BONUSES, 1},
-	{NULL, LUMA_EDIT_NORMAL, 0, 3, 0, MON_DATA_PP_BONUSES, 1},
-	{NULL, LUMA_EDIT_NORMAL, 0, 3, 0, MON_DATA_PP_BONUSES, 1},
+	{Str_PP, LUMA_EDIT_NORMAL, 0, 99, 40, MON_DATA_PP1, 2},
+	{Str_PP, LUMA_EDIT_NORMAL, 0, 99, 40, MON_DATA_PP2, 2},
+	{Str_PP, LUMA_EDIT_NORMAL, 0, 99, 40, MON_DATA_PP3, 2},
+	{Str_PP, LUMA_EDIT_NORMAL, 0, 99, 40, MON_DATA_PP4, 2},
+	{Str_PPUp, LUMA_EDIT_NORMAL, 0, 3, 0, MON_DATA_PP_BONUSES, 1},
+	{Str_PPUp, LUMA_EDIT_NORMAL, 0, 3, 0, MON_DATA_PP_BONUSES, 1},
+	{Str_PPUp, LUMA_EDIT_NORMAL, 0, 3, 0, MON_DATA_PP_BONUSES, 1},
+	{Str_PPUp, LUMA_EDIT_NORMAL, 0, 3, 0, MON_DATA_PP_BONUSES, 1},
 };
 
 #define LUMA_EDIT_OPTION_COUNT ARRAY_COUNT(LumaDebugMenu_EditPKMN_Options)
@@ -482,7 +618,6 @@ struct EditPokemonRam {
 static EWRAM_DATA struct EditPokemonRam LumaDebugMenu_EditPKMN_Data;
 static u8 LumaDebugMenu_EditPKMN_CurrentPage;
 static u8 LumaDebugMenu_EditPKMN_CurrentlySelectedOption;
-static u32 LumaDebugMenu_EditPKMN_editingVal;
 
 static const struct WindowTemplate LumaDebugMenu_HeaderWindowTemplate = {
 	.bg = 0,
@@ -508,9 +643,43 @@ static const u8 Str_AddPKMN_Header[] = _("{COLOR GREEN}Create Pokémon");
 static const u8 Str_EditPKMN_Header[] = _("{COLOR GREEN}Edit Pokémon");
 static const u8 Str_AddEditPKMN_Header2[] = _("{START_BUTTON} Confirm {DPAD_LEFTRIGHT} Page");
 
+static const u8 Str_DefaultOTName[8] = _("Debug-E");
+
 static u8 LumaDebugMenu_EditPKMN_headerWindowId;
 static u8 LumaDebugMenu_EditPKMN_menuWindowId;
 
+// Port of Watanabe Debug Menu -> Create Pokemon Menu
+/* TODO Known Bugs and Todo List:
+	* EXP can only be edited within the bounds of the current level. Level itself can be freely edited.
+	* Changing IVs (or EVs in the IV "slot") does not recalculate stats like it's supposed to.
+	* Changing something in index 0, then scrolling over to index 1, then pressing A, does not update the value in index 0. Scrolling back to index 0 does update all values.
+Things that are not implemented yet, or bugs that are caused by unimplemented features:
+	* Fade into and out of this menu instead of drawing it over the overworld. (Possible custom GFX?)
+	* If you scroll over to Nature when editing PID, the Nature draws over the last two PID digits.
+	* The Max HP index is drawn outside of the window.
+	* PP are not recalculated when editing PP Up count or moves.
+	* Alternate values aren't drawn until you scroll over to them in edit mode.
+	* You can scroll over to read only values but you can'y edit them. While this is intended behavior, you should not to be able to scroll over to them in the first place.
+	* Only one of the sleep and toxic counter should be visible and editable at one time, but only if the status is sleep or toxic respectively. (This does not take the separate indexes for these two values into consideration.)
+	* Gender, OT Gender, and Nature should be drawn as a string, not the number representing it.
+	* The label for moves should say "Move X" instead of just "Move".
+	* Species, moves, held item, Ability, Language, Origin Game, Met Location, Ball, and Nature (the unused separate index) should be drawn with their names next to them.
+	* Ribbons should have "Ribbon" as part of their label.
+	* If the Pokerus Strain is 0, the Days indexes should not be accessible.
+	* Setting "Egg" from Off to On should also update "Egg2", but setting "Egg2" to Off should NOT update "Egg". Also, setting "Egg" to Off should NOT update "Egg2".
+	* Add a "Bad Egg" index as an alternate value for "Present".
+	* In edit mode, pressing Select should reset that value; in mode 0, to default; else to that of the mon being edited.
+	* While not in edit mode, pressing Select when the cursor is selecting the PID or IVs, re-randomize them both according to "Method 1". When selecting Species, toggle that species' Pokedex flags, else copy to gEnemyParty then open up the Summary Screen. Set the PSS callback back to this menu.
+	* If the mon being created would be Shiny, draw a star next to the nickname.
+	* Dynamic max values:
+		* PP (With max PP for that move including PP Up boosts)
+		* Current HP (with max HP)
+		* EXP (with EXP at level 100 for that species)
+	* Binary and octal display modes
+	* A comfirmation prompt
+	* Draw the mon's icon next to the species
+	* An actual cursor (instead of just highlighting the selected option)
+*/
 static void LumaDebugMenu_AddEditPKMN_Init(u8 mode) {
 	struct Pokemon* mons;
 	LumaDebugMenu_EditPKMN_Data.mode = mode;
@@ -536,6 +705,7 @@ static void LumaDebugMenu_AddEditPKMN_Init(u8 mode) {
 	}
 	// Set default data
 	if (mode == 0) {
+		SetMonData(&LumaDebugMenu_EditPKMN_Data.mon, MON_DATA_OT_NAME, Str_DefaultOTName);
 		LumaDebugMenu_EditPKMN_SetDefaults();
 	}
 	// Populate the editor data
@@ -554,28 +724,62 @@ static void LumaDebugMenu_AddEditPKMN_Init(u8 mode) {
 	CreateTask(LumaDebugMenu_AddEditPKMN_ProcessInput, 10);
 }
 
-static void LumaDebugMenu_EditPKMN_SetDefaults() {
+static u8 LumaDebugMenu_EditPKMN_NameBuffer[16];
+
+static void LumaDebugMenu_EditPKMN_SetNewMonData(bool8 setMoves) {
 	struct Pokemon* mons = &LumaDebugMenu_EditPKMN_Data.mon;
 	u32 data, i, j, k;
-	CreateMon(mons, LumaDebugMenu_EditPKMN_Options[0].initial, LumaDebugMenu_EditPKMN_Options[15].initial, 32, 0, 0, 0, 0);
-	data = (LumaDebugMenu_EditPKMN_Options[23].initial & 0xc0) << 6;
-	data |= (LumaDebugMenu_EditPKMN_Options[22].initial & 0x30) << 4;
-	data |= (LumaDebugMenu_EditPKMN_Options[24].initial & 0xf);
+	// Buffer the OT name
+	StringCopyN(LumaDebugMenu_EditPKMN_NameBuffer, mons->box.otName, PLAYER_NAME_LENGTH);
+	data = (LumaDebugMenu_EditPKMN_Data.data[3] << 16) | LumaDebugMenu_EditPKMN_Data.data[2];
+	CreateMon(mons, LumaDebugMenu_EditPKMN_Data.data[0], LumaDebugMenu_EditPKMN_Data.data[15], 32, 1, LumaDebugMenu_EditPKMN_Data.data[1], OT_ID_PRESET, data);
+	SetMonData(mons, MON_DATA_OT_NAME, LumaDebugMenu_EditPKMN_NameBuffer);
+	data = ((LumaDebugMenu_EditPKMN_Data.data[23] - 1) & 3) << 6;
+	data |= (LumaDebugMenu_EditPKMN_Data.data[22] & 3) << 4;
+	data |= (LumaDebugMenu_EditPKMN_Data.data[24] & 0xf);
 	SetMonData(mons, MON_DATA_POKERUS, &data);
 	for (i = 0; i < LUMA_EDIT_OPTION_COUNT; i++) {
 		switch (i) {
 		default:
-			SetMonData(mons, LumaDebugMenu_EditPKMN_Options[i].SetMonDataParam, &LumaDebugMenu_EditPKMN_Options[i].initial);
+			SetMonData(mons, LumaDebugMenu_EditPKMN_Options[i].SetMonDataParam, &LumaDebugMenu_EditPKMN_Data.data[i]);
 			break;
 		// All these should already be set (or will be set later)
-		case 0 ... 8: // Species, PID, nick, etc.
-		case 11: // Sanity bit
-		case 15 ... 16: // Level and EXP
-		case 22 ... 37: // Pokerus, stats
-		case 70 ... 76: // PP
+		case 0 ... 4: // PID, TID, OT
+		case 6 ... 8: // Nickname, gender, nature
+		case 15: // Level
+		case 22 ... 24: // Pokerus
+		case 26 ... 31: // Current stats
+		case 74 ... 76: // PP Up counts
+			break;
+		// Only set after initial generation
+		case 5: // OT Gender
+		case 18: // Friendship (will always default to the base friendship of the default species)
+		case 20: // Met location
+		case 25: // Current HP
+			if (!setMoves) {
+				SetMonData(mons, LumaDebugMenu_EditPKMN_Options[i].SetMonDataParam, &LumaDebugMenu_EditPKMN_Data.data[i]);
+			}
+			break;
+		case 17: // Ability
+			if (setMoves) {
+				if (gBaseStats[LumaDebugMenu_EditPKMN_Data.data[0]].abilities[1]) {
+					data = LumaDebugMenu_EditPKMN_Data.data[1] & 1;
+					SetMonData(mons, LumaDebugMenu_EditPKMN_Options[i].SetMonDataParam, &data);
+				}
+				break;
+			}
+			SetMonData(mons, LumaDebugMenu_EditPKMN_Options[i].SetMonDataParam, &LumaDebugMenu_EditPKMN_Data.data[i]);
+			break;
+		case 37: // IVs
+			if (setMoves) {
+				data = Random32();
+				SetMonData(mons, MON_DATA_IVS, &data);
+				break;
+			}
+			SetMonData(mons, LumaDebugMenu_EditPKMN_Options[i].SetMonDataParam, &LumaDebugMenu_EditPKMN_Data.data[i]);
 			break;
 		case 50: // Status
-			j = LumaDebugMenu_EditPKMN_Options[i].initial;
+			j = LumaDebugMenu_EditPKMN_Data.data[i];
 			switch (j) {
 			case 0:
 			default:
@@ -603,19 +807,110 @@ static void LumaDebugMenu_EditPKMN_SetDefaults() {
 			SetMonData(mons, LumaDebugMenu_EditPKMN_Options[i].SetMonDataParam, &data);
 			break;
 		case 51: // Sleep counter
-			if (LumaDebugMenu_EditPKMN_Options[50].initial == 4) {
-				data = LumaDebugMenu_EditPKMN_Options[i].initial;
+			if (LumaDebugMenu_EditPKMN_Data.data[50] == 4) {
+				data = LumaDebugMenu_EditPKMN_Data.data[i];
 				SetMonData(mons, LumaDebugMenu_EditPKMN_Options[i].SetMonDataParam, &data);
 			}
 			break;
 		case 52: // Toxic counter
-			if (LumaDebugMenu_EditPKMN_Options[50].initial == 4) {
-				data = LumaDebugMenu_EditPKMN_Options[i].initial << 8 | STATUS1_TOXIC_POISON;
+			if (LumaDebugMenu_EditPKMN_Data.data[i] == 6) {
+				data = LumaDebugMenu_EditPKMN_Data.data[i] << 8 | STATUS1_TOXIC_POISON;
 				SetMonData(mons, LumaDebugMenu_EditPKMN_Options[i].SetMonDataParam, &data);
 			}
 			break;
 		case 63: // Gift ribbons
-			data = LumaDebugMenu_EditPKMN_Options[i].initial;
+			data = LumaDebugMenu_EditPKMN_Data.data[i];
+			for (j = 0; j < 7; j++) {
+				k = data & 1;
+				SetMonData(mons, LumaDebugMenu_EditPKMN_Options[i].SetMonDataParam + j, &k);
+				data >>= 1;
+			}
+			break;
+		case 69: // Moves
+			if (setMoves) {
+				GiveMonInitialMoveset(mons);
+				break;
+			}
+			SetMonData(mons, LumaDebugMenu_EditPKMN_Options[i].SetMonDataParam, &LumaDebugMenu_EditPKMN_Data.data[i]);
+			break;
+		case 77: // PP Up count (74 through 76 are set too)
+			data = 0;
+			for (j = 0; j < 4; j++) {
+				data <<= 2;
+				data |= (LumaDebugMenu_EditPKMN_Data.data[74 + j] & 3);
+			}
+			SetMonData(mons, LumaDebugMenu_EditPKMN_Options[74].SetMonDataParam, &data);
+			break;
+		}
+	}
+	if (setMoves) MonRestorePP(mons);
+	CalculateMonStats(mons);
+}
+
+static void LumaDebugMenu_EditPKMN_SetMonData() {
+	struct Pokemon* mons = &LumaDebugMenu_EditPKMN_Data.mon;
+	u32 data, i, j, k;
+	data = ((LumaDebugMenu_EditPKMN_Data.data[23] - 1) & 3) << 6;
+	data |= (LumaDebugMenu_EditPKMN_Data.data[22] & 3) << 4;
+	data |= (LumaDebugMenu_EditPKMN_Data.data[24] & 0xf);
+	SetMonData(mons, MON_DATA_POKERUS, &data);
+	for (i = 0; i < LUMA_EDIT_OPTION_COUNT; i++) {
+		switch (i) {
+		default:
+			SetMonData(mons, LumaDebugMenu_EditPKMN_Options[i].SetMonDataParam, &LumaDebugMenu_EditPKMN_Data.data[i]);
+			break;
+		case 0 ... 4: // PID and TID, leave alone. 0 is species, which we handle in a different function
+		case 6 ... 8: // Nickname (4) and OT name, set by the actual editor; 7-8 are gender and nature (readonly)
+		case 15: // Level (set by CalculateMonStats)
+		case 22 ... 24: // Pokerus (set above)
+		case 26 ... 30: // Current stats (readonly). 31 calls CalculateMonStats
+		case 70 ... 76: // Moves, PP Up counts (77 sets all of this at once)
+			break;
+		case 31: // Stats (and level)
+			CalculateMonStats(mons);
+			break;
+		case 50: // Status
+			j = LumaDebugMenu_EditPKMN_Data.data[i];
+			switch (j) {
+			case 0:
+			default:
+				data = 0;
+				break;
+			case 1:
+				data = STATUS1_POISON;
+				break;
+			case 2:
+				data = STATUS1_PARALYSIS;
+				break;
+			case 3:
+				data = STATUS1_BURN;
+				break;
+			case 4:
+				data = 3;
+				break;
+			case 5:
+				data = STATUS1_FREEZE;
+				break;
+			case 6:
+				data = STATUS1_TOXIC_POISON;
+				break;
+			}
+			SetMonData(mons, LumaDebugMenu_EditPKMN_Options[i].SetMonDataParam, &data);
+			break;
+		case 51: // Sleep counter
+			if (LumaDebugMenu_EditPKMN_Data.data[50] == 4) {
+				data = LumaDebugMenu_EditPKMN_Data.data[i];
+				SetMonData(mons, LumaDebugMenu_EditPKMN_Options[i].SetMonDataParam, &data);
+			}
+			break;
+		case 52: // Toxic counter
+			if (LumaDebugMenu_EditPKMN_Data.data[i] == 6) {
+				data = LumaDebugMenu_EditPKMN_Data.data[i] << 8 | STATUS1_TOXIC_POISON;
+				SetMonData(mons, LumaDebugMenu_EditPKMN_Options[i].SetMonDataParam, &data);
+			}
+			break;
+		case 63: // Gift ribbons
+			data = LumaDebugMenu_EditPKMN_Data.data[i];
 			for (j = 0; j < 7; j++) {
 				k = data & 1;
 				SetMonData(mons, LumaDebugMenu_EditPKMN_Options[i].SetMonDataParam + j, &k);
@@ -626,13 +921,36 @@ static void LumaDebugMenu_EditPKMN_SetDefaults() {
 			data = 0;
 			for (j = 0; j < 4; j++) {
 				data <<= 2;
-				data |= (LumaDebugMenu_EditPKMN_Options[74 + j].initial & 3);
+				data |= (LumaDebugMenu_EditPKMN_Data.data[74 + j] & 3);
 			}
 			SetMonData(mons, LumaDebugMenu_EditPKMN_Options[74].SetMonDataParam, &data);
 			break;
 		}
 	}
-	MonRestorePP(mons);
+}
+
+static void LumaDebugMenu_EditPKMN_SetDefaults() {
+	u32 i;
+	for (i = 0; i < LUMA_EDIT_OPTION_COUNT; i++) {
+		switch (i) {
+		default:
+			LumaDebugMenu_EditPKMN_Data.data[i] = LumaDebugMenu_EditPKMN_Options[i].initial;
+			break;
+		case 1: // PID
+			LumaDebugMenu_EditPKMN_Data.data[i] = Random32();
+			break;
+		case 2: // TID
+			LumaDebugMenu_EditPKMN_Data.data[i] = (*(u32*) &gSaveBlock2Ptr->playerTrainerId) & 0xffff;
+			break;
+		case 3: // SID
+			LumaDebugMenu_EditPKMN_Data.data[i] = (*(u32*) &gSaveBlock2Ptr->playerTrainerId) >> 16;
+			break;
+		case 16: // EXP
+			LumaDebugMenu_EditPKMN_Data.data[i] = gExperienceTables[gBaseStats[LumaDebugMenu_EditPKMN_Options[0].initial].growthRate][LumaDebugMenu_EditPKMN_Options[15].initial];
+			break;
+		}
+	}
+	LumaDebugMenu_EditPKMN_SetNewMonData(1);
 }
 
 static void LumaDebugMenu_EditPKMN_PopulateData() {
@@ -649,7 +967,7 @@ static void LumaDebugMenu_EditPKMN_PopulateData() {
 			break;
 		case 3: // SID
 			data = GetMonData(mons, LumaDebugMenu_EditPKMN_Options[i].SetMonDataParam, NULL);
-			LumaDebugMenu_EditPKMN_Data.data[i] = (data & 0xffff0000) >> 16;
+			LumaDebugMenu_EditPKMN_Data.data[i] = data >> 16;
 			break;
 		case 4: // OT
 			LumaDebugMenu_EditPKMN_Data.data[i] = (u32) &mons->box.otName;
@@ -676,11 +994,12 @@ static void LumaDebugMenu_EditPKMN_PopulateData() {
 			data = GetMonData(mons, LumaDebugMenu_EditPKMN_Options[i].SetMonDataParam, NULL);
 			data &= 0xc0;
 			data >>= 6;
-			LumaDebugMenu_EditPKMN_Data.data[i] = data;
+			LumaDebugMenu_EditPKMN_Data.data[i] = data + 1;
 			break;
 		case 24: // Pokerus days left
 			data = GetMonData(mons, LumaDebugMenu_EditPKMN_Options[i].SetMonDataParam, NULL);
-			data &= 0xf;			LumaDebugMenu_EditPKMN_Data.data[i] = data;
+			data &= 0xf;
+			LumaDebugMenu_EditPKMN_Data.data[i] = data;
 			break;
 		case 50: // Status
 			data = GetMonData(mons, LumaDebugMenu_EditPKMN_Options[i].SetMonDataParam, NULL);
@@ -706,7 +1025,7 @@ static void LumaDebugMenu_EditPKMN_PopulateData() {
 		case 63: // Gift ribbons
 			data = 0;
 			for (j = 0; j < 7; j++) {
-				data |= GetMonData(mons, LumaDebugMenu_EditPKMN_Options[i].SetMonDataParam + j, NULL);
+				data |= GetMonData(mons, LumaDebugMenu_EditPKMN_Options[i].SetMonDataParam + (7 - j), NULL);
 				data <<= 1;
 			}
 			LumaDebugMenu_EditPKMN_Data.data[i] = data;
@@ -727,14 +1046,15 @@ static const u8 Str_Slot[] = _("Slot: {STR_VAR_1}");
 static const u8 Str_StringVars[] = _("{STR_VAR_1}{STR_VAR_3}");
 static const u8 Str_Spacer1[] = _(": {CLEAR_TO 100}");
 static const u8 Str_CursorColor[] = _("{COLOR GREEN}");
-static const u8 Str_Cursor2Color[] = _("{COLOR LIGHT_GREEN}{SHADOW GREEN}");
-static const u8 Str_Cursor3Color[] = _("{COLOR RED}");
+static const u8 Str_Cursor2Color[] = _("{COLOR DARK_GREY}{HIGHLIGHT LIGHT_BLUE}");
+static const u8 Str_CursorColorOff[] = _("{HIGHLIGHT WHITE}{COLOR GREEN}");
+static const u8 Str_JpnCharset[] = _("{JPN}");
 
 static const u8 LumaDebugMenu_Pages[13][7] = {
 	{ 0, 16,  2,  1,  6,  4, 0xff},
 	{50, 18, 22,  9, 11, 10, 0xff},
 	{66, 67, 68, 69, 14, 17, 0xff},
-	{25, 27, 28, 29, 30, 31, 0xff},
+	{32, 33, 34, 35, 36, 37, 0xff},
 	{44, 45, 46, 47, 48, 49, 0xff},
 	{58, 59, 60, 61, 62, 56, 0xff},
 	{53, 54, 55, 57, 63, 64, 0xff},
@@ -743,14 +1063,122 @@ static const u8 LumaDebugMenu_Pages[13][7] = {
 	{ 3,  5, 70, 71, 72, 73, 0xff},
 	{ 7,  8, 74, 75, 76, 77, 0xff},
 	{15, 23, 24, 26, 51, 52, 0xff},
-	{32, 33, 34, 35, 36, 37, 0xff},
+	{25, 27, 28, 29, 30, 31, 0xff},
 	{38, 39, 40, 41, 42, 43, 0xff},
 };
 
-static EWRAM_DATA u8 LumaDebugMenu_NameBuffer[16];
+static const u8 LumaDebugMenu_EditPKMN_AltIndexes[14][6][3] = {
+	{
+		{   7, 0xff, 0xff},
+		{  15, 0xff, 0xff},
+		{   3,    5, 0xff},
+		{   8, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+	},
+	{
+		{  51,   52, 0xff},
+		{0xff, 0xff, 0xff},
+		{  23,   24, 0xff},
+		{0xff, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+	},
+	{
+		{  70,   74, 0xff},
+		{  71,   75, 0xff},
+		{  72,   76, 0xff},
+		{  73,   77, 0xff},
+		{0xff, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+	},
+	{
+		{  38,   25,   26},
+		{  39,   27, 0xff},
+		{  40,   28, 0xff},
+		{  41,   29, 0xff},
+		{  42,   30, 0xff},
+		{  43,   31, 0xff},
+	},
+	{
+		{0xff, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+	},
+	{
+		{0xff, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+	},
+	{
+		{0xff, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+	},
+	{
+		{0xff, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+	},
+	// Below entries are unused
+	{
+		{0xff, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+		{  74, 0xff, 0xff},
+		{  75, 0xff, 0xff},
+		{  76, 0xff, 0xff},
+		{  77, 0xff, 0xff},
+	},
+	{
+		{0xff, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+	},
+	{
+		{0xff, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+	},
+	{
+		{  26, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+	},
+	{
+		{0xff, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+		{0xff, 0xff, 0xff},
+	}
+};
 
 static void LumaDebugMenu_EditPKMN_Redraw() {
-	u32 i, x, y;
+	u32 i;
+	u32 x = 0;
+	u32 y = 0;
 	u8* bufferPosition;
 	const u8* page = LumaDebugMenu_Pages[LumaDebugMenu_EditPKMN_CurrentPage];
 	const struct EditPokemonStruct* data;
@@ -764,13 +1192,12 @@ static void LumaDebugMenu_EditPKMN_Redraw() {
 	AddTextPrinterParameterized(LumaDebugMenu_EditPKMN_menuWindowId, 0, gStringVar2, x, y, 0, NULL);
 	x = 0;
 	y += 16;
-	// TODO: Redraw the window (Menu_BlankWindowRect in RS, what's Emerald's equivalent?)
 	for (i = 0; i < 6; i++) {
 		bufferPosition = gStringVar2;
 		index = page[i];
 		if (index == 0xff) break;
 		if (i == LumaDebugMenu_EditPKMN_CurrentlySelectedOption) {
-			// Color the currently selected option red
+			// Color the currently selected option green
 			bufferPosition = StringCopy(bufferPosition, Str_CursorColor);
 		}
 		data = &LumaDebugMenu_EditPKMN_Options[index];
@@ -778,6 +1205,7 @@ static void LumaDebugMenu_EditPKMN_Redraw() {
 		default:
 			switch (data->mode) {
 			case LUMA_EDIT_NORMAL:
+			case LUMA_EDIT_READONLY:
 			default:
 				ConvertIntToDecimalStringN(gStringVar1, LumaDebugMenu_EditPKMN_Data.data[index], STR_CONV_MODE_LEADING_ZEROS, data->digitCount);
 				break;
@@ -790,7 +1218,9 @@ static void LumaDebugMenu_EditPKMN_Redraw() {
 				StringCopy(gStringVar1, LumaDebugMenu_EditPKMN_Data.data[index] ? Str_On : Str_Off);
 				break;
 			case LUMA_EDIT_STRING:
-				StringCopy(gStringVar1, (u8*) LumaDebugMenu_EditPKMN_Data.data[index]);
+				StringCopyN(gStringVar1, (u8*) LumaDebugMenu_EditPKMN_Data.data[index], data->digitCount);
+				// Pokemon names can sometimes be unterminated, so add an extra terminator here
+				gStringVar1[data->digitCount] = EOS;
 				break;
 			}
 			if (data->text != NULL) {
@@ -806,13 +1236,37 @@ static void LumaDebugMenu_EditPKMN_Redraw() {
 			y+= 16;
 			break;
 		}
-		// TODO: Add non-default cases
+		/* TODO: Add non-default cases:
+			* Species (species name)
+			* Experience (level)
+			* TID (SID)
+			* PID (Gender, nature, is shiny)
+			* Nickname (draw with different font)
+			* OT (OT gender, draw with different font)
+			* Status (status name, sleep/toxic counter)
+			* Pokerus (counters)
+			* Moves (label oveeride, move name, PP, PP Up)
+			* Held item (item name)
+			* Ability (ability name)
+			* IVs (label override, EVs, current, current HP)
+			* EVs (label override, IVs, current, current HP)
+			* Stats (label override, current HP, IVs, EVs)
+			* Ribbons (label override)
+			* Language (language name)
+			* Origin game (game name)
+			* Met location (location name)
+			* Ball (item name)
+			* OT Gender (male/female indicator)
+			* Gender (male/female indicator)
+			* Nature (nature name)
+		*/
 	}
 }
 
+static u32 LumaDebugMenu_EditPKMN_editingVal[4];
+
 static void LumaDebugMenu_AddEditPKMN_ProcessInput(u8 taskid) {
 	u16 keys = gMain.newKeys;
-	u16 heldKeys = gMain.newAndRepeatedKeys;
 	struct Task* task = &gTasks[taskid];
 	struct Pokemon* mons;
 
@@ -821,19 +1275,21 @@ static void LumaDebugMenu_AddEditPKMN_ProcessInput(u8 taskid) {
 			LumaDebugMenu_EditPKMN_CurrentPage--;
 		}
 		else {
-			LumaDebugMenu_EditPKMN_CurrentPage = 7;
+			LumaDebugMenu_EditPKMN_CurrentPage = 12;
 		}
+		FillWindowPixelBuffer(LumaDebugMenu_EditPKMN_menuWindowId, 0x11);
 		LumaDebugMenu_EditPKMN_Redraw();
 		PlaySE(SE_SELECT);
 		return;
 	}
 	if (keys & DPAD_RIGHT) {
-		if (LumaDebugMenu_EditPKMN_CurrentPage < 7) {
+		if (LumaDebugMenu_EditPKMN_CurrentPage < 12) {
 			LumaDebugMenu_EditPKMN_CurrentPage++;
 		}
 		else {
 			LumaDebugMenu_EditPKMN_CurrentPage = 0;
 		}
+		FillWindowPixelBuffer(LumaDebugMenu_EditPKMN_menuWindowId, 0x11);
 		LumaDebugMenu_EditPKMN_Redraw();
 		PlaySE(SE_SELECT);
 		return;
@@ -877,6 +1333,7 @@ static void LumaDebugMenu_AddEditPKMN_ProcessInput(u8 taskid) {
 			CopyMon(&LumaDebugMenu_EditPKMN_Data.mon, mons, sizeof(struct Pokemon));
 		}
 		LumaDebugMenu_EditPKMN_PopulateData();
+		FillWindowPixelBuffer(LumaDebugMenu_EditPKMN_menuWindowId, 0x11);
 		LumaDebugMenu_EditPKMN_Redraw();
 		PlaySE(SE_SELECT);
 		return;
@@ -894,7 +1351,7 @@ static void LumaDebugMenu_AddEditPKMN_ProcessInput(u8 taskid) {
 			max_index = TOTAL_BOXES_COUNT * IN_BOX_COUNT;
 			break;
 		}
-		if (LumaDebugMenu_EditPKMN_Data.index <= max_index) return;
+		if (LumaDebugMenu_EditPKMN_Data.index >= max_index - 1) return;
 		LumaDebugMenu_EditPKMN_Data.index++;
 		if (LumaDebugMenu_EditPKMN_Data.mode == 2) {
 			mons = (struct Pokemon*) &gPokemonStoragePtr->boxes[0][LumaDebugMenu_EditPKMN_Data.index];
@@ -908,6 +1365,7 @@ static void LumaDebugMenu_AddEditPKMN_ProcessInput(u8 taskid) {
 			CopyMon(&LumaDebugMenu_EditPKMN_Data.mon, mons, sizeof(struct Pokemon));
 		}
 		LumaDebugMenu_EditPKMN_PopulateData();
+		FillWindowPixelBuffer(LumaDebugMenu_EditPKMN_menuWindowId, 0x11);
 		LumaDebugMenu_EditPKMN_Redraw();
 		PlaySE(SE_SELECT);
 		return;
@@ -918,20 +1376,423 @@ static void LumaDebugMenu_AddEditPKMN_ProcessInput(u8 taskid) {
 		ClearStdWindowAndFrame(LumaDebugMenu_EditPKMN_menuWindowId, TRUE);
 		RemoveWindow(LumaDebugMenu_EditPKMN_menuWindowId);
 		DestroyTask(taskid);
+		EnableBothScriptContexts();
 		PlaySE(SE_SELECT);
 		return;
 	}
 	if (keys & SELECT_BUTTON) {
-		// TODO: Re-randomize the PID and IVs
+		// TODO: Re-randomize the PID and IVs, or if OT is selected, toggle OT gender
 		return;
 	}
 	if (keys & A_BUTTON) {
-		// TODO: Go into "edit" mode
+		u32 i;
+		u8 index = LumaDebugMenu_Pages[LumaDebugMenu_EditPKMN_CurrentPage][LumaDebugMenu_EditPKMN_CurrentlySelectedOption];
+		if (LumaDebugMenu_EditPKMN_Options[index].mode != LUMA_EDIT_NULL && LumaDebugMenu_EditPKMN_Options[index].mode != LUMA_EDIT_READONLY) {
+			LumaDebugMenu_EditPKMN_editingVal[0] = LumaDebugMenu_EditPKMN_Data.data[index];
+			if (LumaDebugMenu_EditPKMN_Options[index].mode == LUMA_EDIT_STRING) {
+				StringCopyN(LumaDebugMenu_EditPKMN_NameBuffer, (u8*) LumaDebugMenu_EditPKMN_editingVal[0], 16);
+				LumaDebugMenu_EditPKMN_NameBuffer[LumaDebugMenu_EditPKMN_Options[index].digitCount] = EOS;
+			}
+			for (i = 1; i < 3; i++) {
+				if (LumaDebugMenu_EditPKMN_AltIndexes[LumaDebugMenu_EditPKMN_CurrentPage][LumaDebugMenu_EditPKMN_CurrentlySelectedOption][i - 1] == 0xff) break;
+				LumaDebugMenu_EditPKMN_editingVal[i] = LumaDebugMenu_EditPKMN_Data.data[LumaDebugMenu_EditPKMN_AltIndexes[LumaDebugMenu_EditPKMN_CurrentPage][LumaDebugMenu_EditPKMN_CurrentlySelectedOption][i - 1]];
+			}
+			task->data[0] = 0;
+			task->data[1] = 0;
+			LumaDebugMenu_EditPKMN_EditModeRedraw(task->data[0], task->data[1]);
+			task->func = LumaDebugMenu_EditPKMN_EditModeProcessInput;
+			PlaySE(SE_SELECT);
+		}
 		return;
 	}
 	if (keys & START_BUTTON) {
-		// TODO: Add mon to party
+		LumaDebugMenu_EditPKMN_SetMonData();
+		// TODO: Add a confirmation prompt
+		if (LumaDebugMenu_AddEditPKMN_GiveToPlayer() != MON_CANT_GIVE)
+			PlaySE(SE_EXP_MAX);
+		else PlaySE(SE_BOO);
 		return;
+	}
+}
+
+static const u32 powersOf10[10] = {
+	1,
+	10,
+	100,
+	1000,
+	10000,
+	100000,
+	1000000,
+	10000000,
+	100000000,
+	1000000000,
+};
+
+static void LumaDebugMenu_EditPKMN_EditModeProcessInput(u8 taskid) {
+	u16 keys = gMain.newKeys;
+	u16 heldKeys = gMain.newAndRepeatedKeys;
+	struct Task* task = &gTasks[taskid];
+	u32 i, min, max;
+	u32 z = 0;
+
+	u16 digit = task->data[0];
+	u16 editIndex = task->data[1];
+
+	u32 x = 100;
+	u32 y = LumaDebugMenu_EditPKMN_CurrentlySelectedOption * 2 * 8 + 16;
+
+	u8 index;
+
+	const u8* page = LumaDebugMenu_Pages[LumaDebugMenu_EditPKMN_CurrentPage];
+
+	if (editIndex != 0 && LumaDebugMenu_EditPKMN_AltIndexes[LumaDebugMenu_EditPKMN_CurrentPage][LumaDebugMenu_EditPKMN_CurrentlySelectedOption][editIndex - 1] != 0xff) {
+		index = LumaDebugMenu_EditPKMN_AltIndexes[LumaDebugMenu_EditPKMN_CurrentPage][LumaDebugMenu_EditPKMN_CurrentlySelectedOption][editIndex - 1];
+	}
+	else {
+		index = page[LumaDebugMenu_EditPKMN_CurrentlySelectedOption];
+	}
+
+	const struct EditPokemonStruct* data = &LumaDebugMenu_EditPKMN_Options[index];
+
+	switch (index) {
+	default:
+		min = data->min;
+		max = data->max;
+		break;
+	}
+
+	if (keys & B_BUTTON) {
+		FillWindowPixelRect(LumaDebugMenu_EditPKMN_menuWindowId, 0x11, x, y, data->digitCount * 8, 16);
+		LumaDebugMenu_EditPKMN_Redraw();
+		task->func = LumaDebugMenu_AddEditPKMN_ProcessInput;
+		PlaySE(SE_SELECT);
+		return;
+	}
+
+	if (keys & (A_BUTTON | START_BUTTON)) {
+		// TODO: This works just as well... but for sanity's sake, call SetMonData properly
+		if (data->mode == LUMA_EDIT_STRING)
+			StringCopyN((u8*) LumaDebugMenu_EditPKMN_Data.data[index], LumaDebugMenu_EditPKMN_NameBuffer, data->digitCount);
+		else {
+#define indexBeingEdited min
+			for (i = 0; i < 4; i++) {
+				if (i == 4) break;
+				if (i != 0)
+					indexBeingEdited = LumaDebugMenu_EditPKMN_AltIndexes[LumaDebugMenu_EditPKMN_CurrentPage][LumaDebugMenu_EditPKMN_CurrentlySelectedOption][i - 1];
+				else indexBeingEdited = index;
+				if (indexBeingEdited == 0xff)
+					continue;
+				if (LumaDebugMenu_EditPKMN_Data.data[indexBeingEdited] == LumaDebugMenu_EditPKMN_editingVal[i])
+					continue;
+				LumaDebugMenu_EditPKMN_Data.data[indexBeingEdited] = LumaDebugMenu_EditPKMN_editingVal[i];
+				data = &LumaDebugMenu_EditPKMN_Options[indexBeingEdited];
+				switch (indexBeingEdited) {
+				default:
+					LumaDebugMenu_EditPKMN_SetMonData();
+					break;
+				case 0:
+					LumaDebugMenu_EditPKMN_SetMonData();
+					SetMonData(&LumaDebugMenu_EditPKMN_Data.mon, data->SetMonDataParam, &LumaDebugMenu_EditPKMN_editingVal[i]);
+					SetMonData(&LumaDebugMenu_EditPKMN_Data.mon, MON_DATA_NICKNAME, gSpeciesNames[LumaDebugMenu_EditPKMN_editingVal[i]]);
+					// Clear moves
+					SetMonData(&LumaDebugMenu_EditPKMN_Data.mon, MON_DATA_MOVE1, &z);
+					SetMonData(&LumaDebugMenu_EditPKMN_Data.mon, MON_DATA_MOVE2, &z);
+					SetMonData(&LumaDebugMenu_EditPKMN_Data.mon, MON_DATA_MOVE3, &z);
+					SetMonData(&LumaDebugMenu_EditPKMN_Data.mon, MON_DATA_MOVE4, &z);
+					SetMonData(&LumaDebugMenu_EditPKMN_Data.mon, MON_DATA_PP1, &z);
+					SetMonData(&LumaDebugMenu_EditPKMN_Data.mon, MON_DATA_PP2, &z);
+					SetMonData(&LumaDebugMenu_EditPKMN_Data.mon, MON_DATA_PP3, &z);
+					SetMonData(&LumaDebugMenu_EditPKMN_Data.mon, MON_DATA_PP4, &z);
+					GiveMonInitialMoveset(&LumaDebugMenu_EditPKMN_Data.mon);
+					// preserve level
+					SetMonData(&LumaDebugMenu_EditPKMN_Data.mon, MON_DATA_EXP, &gExperienceTables[gBaseStats[LumaDebugMenu_EditPKMN_editingVal[i]].growthRate][LumaDebugMenu_EditPKMN_Data.data[15]]);
+					CalculateMonStats(&LumaDebugMenu_EditPKMN_Data.mon);
+					// preserve sanity bit
+					SetMonData(&LumaDebugMenu_EditPKMN_Data.mon, MON_DATA_SANITY_HAS_SPECIES, &LumaDebugMenu_EditPKMN_Data.data[11]);
+					LumaDebugMenu_EditPKMN_PopulateData();
+					break;
+				case 1 ... 3:
+					LumaDebugMenu_EditPKMN_SetNewMonData(0);
+					LumaDebugMenu_EditPKMN_PopulateData();
+					break;
+				case 15:
+					LumaDebugMenu_EditPKMN_SetMonData();
+					SetMonData(&LumaDebugMenu_EditPKMN_Data.mon, MON_DATA_EXP, &gExperienceTables[gBaseStats[LumaDebugMenu_EditPKMN_Data.data[0]].growthRate][LumaDebugMenu_EditPKMN_editingVal[i]]);
+					CalculateMonStats(&LumaDebugMenu_EditPKMN_Data.mon);
+					LumaDebugMenu_EditPKMN_PopulateData();
+					break;
+				case 16:
+				case 32 ... 43:
+					LumaDebugMenu_EditPKMN_SetMonData();
+					SetMonData(&LumaDebugMenu_EditPKMN_Data.mon, data->SetMonDataParam, &LumaDebugMenu_EditPKMN_editingVal[i]);
+					CalculateMonStats(&LumaDebugMenu_EditPKMN_Data.mon);
+					LumaDebugMenu_EditPKMN_PopulateData();
+					break;
+				}
+			}
+#undef indexBeingEdited
+		}
+		FillWindowPixelRect(LumaDebugMenu_EditPKMN_menuWindowId, 0x11, x, y, data->digitCount * 8, 16);
+		LumaDebugMenu_EditPKMN_Redraw();
+		task->func = LumaDebugMenu_AddEditPKMN_ProcessInput;
+		PlaySE(SE_SELECT);
+		return;
+	}
+	if (heldKeys & DPAD_UP) {
+		if (index == 1) { // PID does have a min/max, but they cover the entire 32-bit value range.
+			LumaDebugMenu_EditPKMN_editingVal[editIndex] += (1 << (4 * digit));
+			LumaDebugMenu_EditPKMN_EditModeRedraw(digit, editIndex);
+			PlaySE(SE_SELECT);
+			return;
+		}
+		switch (data->mode) {
+		case LUMA_EDIT_NORMAL:
+		default:
+			if (LumaDebugMenu_EditPKMN_editingVal[editIndex] + powersOf10[digit] > max)
+				LumaDebugMenu_EditPKMN_editingVal[editIndex] = data->min;
+			else
+				LumaDebugMenu_EditPKMN_editingVal[editIndex] += powersOf10[digit];
+			break;
+		case LUMA_EDIT_NULL:
+		case LUMA_EDIT_READONLY:
+			return;
+		case LUMA_EDIT_BOOL:
+			if (LumaDebugMenu_EditPKMN_editingVal[editIndex]) return;
+			LumaDebugMenu_EditPKMN_editingVal[editIndex] = TRUE;
+			break;
+		case LUMA_EDIT_HEX:
+			if (LumaDebugMenu_EditPKMN_editingVal[editIndex] + (1 << (4 * digit)) > max)
+				LumaDebugMenu_EditPKMN_editingVal[editIndex] = data->min;
+			else
+				LumaDebugMenu_EditPKMN_editingVal[editIndex] += (1 << (4 * digit));
+			break;
+		case LUMA_EDIT_STRING:
+			// HACK: Extra check for EOS, as apparently, the "main" comparison uses 0x100 instead of 0x0 due to incrementing something that isn't casted to a u8 before comparing it
+			if (LumaDebugMenu_EditPKMN_NameBuffer[digit] == EOS)
+				LumaDebugMenu_EditPKMN_NameBuffer[digit] = 0;
+			else if (LumaDebugMenu_EditPKMN_NameBuffer[digit] + 1 >= CHAR_DYNAMIC && LumaDebugMenu_EditPKMN_NameBuffer[digit] + 1 <= EOS)
+				LumaDebugMenu_EditPKMN_NameBuffer[digit] = EOS;
+			else
+				LumaDebugMenu_EditPKMN_NameBuffer[digit]++;
+			break;
+		}
+		LumaDebugMenu_EditPKMN_EditModeRedraw(digit, editIndex);
+		PlaySE(SE_SELECT);
+		return;
+	}
+	if (heldKeys & DPAD_DOWN) {
+		if (index == 1) {
+			LumaDebugMenu_EditPKMN_editingVal[editIndex] -= (1 << (4 * digit));
+			LumaDebugMenu_EditPKMN_EditModeRedraw(digit, editIndex);
+			PlaySE(SE_SELECT);
+			return;
+		}
+		switch (data->mode) {
+		case LUMA_EDIT_NORMAL:
+		default:
+			if ((s32) (LumaDebugMenu_EditPKMN_editingVal[editIndex] - powersOf10[digit]) < (s32) min)
+				LumaDebugMenu_EditPKMN_editingVal[editIndex] = data->max;
+			else
+				LumaDebugMenu_EditPKMN_editingVal[editIndex] -= powersOf10[digit];
+			break;
+		case LUMA_EDIT_NULL:
+		case LUMA_EDIT_READONLY:
+			return;
+		case LUMA_EDIT_BOOL:
+			if (!LumaDebugMenu_EditPKMN_editingVal[editIndex]) return;
+			LumaDebugMenu_EditPKMN_editingVal[editIndex] = FALSE;
+			break;
+		case LUMA_EDIT_HEX:
+			if ((s32) (LumaDebugMenu_EditPKMN_editingVal[editIndex] - (1 << (4 * digit))) < (s32) min)
+				LumaDebugMenu_EditPKMN_editingVal[editIndex] = data->max;
+			else
+				LumaDebugMenu_EditPKMN_editingVal[editIndex] -= (1 << (4 * digit));
+			break;
+		case LUMA_EDIT_STRING:
+			if (LumaDebugMenu_EditPKMN_NameBuffer[digit] - 1 >= CHAR_DYNAMIC && LumaDebugMenu_EditPKMN_NameBuffer[digit] - 1 < EOS)
+				LumaDebugMenu_EditPKMN_NameBuffer[digit] = CHAR_DYNAMIC - 1;
+			else
+				LumaDebugMenu_EditPKMN_NameBuffer[digit]--;
+			break;
+		}
+		LumaDebugMenu_EditPKMN_EditModeRedraw(digit, editIndex);
+		PlaySE(SE_SELECT);
+		return;
+	}
+	if (keys & DPAD_LEFT) {
+		if (data->mode == LUMA_EDIT_STRING) {
+			if ((s16) (digit - 1) < 0) {
+				if ((editIndex != 0 && LumaDebugMenu_EditPKMN_AltIndexes[LumaDebugMenu_EditPKMN_CurrentPage][LumaDebugMenu_EditPKMN_CurrentlySelectedOption][editIndex - 2] != 0xff) || editIndex == 1) {
+					LumaDebugMenu_EditPKMN_EditModeRedraw(data->digitCount, editIndex);
+					digit = LumaDebugMenu_EditPKMN_Options[LumaDebugMenu_EditPKMN_AltIndexes[LumaDebugMenu_EditPKMN_CurrentPage][LumaDebugMenu_EditPKMN_CurrentlySelectedOption][editIndex]].digitCount - 1;
+					editIndex--;
+				}
+				else return;
+			}
+			else digit--;
+		}
+		else {
+			if (digit >= data->digitCount - 1) {
+				if ((editIndex != 0 && LumaDebugMenu_EditPKMN_AltIndexes[LumaDebugMenu_EditPKMN_CurrentPage][LumaDebugMenu_EditPKMN_CurrentlySelectedOption][editIndex - 2] != 0xff) || editIndex == 1) {
+					LumaDebugMenu_EditPKMN_EditModeRedraw(data->digitCount, editIndex);
+					digit = 0;
+					editIndex--;
+				}
+				else return;
+			}
+			else digit++;
+		}
+		LumaDebugMenu_EditPKMN_EditModeRedraw(digit, editIndex);
+		task->data[0] = digit;
+		task->data[1] = editIndex;
+		PlaySE(SE_SELECT);
+		return;
+	}
+	if (keys & DPAD_RIGHT) {
+		if (data->mode == LUMA_EDIT_STRING) {
+			if (digit >= data->digitCount - 1) {
+				if (editIndex + 1 < 4 && LumaDebugMenu_EditPKMN_AltIndexes[LumaDebugMenu_EditPKMN_CurrentPage][LumaDebugMenu_EditPKMN_CurrentlySelectedOption][editIndex] != 0xff) {
+					LumaDebugMenu_EditPKMN_EditModeRedraw(data->digitCount, editIndex);
+					digit = 0;
+					editIndex++;
+				}
+				else return;
+			}
+			else digit++;
+		}
+		else {
+			if ((s16) (digit - 1) < 0) {
+				if (editIndex + 1 < 4 && LumaDebugMenu_EditPKMN_AltIndexes[LumaDebugMenu_EditPKMN_CurrentPage][LumaDebugMenu_EditPKMN_CurrentlySelectedOption][editIndex] != 0xff) {
+					LumaDebugMenu_EditPKMN_EditModeRedraw(data->digitCount, editIndex);
+					digit = LumaDebugMenu_EditPKMN_Options[LumaDebugMenu_EditPKMN_AltIndexes[LumaDebugMenu_EditPKMN_CurrentPage][LumaDebugMenu_EditPKMN_CurrentlySelectedOption][editIndex]].digitCount - 1;
+					editIndex++;
+				}
+				else return;
+			}
+			else digit--;
+		}
+		LumaDebugMenu_EditPKMN_EditModeRedraw(digit, editIndex);
+		task->data[0] = digit;
+		task->data[1] = editIndex;
+		PlaySE(SE_SELECT);
+		return;
+	}
+	// TODO: Select resets the value to default
+}
+
+static void LumaDebugMenu_EditPKMN_EditModeRedraw(u32 digit, u8 editIndex) {
+	u32 x = 100;
+	u32 y = LumaDebugMenu_EditPKMN_CurrentlySelectedOption * 2 * 8 + 16;
+	u32 i = 0;
+	u8* bufferPosition = gStringVar2;
+	const u8* page = LumaDebugMenu_Pages[LumaDebugMenu_EditPKMN_CurrentPage];
+	u8 index;
+
+	if (editIndex && LumaDebugMenu_EditPKMN_AltIndexes[LumaDebugMenu_EditPKMN_CurrentPage][LumaDebugMenu_EditPKMN_CurrentlySelectedOption][editIndex - 1] != 0xff) {
+		index = LumaDebugMenu_EditPKMN_AltIndexes[LumaDebugMenu_EditPKMN_CurrentPage][LumaDebugMenu_EditPKMN_CurrentlySelectedOption][editIndex - 1];
+		x += 5 * 8 * editIndex;
+	}
+	else {
+		index = page[LumaDebugMenu_EditPKMN_CurrentlySelectedOption];
+	}
+
+	const struct EditPokemonStruct* data = &LumaDebugMenu_EditPKMN_Options[index];
+	/*
+	switch (index) {
+	default:
+			break;
+	}
+	*/
+	switch (data->mode) {
+	case LUMA_EDIT_NORMAL:
+	default:
+		FillWindowPixelRect(LumaDebugMenu_EditPKMN_menuWindowId, 0x11, x, y, data->digitCount * 8, 16);
+		ConvertIntToDecimalStringN(gStringVar1, LumaDebugMenu_EditPKMN_editingVal[editIndex], STR_CONV_MODE_LEADING_ZEROS, data->digitCount);
+		break;
+	case LUMA_EDIT_HEX:
+		FillWindowPixelRect(LumaDebugMenu_EditPKMN_menuWindowId, 0x11, x, y, data->digitCount * 8, 16);
+		ConvertUIntToHexStringN(gStringVar1, LumaDebugMenu_EditPKMN_editingVal[editIndex], STR_CONV_MODE_LEADING_ZEROS, data->digitCount);
+		bufferPosition = StringCopy(bufferPosition, Str_CursorColor);
+		bufferPosition = StringCopy(bufferPosition, Str_HexPrefix);
+		break;
+	case LUMA_EDIT_NULL:
+		return; // Haha, don't even make the effort...
+	case LUMA_EDIT_BOOL:
+		FillWindowPixelRect(LumaDebugMenu_EditPKMN_menuWindowId, 0x11, x, y, 24, 16);
+		bufferPosition = StringCopy(bufferPosition, Str_Cursor2Color);
+		bufferPosition = StringCopy(bufferPosition, LumaDebugMenu_EditPKMN_editingVal[editIndex] ? Str_On : Str_Off);
+		*bufferPosition = EOS;
+		AddTextPrinterParameterized(LumaDebugMenu_EditPKMN_menuWindowId, 7, gStringVar2, x, y, 0, NULL);
+		return;
+	case LUMA_EDIT_STRING:
+		FillWindowPixelRect(LumaDebugMenu_EditPKMN_menuWindowId, 0x11, x, y, data->digitCount * 8, 16);
+		StringCopyN(gStringVar1, LumaDebugMenu_EditPKMN_NameBuffer, data->digitCount);
+		break;
+	}
+	bufferPosition = StringCopy(bufferPosition, Str_CursorColor);
+	u32 digitToHighlight = data->mode == LUMA_EDIT_STRING ? digit : data->digitCount - digit - 1;
+	for (i = 0; i < data->digitCount; i++) {
+		if (i == digitToHighlight) {
+			bufferPosition = StringCopy(bufferPosition, Str_Cursor2Color);
+		}
+		*bufferPosition = gStringVar1[i];
+		bufferPosition++;
+		if (i == digitToHighlight) {
+			bufferPosition = StringCopy(bufferPosition, Str_CursorColorOff);
+		}
+	}
+	*bufferPosition = EOS;
+	AddTextPrinterParameterized(LumaDebugMenu_EditPKMN_menuWindowId, 7, gStringVar2, x, y, 0, NULL);
+	/* TODO Re-print the following data once edited:
+		* Species (species name)
+		* Experience (level)
+		* TID (SID)
+		* PID (Gender, nature, is shiny)
+		* Nickname (draw with different font)
+		* OT (OT gender, draw with different font)
+		* Status (sleep/toxic counter)
+		* Pokerus (counters)
+		* Moves (label oveeride, move name, PP, PP Up)
+		* Held item (item name)
+		* Ability (ability name)
+		* IVs (label override, EVs, current, current HP)
+		* EVs (label override, IVs, current, current HP)
+		* Stats (label override, current HP, IVs, EVs)
+		* Ribbons (label override)
+		* Language (language name)
+		* Origin game (game name)
+		* Met location (location name)
+		* Ball (item name)
+		* OT Gender (male/female indicator)
+		* Gender (male/female indicator)
+		* Nature (nature name)
+	*/
+}
+
+// This is basically a copy of GiveMonToPlayer, except without setting the OT details to the player's.
+static u8 LumaDebugMenu_AddEditPKMN_GiveToPlayer() {
+	u32 i;
+	struct Pokemon* mon = &LumaDebugMenu_EditPKMN_Data.mon;
+	switch (LumaDebugMenu_EditPKMN_Data.mode) {
+	case 0:
+	default:
+		for (i = 0; i < PARTY_SIZE; i++) {
+			if (GetMonData(&gPlayerParty[i], MON_DATA_SPECIES, NULL) == 0)
+				break;
+		}
+
+		if (i >= PARTY_SIZE)
+			return SendMonToPC(mon);
+
+		CopyMon(&gPlayerParty[i], mon, sizeof(*mon));
+		gPlayerPartyCount = i + 1;
+		return MON_GIVEN_TO_PARTY;
+	case 1:
+		CopyMon(LumaDebugMenu_EditPKMN_Data.monBeingEdited, mon, sizeof(struct Pokemon));
+		return MON_GIVEN_TO_PARTY;
+	case 2:
+		CopyMon(LumaDebugMenu_EditPKMN_Data.monBeingEdited, mon, sizeof(struct BoxPokemon));
+		return MON_GIVEN_TO_PC;
 	}
 }
 
