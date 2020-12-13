@@ -108,7 +108,7 @@ static const u8 Str_DebugSaveFailTest[] = _("Save fail test");
 static const u8 Str_DebugPC[] = _("Jump to Storage System");
 static const u8 Str_DebugPlayerPC[] = _("Jump to {PLAYER}'s PC");
 static const u8 Str_DebugTileInfo[] = _("Tile Info");
-static const u8 Str_DebugFixChecksums[] = _("Fix {0x55}{0x56} Checksums");
+static const u8 Str_DebugFixChecksums[] = _("Fix {PKMN} Checksums");
 static const u8 Str_DebugClearStorage[] = _("Clear Storage");
 static const u8 Str_DebugFillStorage[] = _("Fill Storage");
 static const u8 Str_DebugNickname[] = _("Nickname");
@@ -170,6 +170,7 @@ static const u8 Str_DexGroup[] = _("{COLOR BLUE}{0x55}{0x56}Dex");
 static const u8 Str_FunctionsGroup[] = _("{COLOR BLUE}Functions");
 static const u8 Str_CommonGroup[] = _("{COLOR BLUE}Common");
 static const u8 Str_Cancel[] = _("Cancel");
+static const u8 Str_Cancel2[] = _("{COLOR BLUE}Cancel");
 
 static const u8 Str_On[] = _("On");
 static const u8 Str_Off[] = _("Off");
@@ -306,7 +307,7 @@ static const struct ListMenuItem LumaDebugMenu_Items[] = {
 	{Str_NationalDexClearCaught, 0},
 	{Str_RegionalDexAllCaught, 0},
 	{Str_RegionalDexClearCaught, 0},
-	{Str_Cancel, LIST_HEADER},
+	{Str_Cancel2, LIST_HEADER},
 	{Str_Cancel, 1},
 };
 
@@ -340,7 +341,7 @@ static const struct WindowTemplate LumaDebugMenu_WindowTemplate = {
 	.bg = 0,
 	.tilemapLeft = 1,
 	.tilemapTop = 1,
-	.width = 13,
+	.width = 20,
 	.height = 18,
 	.baseBlock = 1,
 	.paletteNum = 15
