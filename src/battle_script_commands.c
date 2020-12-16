@@ -5256,7 +5256,7 @@ bool32 CanBattlerSwitch(u32 battlerId)
     }
     else if (gBattleTypeFlags & BATTLE_TYPE_INGAME_PARTNER)
     {
-        if (GetBattlerSide(battlerId) == B_SIDE_OPPONENT)
+        if (GetBattlerSide(gActiveBattler) == B_SIDE_OPPONENT)
             party = gEnemyParty;
         else
             party = gPlayerParty;
@@ -5265,7 +5265,7 @@ bool32 CanBattlerSwitch(u32 battlerId)
         if (battlerId & 2)
             i = 3;
 
-        for (lastMonId = i + 3; i < lastMonId; i++)
+        for (i = lastMonId; i < lastMonId + 3; i++)
         {
             if (GetMonData(&party[i], MON_DATA_SPECIES) != SPECIES_NONE
              && !GetMonData(&party[i], MON_DATA_IS_EGG)
@@ -5295,7 +5295,7 @@ bool32 CanBattlerSwitch(u32 battlerId)
                 if (battlerId == 1)
                     i = 0;
                 else
-                    i = 3;
+                    lastMonId = 3;
             }
         }
         else
@@ -5310,7 +5310,7 @@ bool32 CanBattlerSwitch(u32 battlerId)
                 i = 3;
         }
 
-        for (lastMonId = i + 3; i < lastMonId; i++)
+        for (i = lastMonId; i < lastMonId + 3; i++)
         {
             if (GetMonData(&party[i], MON_DATA_SPECIES) != SPECIES_NONE
              && !GetMonData(&party[i], MON_DATA_IS_EGG)
@@ -5329,7 +5329,7 @@ bool32 CanBattlerSwitch(u32 battlerId)
         if (battlerId == B_POSITION_OPPONENT_RIGHT)
             i = 3;
 
-        for (lastMonId = i + 3; i < lastMonId; i++)
+        for (i = lastMonId; i < lastMonId + 3; i++)
         {
             if (GetMonData(&party[i], MON_DATA_SPECIES) != SPECIES_NONE
              && !GetMonData(&party[i], MON_DATA_IS_EGG)
@@ -5627,14 +5627,9 @@ static void Cmd_openpartyscreen(void)
         hitmarkerFaintBits = gHitMarker >> 0x1C;
 
         gBattlerFainted = 0;
-        while (1)
-        {
-            if (gBitTable[gBattlerFainted] & hitmarkerFaintBits)
-                break;
-            if (gBattlerFainted >= gBattlersCount)
-                break;
+        while (!(gBitTable[gBattlerFainted] & hitmarkerFaintBits)
+               && gBattlerFainted < gBattlersCount)
             gBattlerFainted++;
-        }
 
         if (gBattlerFainted == gBattlersCount)
             gBattlescriptCurrInstr = jumpPtr;
