@@ -62,13 +62,13 @@ ASFLAGS := -mcpu=arm7tdmi --defsym MODERN=$(MODERN)
 
 ifeq ($(MODERN),0)
 CC1             := tools/agbcc/bin/agbcc$(EXE)
-override CFLAGS += -mthumb-interwork -Wimplicit -Wparentheses -Werror -O2 -fhex-asm
+override CFLAGS += -mthumb-interwork -Wimplicit -Wparentheses -Werror -O2 -fhex-asm -g
 ROM := pokeemerald.gba
 OBJ_DIR := build/emerald
 LIBPATH := -L ../../tools/agbcc/lib
 else
 CC1              = $(shell $(CC) --print-prog-name=cc1) -quiet
-override CFLAGS += -mthumb -mthumb-interwork -O2 -mabi=apcs-gnu -mtune=arm7tdmi -march=armv4t -fno-toplevel-reorder -Wno-pointer-to-int-cast
+override CFLAGS += -mthumb -mthumb-interwork -O2 -mabi=apcs-gnu -mtune=arm7tdmi -march=armv4t -fno-toplevel-reorder -Wno-pointer-to-int-cast -g
 ROM := pokeemerald_modern.gba
 OBJ_DIR := build/modern
 LIBPATH := -L "$(dir $(shell $(CC) -mthumb -print-file-name=libgcc.a))" -L "$(dir $(shell $(CC) -mthumb -print-file-name=libc.a))"
@@ -167,23 +167,26 @@ rom: $(ROM)
 clean: mostlyclean clean-tools
 
 clean-tools:
+	@echo clean-tools
 	@$(foreach tooldir,$(TOOLDIRS),$(MAKE) clean -C $(tooldir);)
 
 mostlyclean: tidy
-	rm -f $(SAMPLE_SUBDIR)/*.bin
-	rm -f $(CRY_SUBDIR)/*.bin
-	rm -f $(MID_SUBDIR)/*.s
-	find . \( -iname '*.1bpp' -o -iname '*.4bpp' -o -iname '*.8bpp' -o -iname '*.gbapal' -o -iname '*.lz' -o -iname '*.rl' -o -iname '*.latfont' -o -iname '*.hwjpnfont' -o -iname '*.fwjpnfont' \) -exec rm {} +
-	rm -f $(DATA_ASM_SUBDIR)/layouts/layouts.inc $(DATA_ASM_SUBDIR)/layouts/layouts_table.inc
-	rm -f $(DATA_ASM_SUBDIR)/maps/connections.inc $(DATA_ASM_SUBDIR)/maps/events.inc $(DATA_ASM_SUBDIR)/maps/groups.inc $(DATA_ASM_SUBDIR)/maps/headers.inc
-	find $(DATA_ASM_SUBDIR)/maps \( -iname 'connections.inc' -o -iname 'events.inc' -o -iname 'header.inc' \) -exec rm {} +
-	rm -f $(AUTO_GEN_TARGETS)
+	@echo mostlyclean
+	@rm -f $(SAMPLE_SUBDIR)/*.bin
+	@rm -f $(CRY_SUBDIR)/*.bin
+	@rm -f $(MID_SUBDIR)/*.s
+	@find . \( -iname '*.1bpp' -o -iname '*.4bpp' -o -iname '*.8bpp' -o -iname '*.gbapal' -o -iname '*.lz' -o -iname '*.rl' -o -iname '*.latfont' -o -iname '*.hwjpnfont' -o -iname '*.fwjpnfont' \) -exec rm {} +
+	@rm -f $(DATA_ASM_SUBDIR)/layouts/layouts.inc $(DATA_ASM_SUBDIR)/layouts/layouts_table.inc
+	@rm -f $(DATA_ASM_SUBDIR)/maps/connections.inc $(DATA_ASM_SUBDIR)/maps/events.inc $(DATA_ASM_SUBDIR)/maps/groups.inc $(DATA_ASM_SUBDIR)/maps/headers.inc
+	@find $(DATA_ASM_SUBDIR)/maps \( -iname 'connections.inc' -o -iname 'events.inc' -o -iname 'header.inc' \) -exec rm {} +
+	@rm -f $(AUTO_GEN_TARGETS)
 	@$(MAKE) clean -C berry_fix
 	@$(MAKE) clean -C libagbsyscall
 
 tidy:
-	rm -f $(ROM) $(ELF) $(MAP)
-	rm -r $(OBJ_DIR)
+	@echo tidy
+	@rm -f $(ROM) $(ELF) $(MAP)
+	@rm -r $(OBJ_DIR)
 ifeq ($(MODERN),0)
 	@$(MAKE) tidy MODERN=1
 endif
@@ -203,16 +206,36 @@ include songs.mk
 %.pal: ;
 %.aif: ;
 
-%.1bpp: %.png  ; $(GFX) $< $@
-%.4bpp: %.png  ; $(GFX) $< $@
-%.8bpp: %.png  ; $(GFX) $< $@
-%.gbapal: %.pal ; $(GFX) $< $@
-%.gbapal: %.png ; $(GFX) $< $@
-%.lz: % ; $(GFX) $< $@
-%.rl: % ; $(GFX) $< $@
-$(CRY_SUBDIR)/%.bin: $(CRY_SUBDIR)/%.aif ; $(AIF) $< $@ --compress
-sound/%.bin: sound/%.aif ; $(AIF) $< $@
-
+%.1bpp: %.png
+	@echo $@
+	@$(GFX) $< $@
+%.4bpp: %.png
+	@echo $@
+	@$(GFX) $< $@
+%.8bpp: %.png
+	@echo $@
+	@$(GFX) $< $@
+%.gbapal: %.pal
+	@echo $@
+	@$(GFX) $< $@
+%.gbapal: %.png
+	@echo $@
+	@$(GFX) $< $@
+%.lz: %
+	@echo $@
+	@$(GFX) $< $@
+%.rl: %
+	@echo $@
+	@$(GFX) $< $@
+$(CRY_SUBDIR)/cry_not_%.bin: $(CRY_SUBDIR)/cry_not_%.aif
+	@echo $<
+	@$(AIF) $< $@
+$(CRY_SUBDIR)/%.bin: $(CRY_SUBDIR)/%.aif
+	@echo $<
+	@$(AIF) $< $@ --compress
+sound/%.bin: sound/%.aif
+	@echo $<
+	@$(AIF) $< $@
 
 ifeq ($(MODERN),0)
 $(C_BUILDDIR)/libc.o: CC1 := tools/agbcc/bin/old_agbcc
@@ -239,6 +262,8 @@ else
 $(C_BUILDDIR)/%.o: c_dep = $(shell [[ -f $(C_SUBDIR)/$*.c ]] && $(SCANINC) -I include -I tools/agbcc/include -I gflib $(C_SUBDIR)/$*.c)
 endif
 
+$(C_BUILDDIR)/luma_debug_menu.o: CFLAGS += -Wall -Wextra -Wunused -Wshadow=local
+
 ifeq ($(DINFO),1)
 ifeq ($(MODERN), 1)
 override CFLAGS += -g3
@@ -253,10 +278,11 @@ override CPPFLAGS += -D DEBUG=1
 endif
 
 $(C_BUILDDIR)/%.o : $(C_SUBDIR)/%.c $$(c_dep)
+	@echo $<
 	@$(CPP) $(CPPFLAGS) $< -o $(C_BUILDDIR)/$*.i
 	@$(PREPROC) $(C_BUILDDIR)/$*.i charmap.txt | $(CC1) $(CFLAGS) -o $(C_BUILDDIR)/$*.s
 	@echo -e ".text\n\t.align\t2, 0\n" >> $(C_BUILDDIR)/$*.s
-	$(AS) $(ASFLAGS) -o $@ $(C_BUILDDIR)/$*.s
+	@$(AS) $(ASFLAGS) -o $@ $(C_BUILDDIR)/$*.s
 
 ifeq ($(NODEP),1)
 $(GFLIB_BUILDDIR)/%.o: c_dep :=
@@ -265,10 +291,11 @@ $(GFLIB_BUILDDIR)/%.o: c_dep = $(shell [[ -f $(GFLIB_SUBDIR)/$*.c ]] && $(SCANIN
 endif
 
 $(GFLIB_BUILDDIR)/%.o : $(GFLIB_SUBDIR)/%.c $$(c_dep)
+	@echo $<
 	@$(CPP) $(CPPFLAGS) $< -o $(GFLIB_BUILDDIR)/$*.i
 	@$(PREPROC) $(GFLIB_BUILDDIR)/$*.i charmap.txt | $(CC1) $(CFLAGS) -o $(GFLIB_BUILDDIR)/$*.s
 	@echo -e ".text\n\t.align\t2, 0\n" >> $(GFLIB_BUILDDIR)/$*.s
-	$(AS) $(ASFLAGS) -o $@ $(GFLIB_BUILDDIR)/$*.s
+	@$(AS) $(ASFLAGS) -o $@ $(GFLIB_BUILDDIR)/$*.s
 
 ifeq ($(NODEP),1)
 $(C_BUILDDIR)/%.o: c_asm_dep :=
@@ -277,7 +304,8 @@ $(C_BUILDDIR)/%.o: c_asm_dep = $(shell [[ -f $(C_SUBDIR)/$*.s ]] && $(SCANINC) -
 endif
 
 $(C_BUILDDIR)/%.o: $(C_SUBDIR)/%.s $$(c_asm_dep)
-	$(AS) $(ASFLAGS) -o $@ $<
+	@echo $<
+	@$(AS) $(ASFLAGS) -o $@ $<
 
 # The dep rules have to be explicit or else missing files won't be reported.
 # As a side effect, they're evaluated immediately instead of when the rule is invoked.
@@ -286,39 +314,47 @@ $(C_BUILDDIR)/%.o: $(C_SUBDIR)/%.s $$(c_asm_dep)
 
 ifeq ($(NODEP),1)
 $(ASM_BUILDDIR)/%.o: $(ASM_SUBDIR)/%.s
-	$(AS) $(ASFLAGS) -o $@ $<
+	@echo $<
+	@$(AS) $(ASFLAGS) -o $@ $<
 else
 define ASM_DEP
 $1: $2 $$(shell $(SCANINC) -I include -I "" $2)
-	$$(AS) $$(ASFLAGS) -o $$@ $$<
+	@echo $$<
+	@$$(AS) $$(ASFLAGS) -o $$@ $$<
 endef
 $(foreach src, $(ASM_SRCS), $(eval $(call ASM_DEP,$(patsubst $(ASM_SUBDIR)/%.s,$(ASM_BUILDDIR)/%.o, $(src)),$(src))))
 endif
 
 ifeq ($(NODEP),1)
 $(DATA_ASM_BUILDDIR)/%.o: $(DATA_ASM_SUBDIR)/%.s
-	$(PREPROC) $< charmap.txt | $(CPP) -I include | $(AS) $(ASFLAGS) -o $@
+	@echo $<
+	@$(PREPROC) $< charmap.txt | $(CPP) -I include | $(AS) $(ASFLAGS) -o $@
 else
 define DATA_ASM_DEP
 $1: $2 $$(shell $(SCANINC) -I include -I "" $2)
-	$$(PREPROC) $$< charmap.txt | $$(CPP) -I include | $$(AS) $$(ASFLAGS) -o $$@
+	@echo $$<
+	@$$(PREPROC) $$< charmap.txt | $$(CPP) -I include | $$(AS) $$(ASFLAGS) -o $$@
 endef
 $(foreach src, $(REGULAR_DATA_ASM_SRCS), $(eval $(call DATA_ASM_DEP,$(patsubst $(DATA_ASM_SUBDIR)/%.s,$(DATA_ASM_BUILDDIR)/%.o, $(src)),$(src))))
 endif
 
 $(SONG_BUILDDIR)/%.o: $(SONG_SUBDIR)/%.s
-	$(AS) $(ASFLAGS) -I sound -o $@ $<
+	@echo $<
+	@$(AS) $(ASFLAGS) -I sound -o $@ $<
 
 LD_SCRIPT := ld_script.txt
 
 $(OBJ_DIR)/ld_script.ld: $(LD_SCRIPT)
-	cd $(OBJ_DIR) && sed "s#tools/#../../tools/#g" ../../$(LD_SCRIPT) > ld_script.ld
+	@echo $<
+	@cd $(OBJ_DIR) && sed "s#tools/#../../tools/#g" ../../$(LD_SCRIPT) > ld_script.ld
 
 $(ELF): $(OBJ_DIR)/ld_script.ld $(OBJS) berry_fix libagbsyscall
-	cd $(OBJ_DIR) && $(LD) $(LDFLAGS) -T ld_script.ld -o ../../$@ $(OBJS_REL) $(LIB)
+	@echo Linking $@
+	@cd $(OBJ_DIR) && $(LD) $(LDFLAGS) -T ld_script.ld -o ../../$@ $(OBJS_REL) $(LIB)
 	$(FIX) $@ -t"$(TITLE)" -c$(GAME_CODE) -m$(MAKER_CODE) -r$(REVISION) --silent
 
 $(ROM): $(ELF)
+	@echo Output $@
 	$(OBJCOPY) -O binary $< $@
 
 modern: ; @$(MAKE) MODERN=1
@@ -326,7 +362,9 @@ modern: ; @$(MAKE) MODERN=1
 berry_fix/berry_fix.gba: berry_fix
 
 berry_fix:
+	@echo berry_fix
 	@$(MAKE) -C berry_fix TOOLCHAIN=$(TOOLCHAIN)
 
 libagbsyscall:
+	@echo libagbsyscall
 	@$(MAKE) -C libagbsyscall TOOLCHAIN=$(TOOLCHAIN)

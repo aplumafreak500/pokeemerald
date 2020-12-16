@@ -1,5 +1,4 @@
 TOOLCHAIN := $(DEVKITARM)
-COMPARE ?= 0
 
 ifeq ($(CC),)
 HOSTCC := gcc
@@ -79,7 +78,7 @@ FIX := ../tools/gbafix/gbafix$(EXE)
 # Secondary expansion is required for dependency variables in object rules.
 .SECONDEXPANSION:
 
-.PHONY: all rom clean compare tidy payload
+.PHONY: all rom clean tidy payload
 
 C_SRCS := $(wildcard $(C_SUBDIR)/*.c $(C_SUBDIR)/*/*.c $(C_SUBDIR)/*/*/*.c)
 C_OBJS := $(patsubst $(C_SUBDIR)/%.c,$(C_BUILDDIR)/%.o,$(C_SRCS))
@@ -107,36 +106,46 @@ all: payload rom
 	@:
 
 rom: $(ROM)
-ifeq ($(COMPARE),1)
-	@$(SHA1) rom.sha1
-endif
-
-# For contributors to make sure a change didn't affect the contents of the ROM.
-compare: ; @$(MAKE) COMPARE=1
 
 clean: tidy
-	rm -f sound/direct_sound_samples/*.bin
-	rm -f $(SONG_OBJS) $(MID_OBJS) $(MID_SUBDIR)/*.s
-	find . \( -iname '*.1bpp' -o -iname '*.4bpp' -o -iname '*.8bpp' -o -iname '*.gbapal' -o -iname '*.lz' -o -iname '*.latfont' -o -iname '*.hwjpnfont' -o -iname '*.fwjpnfont' \) -exec rm {} +
-	make -C payload clean
+	@echo clean
+	@rm -f sound/direct_sound_samples/*.bin
+	@rm -f $(SONG_OBJS) $(MID_OBJS) $(MID_SUBDIR)/*.s
+	@find . \( -iname '*.1bpp' -o -iname '*.4bpp' -o -iname '*.8bpp' -o -iname '*.gbapal' -o -iname '*.lz' -o -iname '*.latfont' -o -iname '*.hwjpnfont' -o -iname '*.fwjpnfont' \) -exec rm {} +
+	@make -C payload clean
 
 tidy:
-	rm -f $(ROM) $(ELF) $(MAP)
-	rm -r build/*
-	make -C payload tidy
+	@echo tidy
+	@rm -f $(ROM) $(ELF) $(MAP)
+	@rm -r build/*
+	@make -C payload tidy
 
 %.s: ;
 %.png: ;
 %.pal: ;
 %.aif: ;
 
-%.1bpp: %.png  ; $(GFX) $< $@
-%.4bpp: %.png  ; $(GFX) $< $@
-%.8bpp: %.png  ; $(GFX) $< $@
-%.gbapal: %.pal ; $(GFX) $< $@
-%.gbapal: %.png ; $(GFX) $< $@
-%.lz: % ; $(GFX) $< $@
-%.rl: % ; $(GFX) $< $@
+%.1bpp: %.png
+	@echo $@
+	@$(GFX) $< $@
+%.4bpp: %.png
+	@echo $@
+	@$(GFX) $< $@
+%.8bpp: %.png
+	@echo $@
+	@$(GFX) $< $@
+%.gbapal: %.pal
+	@echo $@
+	@$(GFX) $< $@
+%.gbapal: %.png
+	@echo $@
+	@$(GFX) $< $@
+%.lz: %
+	@echo $@
+	@$(GFX) $< $@
+%.rl: %
+	@echo $@
+	@$(GFX) $< $@
 
 
 ifeq ($(NODEP),1)
@@ -146,9 +155,10 @@ $(C_BUILDDIR)/%.o: c_dep = $(shell $(SCANINC) -I include $(C_SUBDIR)/$*.c)
 endif
 
 $(C_BUILDDIR)/%.o : $(C_SUBDIR)/%.c $$(c_dep)
+	@echo $<
 	@$(CPP) $(CPPFLAGS) $< -o $(C_BUILDDIR)/$*.i
 	@$(PREPROC) $(C_BUILDDIR)/$*.i charmap.txt | $(CC1) $(CFLAGS) -o $(C_BUILDDIR)/$*.s
-	$(AS) $(ASFLAGS) -o $@ $(C_BUILDDIR)/$*.s
+	@$(AS) $(ASFLAGS) -o $@ $(C_BUILDDIR)/$*.s
 
 ifeq ($(NODEP),1)
 $(ASM_BUILDDIR)/%.o: asm_dep :=
@@ -157,7 +167,8 @@ $(ASM_BUILDDIR)/%.o: asm_dep = $(shell $(SCANINC) $(ASM_SUBDIR)/$*.s)
 endif
 
 $(ASM_BUILDDIR)/%.o: $(ASM_SUBDIR)/%.s $$(asm_dep)
-	$(AS) $(ASFLAGS) -o $@ $<
+	@echo $<
+	@$(AS) $(ASFLAGS) -o $@ $<
 
 ifeq ($(NODEP),1)
 $(DATA_ASM_BUILDDIR)/%.o: data_dep :=
@@ -166,23 +177,29 @@ $(DATA_ASM_BUILDDIR)/%.o: data_dep = $(shell $(SCANINC) $(DATA_ASM_SUBDIR)/$*.s)
 endif
 
 payload:
-	@$(MAKE) -C payload COMPARE=$(COMPARE) TOOLCHAIN=$(TOOLCHAIN)
+	@echo payload
+	@$(MAKE) -C payload TOOLCHAIN=$(TOOLCHAIN)
 
 payload/payload.gba: payload
 
 data/payload.gba.lz: payload/payload.gba
-	$(GFX) $< $@ -search 1
+	@echo $<
+	@$(GFX) $< $@ -search 1
 
 $(DATA_ASM_BUILDDIR)/%.o: $(DATA_ASM_SUBDIR)/%.s $$(data_dep)
-	$(PREPROC) $< charmap.txt | $(CPP) -I include - | $(AS) $(ASFLAGS) -o $@
+	@echo $<
+	@$(PREPROC) $< charmap.txt | $(CPP) -I include - | $(AS) $(ASFLAGS) -o $@
 
 $(SONG_BUILDDIR)/%.o: $(SONG_SUBDIR)/%.s
-	$(AS) $(ASFLAGS) -I sound -o $@ $<
+	@echo $<
+	@$(AS) $(ASFLAGS) -I sound -o $@ $<
 
 $(ELF): ld_script.txt $(OBJS)
-	cd $(OBJ_DIR) && $(LD) $(LDFLAGS) -T ../ld_script.txt -o ../$@
+	@echo Linking $@
+	@cd $(OBJ_DIR) && $(LD) $(LDFLAGS) -T ../ld_script.txt -o ../$@
 
 $(ROM): $(ELF)
-	$(OBJCOPY) -O binary $< $@
+	@echo Output $@
+	@$(OBJCOPY) -O binary $< $@
 	$(FIX) $@ -c$(GAME_CODE) -m$(MAKER_CODE) -r$(REVISION) --silent
 

@@ -1,5 +1,4 @@
 TOOLCHAIN := $(DEVKITARM)
-COMPARE ?= 0
 
 ifeq ($(CC),)
 HOSTCC := gcc
@@ -77,7 +76,7 @@ FIX := ../../tools/gbafix/gbafix$(EXE)
 # Secondary expansion is required for dependency variables in object rules.
 .SECONDEXPANSION:
 
-.PHONY: all rom clean compare tidy
+.PHONY: all rom clean tidy
 
 C_SRCS := $(wildcard $(C_SUBDIR)/*.c $(C_SUBDIR)/*/*.c $(C_SUBDIR)/*/*/*.c)
 C_OBJS := $(patsubst $(C_SUBDIR)/%.c,$(C_BUILDDIR)/%.o,$(C_SRCS))
@@ -111,34 +110,44 @@ all: rom
 	@:
 
 rom: $(ROM)
-ifeq ($(COMPARE),1)
-	@$(SHA1) rom.sha1
-endif
-
-# For contributors to make sure a change didn't affect the contents of the ROM.
-compare: ; @$(MAKE) COMPARE=1
 
 clean: tidy
-	rm -f sound/direct_sound_samples/*.bin
-	rm -f $(SONG_OBJS) $(MID_OBJS) $(MID_SUBDIR)/*.s
-	find . \( -iname '*.1bpp' -o -iname '*.4bpp' -o -iname '*.8bpp' -o -iname '*.gbapal' -o -iname '*.lz' -o -iname '*.latfont' -o -iname '*.hwjpnfont' -o -iname '*.fwjpnfont' \) -exec rm {} +
+	@echo clean
+	@rm -f sound/direct_sound_samples/*.bin
+	@rm -f $(SONG_OBJS) $(MID_OBJS) $(MID_SUBDIR)/*.s
+	@find . \( -iname '*.1bpp' -o -iname '*.4bpp' -o -iname '*.8bpp' -o -iname '*.gbapal' -o -iname '*.lz' -o -iname '*.latfont' -o -iname '*.hwjpnfont' -o -iname '*.fwjpnfont' \) -exec rm {} +
 
 tidy:
-	rm -f $(ROM) $(ELF) $(MAP)
-	rm -r build/*
+	@echo tidy
+	@rm -f $(ROM) $(ELF) $(MAP)
+	@rm -r build/*
 
 %.s: ;
 %.png: ;
 %.pal: ;
 %.aif: ;
 
-%.1bpp: %.png  ; $(GFX) $< $@
-%.4bpp: %.png  ; $(GFX) $< $@
-%.8bpp: %.png  ; $(GFX) $< $@
-%.gbapal: %.pal ; $(GFX) $< $@
-%.gbapal: %.png ; $(GFX) $< $@
-%.lz: % ; $(GFX) $< $@
-%.rl: % ; $(GFX) $< $@
+%.1bpp: %.png
+	@echo $@
+	@$(GFX) $< $@
+%.4bpp: %.png
+	@echo $@
+	@$(GFX) $< $@
+%.8bpp: %.png
+	@echo $@
+	@$(GFX) $< $@
+%.gbapal: %.pal
+	@echo $@
+	@$(GFX) $< $@
+%.gbapal: %.png
+	@echo $@
+	@$(GFX) $< $@
+%.lz: %
+	@echo $@
+	@$(GFX) $< $@
+%.rl: %
+	@echo $@
+	@$(GFX) $< $@
 
 
 ifeq ($(NODEP),1)
@@ -148,10 +157,11 @@ $(C_BUILDDIR)/%.o: c_dep = $(shell $(SCANINC) -I include $(C_SUBDIR)/$*.c)
 endif
 
 $(C_BUILDDIR)/%.o : $(C_SUBDIR)/%.c $$(c_dep)
+	@echo $<
 	@$(CPP) $(CPPFLAGS) $< -o $(C_BUILDDIR)/$*.i
 	@$(PREPROC) $(C_BUILDDIR)/$*.i charmap.txt | $(CC1) $(CC1FLAGS) -o $(C_BUILDDIR)/$*.s
 	@echo -e ".text\n\t.align\t2, 0\n" >> $(C_BUILDDIR)/$*.s
-	$(AS) $(ASFLAGS) -o $@ $(C_BUILDDIR)/$*.s
+	@$(AS) $(ASFLAGS) -o $@ $(C_BUILDDIR)/$*.s
 
 ifeq ($(NODEP),1)
 $(ASM_BUILDDIR)/%.o: asm_dep :=
@@ -160,7 +170,8 @@ $(ASM_BUILDDIR)/%.o: asm_dep = $(shell $(SCANINC) $(ASM_SUBDIR)/$*.s)
 endif
 
 $(ASM_BUILDDIR)/%.o: $(ASM_SUBDIR)/%.s $$(asm_dep)
-	$(AS) $(ASFLAGS) -o $@ $<
+	@echo $<
+	@$(AS) $(ASFLAGS) -o $@ $<
 
 ifeq ($(NODEP),1)
 $(DATA_ASM_BUILDDIR)/%.o: data_dep :=
@@ -169,26 +180,34 @@ $(DATA_ASM_BUILDDIR)/%.o: data_dep = $(shell $(SCANINC) $(DATA_ASM_SUBDIR)/$*.s)
 endif
 
 $(DATA_ASM_BUILDDIR)/%.o: $(DATA_ASM_SUBDIR)/%.s $$(data_dep)
-	$(PREPROC) $< charmap.txt | $(CPP) -I include | $(AS) $(ASFLAGS) -o $@
+	@echo $<
+	@$(PREPROC) $< charmap.txt | $(CPP) -I include | $(AS) $(ASFLAGS) -o $@
 
 $(SONG_BUILDDIR)/%.o: $(SONG_SUBDIR)/%.s
-	$(AS) $(ASFLAGS) -I sound -o $@ $<
+	@echo $<
+	@$(AS) $(ASFLAGS) -I sound -o $@ $<
 
 $(OBJ_DIR)/sym_bss.ld: sym_bss.txt
-	$(RAMSCRGEN) .bss $< ENGLISH > $@
+	@echo $<
+	@$(RAMSCRGEN) .bss $< ENGLISH > $@
 
 $(OBJ_DIR)/sym_common.ld: sym_common.txt $(C_OBJS) $(wildcard common_syms/*.txt)
-	$(RAMSCRGEN) COMMON $< ENGLISH -c $(C_BUILDDIR),common_syms > $@
+	@echo $<
+	@$(RAMSCRGEN) COMMON $< ENGLISH -c $(C_BUILDDIR),common_syms > $@
 
 $(OBJ_DIR)/sym_ewram.ld: sym_ewram.txt
-	$(RAMSCRGEN) ewram_data $< ENGLISH > $@
+	@echo $<
+	@$(RAMSCRGEN) ewram_data $< ENGLISH > $@
 
 $(OBJ_DIR)/ld_script.ld: ld_script.txt $(OBJ_DIR)/sym_bss.ld $(OBJ_DIR)/sym_common.ld $(OBJ_DIR)/sym_ewram.ld
-	cd $(OBJ_DIR) && sed -f ../../ld_script.sed ../$< | sed "s#tools/#../tools/#g" > ld_script.ld
+	@echo $<
+	@cd $(OBJ_DIR) && sed -f ../../ld_script.sed ../$< | sed "s#tools/#../tools/#g" > ld_script.ld
 
 $(ELF): $(OBJ_DIR)/ld_script.ld $(OBJS)
-	cd $(OBJ_DIR) && $(LD) $(LDFLAGS) -T ld_script.ld -o ../$@ $(LIB)
+	@echo Linking $@
+	@cd $(OBJ_DIR) && $(LD) $(LDFLAGS) -T ld_script.ld -o ../$@ $(LIB)
 
 $(ROM): $(ELF)
-	$(OBJCOPY) -O binary $< $@
+	@echo Output $@
+	@$(OBJCOPY) -O binary $< $@
 
