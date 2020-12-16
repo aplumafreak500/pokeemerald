@@ -227,6 +227,9 @@ include songs.mk
 %.rl: %
 	@echo $@
 	@$(GFX) $< $@
+$(CRY_SUBDIR)/cry_not_%.bin: $(CRY_SUBDIR)/cry_not_%.aif
+	@echo $<
+	@$(AIF) $< $@
 $(CRY_SUBDIR)/%.bin: $(CRY_SUBDIR)/%.aif
 	@echo $<
 	@$(AIF) $< $@ --compress
