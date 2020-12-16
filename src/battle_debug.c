@@ -1,3 +1,4 @@
+#if DEBUG
 #include "global.h"
 #include "battle.h"
 #include "battle_anim.h"
@@ -1677,3 +1678,4 @@ static void UpdateMonData(struct BattleDebugMenu *data)
         }
     }
 }
+#endif

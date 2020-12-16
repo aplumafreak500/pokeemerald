@@ -3208,6 +3208,7 @@ static void PlayerHandleCmd55(void)
     gBattlerControllerFuncs[gActiveBattler] = sub_80587B0;
 }
 
+#ifdef DEBUG
 static void WaitForDebug(void)
 {
     if (gMain.callback2 == BattleMainCB2 && !gPaletteFade.active)
@@ -3215,12 +3216,15 @@ static void WaitForDebug(void)
         PlayerBufferExecCompleted();
     }
 }
+#endif
 
 static void PlayerHandleBattleDebug(void)
 {
+#if USE_BATTLE_DEBUG
     BeginNormalPaletteFade(-1, 0, 0, 0x10, 0);
     SetMainCallback2(CB2_BattleDebugMenu);
     gBattlerControllerFuncs[gActiveBattler] = WaitForDebug;
+#endif
 }
 
 static void PlayerCmdEnd(void)
