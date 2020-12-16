@@ -1,5 +1,6 @@
 #ifdef DEBUG
 #include "global.h"
+#include "m4a.h"
 #include "pokemon.h"
 #include "pokemon_storage_system.h"
 #include "debug.h"
@@ -13,8 +14,15 @@
 #include "map_name_popup.h"
 #include "script.h"
 #include "sound.h"
+#include "item.h"
+#include "item_icon.h"
+#include "fieldmap.h"
+#include "overworld.h"
 #include "field_weather.h"
 #include "data.h"
+void PlayerPC(); // was not defined in player_pc.h
+#include "hall_of_fame.h"
+#include "credits.h"
 #include "constants/rgb.h"
 #include "constants/songs.h"
 #include "constants/species.h"
@@ -46,6 +54,7 @@ static const u8 Str_Back[] = _("Back");
 static const u8 Str_AddPKMN[] = _("Add {PKMN}");
 static const u8 Str_EditPKMN[] = _("Edit {PKMN}");
 static const u8 Str_AddItems[] = _("Add items");
+static const u8 Str_RemoveItems[] = _("Remove items");
 static const u8 Str_EditMoney[] = _("Edit ¥");
 static const u8 Str_EditCoins[] = _("Edit Coin Case");
 static const u8 Str_EditPokedex[] = _("Edit {0x55}{0x56}Dex");
@@ -183,6 +192,14 @@ static void LumaDebugMenu_Nop(u8);
 static void LumaDebugMenu_AddPKMN(u8);
 static void LumaDebugMenu_EditPKMN(u8);
 static void LumaDebugMenu_AddItems(u8);
+static void LumaDebugMenu_RemoveItems(u8);
+static void LumaDebugMenu_ViewTownMap(u8);
+static void LumaDebugMenu_JumpToCredits(u8);
+static void LumaDebugMenu_JumpToHoF(u8);
+static void LumaDebugMenu_JumpToStorageSystem(u8);
+static void LumaDebugMenu_JumpToPlayerPC(u8);
+static void LumaDebugMenu_ClearStorage(u8);
+static void LumaDebugMenu_FillStorage(u8);
 static void LumaDebugMenu_AddEditPKMN_Init(u8);
 static void LumaDebugMenu_EditPKMN_SetDefaults();
 static void LumaDebugMenu_EditPKMN_PopulateData();
@@ -191,14 +208,15 @@ static void LumaDebugMenu_AddEditPKMN_ProcessInput(u8);
 static void LumaDebugMenu_EditPKMN_EditModeProcessInput(u8);
 static void LumaDebugMenu_EditPKMN_EditModeRedraw(u32, u8);
 static u8 LumaDebugMenu_AddEditPKMN_GiveToPlayer();
-static void LumaDebugMenu_AddItems_Init();
+static void LumaDebugMenu_AddItems_Init(u8);
 static void LumaDebugMenu_AddItems_ProcessInput(u8);
+static void LumaDebugMenu_AddItems_Redraw(u8);
 
 static const struct ListMenuItem LumaDebugMenu_Items[] = {
 	{Str_CommonGroup, LIST_HEADER},
 	{Str_AddPKMN, 2},
 	{Str_EditPKMN, 3},
-	{Str_AddItems, 0},
+	{Str_AddItems, 4},
 	{Str_EditMoney, 0},
 	{Str_EditCoins, 0},
 	{Str_EditPokedex, 0},
@@ -256,23 +274,24 @@ static const struct ListMenuItem LumaDebugMenu_Items[] = {
 	{Str_DebugWalda, 0},
 	{Str_DebugWarp, 0},
 	{Str_DebugMemoryEditor, 0},
-	{Str_DebugTownMap, 0},
+	{Str_DebugTownMap, 6},
 	{Str_DebugAllBadges, 0},
 	{Str_DebugClearBadges, 0},
 	{Str_DebugAllLandmarks, 0},
 	{Str_DebugClearLandmarks, 0},
-	{Str_DebugCredits, 0},
-	{Str_DebugHoF, 0},
+	{Str_DebugCredits, 7},
+	{Str_DebugHoF, 8},
 	{Str_DebugSafariFeeders, 0},
 	{Str_DebugScreen, 0},
 	{Str_DebugSaveFailTest, 0},
-	{Str_DebugPC, 0},
-	{Str_DebugPlayerPC, 0},
+	{Str_DebugPC, 9},
+	{Str_DebugPlayerPC, 10},
 	{Str_DebugTileInfo, 0},
 	{Str_DebugFixChecksums, 0},
-	{Str_DebugClearStorage, 0},
-	{Str_DebugFillStorage, 0},
+	{Str_DebugClearStorage, 11},
+	{Str_DebugFillStorage, 12},
 	{Str_DebugNickname, 0},
+	{Str_RemoveItems, 5},
 	{Str_DebugEgg, 0},
 	{Str_DebugHM, 0},
 	{Str_DebugRNG, 0},
@@ -316,6 +335,15 @@ static void(*const LumaDebugMenu_Actions[])(u8) = {
 	LumaDebugMenu_Cancel,
 	LumaDebugMenu_AddPKMN,
 	LumaDebugMenu_EditPKMN,
+	LumaDebugMenu_AddItems,
+	LumaDebugMenu_RemoveItems,
+	LumaDebugMenu_ViewTownMap,
+	LumaDebugMenu_JumpToCredits,
+	LumaDebugMenu_JumpToHoF,
+	LumaDebugMenu_JumpToStorageSystem,
+	LumaDebugMenu_JumpToPlayerPC,
+	LumaDebugMenu_ClearStorage,
+	LumaDebugMenu_FillStorage,
 };
 
 static const struct ListMenuTemplate LumaDebugMenu_ListTemplate = {
@@ -350,6 +378,7 @@ static const struct WindowTemplate LumaDebugMenu_WindowTemplate = {
 static u16 menupos;
 static u16 scrolloffset;
 
+// Minor bug: "Player's PC" doesn't display properly.
 void OpenLumaDebugMenu() {
 	struct ListMenuTemplate menuTemplate;
 	struct Task* inputTask;
@@ -376,12 +405,11 @@ void OpenLumaDebugMenu() {
 	inputTask->data[1] = winId;
 }
 
+// Minor bug: SE_SELECT isn't played on change.
 static void LumaDebugMenu_HandleInput(u8 taskid) {
 	void (*func)(u8);
 	struct Task* task = &gTasks[taskid];
 	u32 input;
-
-	ListMenuGetScrollAndRow(taskid, &scrolloffset, &menupos);
 
 	input = ListMenu_ProcessInput(task->data[0]);
 
@@ -400,6 +428,9 @@ static void LumaDebugMenu_HandleInput(u8 taskid) {
 		}
 		break;
 	}
+
+	ListMenuGetScrollAndRow(taskid, &scrolloffset, &menupos);
+
 }
 
 static void LumaDebugMenu_Close(u8 taskid) {
@@ -430,7 +461,115 @@ static void LumaDebugMenu_EditPKMN(u8 taskid) {
 
 static void LumaDebugMenu_AddItems(u8 taskid) {
 	LumaDebugMenu_Close(taskid);
-	// LumaDebugMenu_AddItems_Init();
+	LumaDebugMenu_AddItems_Init(0);
+}
+
+static void LumaDebugMenu_RemoveItems(u8 taskid) {
+	LumaDebugMenu_Close(taskid);
+	LumaDebugMenu_AddItems_Init(1);
+}
+
+static void LumaDebugMenu_ViewTownMap(u8 taskid) {
+	BeginNormalPaletteFade(0xffffffff, 0, 0, 16, RGB_BLACK);
+	while (gPaletteFade.active)
+		UpdatePaletteFade();
+	LumaDebugMenu_Close(taskid);
+	FieldInitRegionMap(CB2_ReturnToField);
+}
+
+static void LumaDebugMenu_JumpToCredits(u8 taskid) {
+	PlayNewMapMusic(0);
+	BeginNormalPaletteFade(0xffffffff, 0, 0, 16, RGB_BLACK);
+	while (gPaletteFade.active)
+		UpdatePaletteFade();
+	LumaDebugMenu_Close(taskid);
+	SetMainCallback2(CB2_StartCreditsSequence);
+}
+
+static void LumaDebugMenu_JumpToHoF(u8 taskid) {
+	PlayNewMapMusic(0);
+	BeginNormalPaletteFade(0xffffffff, 0, 0, 16, RGB_BLACK);
+	while (gPaletteFade.active)
+		UpdatePaletteFade();
+	LumaDebugMenu_Close(taskid);
+	SetMainCallback2(CB2_DoHallOfFameScreen);
+}
+
+static void LumaDebugMenu_JumpToStorageSystem(u8 taskid) {
+	LumaDebugMenu_Close(taskid);
+	ShowPokemonStorageSystemPC();
+}
+
+static void LumaDebugMenu_JumpToPlayerPC(u8 taskid) {
+	LumaDebugMenu_Close(taskid);
+	PlayerPC();
+}
+
+static void LumaDebugMenu_ClearStorage(u8 taskid) {
+	u32 i;
+	for (i = 0; i < TOTAL_BOXES_COUNT * IN_BOX_COUNT; i++) {
+		ZeroBoxMonData(&gPokemonStoragePtr->boxes[0][i]);
+	}
+	PlaySE(SE_PIN);
+	LumaDebugMenu_Close(taskid);
+	EnableBothScriptContexts();
+}
+
+// Partial port of "POKéNAV D"
+static void LumaDebugMenu_FillStorage(u8 taskid) {
+	u32 i;
+	struct BoxPokemon* mon;
+	u32 data;
+	for (i = 0; i < TOTAL_BOXES_COUNT * IN_BOX_COUNT; i++) {
+		mon = &gPokemonStoragePtr->boxes[0][i];
+		CreateBoxMon(mon, NationalPokedexNumToSpecies(Random() % NATIONAL_DEX_COUNT), (Random() % 100) + 1, 32, FALSE, 0, OT_ID_PLAYER_ID, 0);
+		data = Random() % NUM_LANGUAGES;
+		SetBoxMonData(mon, MON_DATA_LANGUAGE, &data);
+		data = Random() % 256;
+		SetBoxMonData(mon, MON_DATA_COOL, &data);
+		data = Random() % 256;
+		SetBoxMonData(mon, MON_DATA_CUTE, &data);
+		data = Random() % 256;
+		SetBoxMonData(mon, MON_DATA_TOUGH, &data);
+		data = Random() % 256;
+		SetBoxMonData(mon, MON_DATA_SMART, &data);
+		data = Random() % 256;
+		SetBoxMonData(mon, MON_DATA_BEAUTY, &data);
+		data = Random() % 256;
+		SetBoxMonData(mon, MON_DATA_SHEEN, &data);
+		data = Random() % 256;
+		SetBoxMonData(mon, MON_DATA_HP_EV, &data);
+		data = Random() % 256;
+		SetBoxMonData(mon, MON_DATA_ATK_EV, &data);
+		data = Random() % 256;
+		SetBoxMonData(mon, MON_DATA_DEF_EV, &data);
+		data = Random() % 256;
+		SetBoxMonData(mon, MON_DATA_SPEED_EV, &data);
+		data = Random() % 256;
+		SetBoxMonData(mon, MON_DATA_SPATK_EV, &data);
+		data = Random() % 256;
+		SetBoxMonData(mon, MON_DATA_SPDEF_EV, &data);
+		data = Random() % 256;
+		SetBoxMonData(mon, MON_DATA_FRIENDSHIP, &data);
+		data = Random() % 256;
+		SetBoxMonData(mon, MON_DATA_MET_LOCATION, &data);
+		data = Random() % 15;
+		SetBoxMonData(mon, MON_DATA_MET_GAME, &data);
+		data = (Random() % ITEM_PREMIER_BALL) + 1;
+		SetBoxMonData(mon, MON_DATA_POKEBALL, &data);
+		data = Random32();
+		SetBoxMonData(mon, MON_DATA_RIBBONS, &data);
+		data = Random() % 1;
+		SetBoxMonData(mon, MON_DATA_IS_EGG, &data);
+		if (i % IN_BOX_COUNT == 0) {
+			PlaySE(SE_CONTEST_HEART);
+			m4aMPlayImmInit(&gMPlayInfo_SE1);
+			m4aMPlayPitchControl(&gMPlayInfo_SE1, 0xFFFF, (i /IN_BOX_COUNT) * 256);
+		}
+	}
+	PlaySE(SE_PIN);
+	LumaDebugMenu_Close(taskid);
+	EnableBothScriptContexts();
 }
 
 static const u8 Str_Species[] = _("Species");
@@ -1753,13 +1892,12 @@ static void LumaDebugMenu_EditPKMN_EditModeRedraw(u32 digit, u8 editIndex) {
 		* OT (OT gender, draw with different font)
 		* Status (sleep/toxic counter)
 		* Pokerus (counters)
-		* Moves (label oveeride, move name, PP, PP Up)
+		* Moves (move name, PP, PP Up)
 		* Held item (item name)
 		* Ability (ability name)
-		* IVs (label override, EVs, current, current HP)
-		* EVs (label override, IVs, current, current HP)
-		* Stats (label override, current HP, IVs, EVs)
-		* Ribbons (label override)
+		* IVs (EVs, current, current HP)
+		* EVs (IVs, current, current HP)
+		* Stats (current HP, IVs, EVs)
 		* Language (language name)
 		* Origin game (game name)
 		* Met location (location name)
@@ -1794,6 +1932,198 @@ static u8 LumaDebugMenu_AddEditPKMN_GiveToPlayer() {
 	case 2:
 		CopyMon(LumaDebugMenu_EditPKMN_Data.monBeingEdited, mon, sizeof(struct BoxPokemon));
 		return MON_GIVEN_TO_PC;
+	}
+}
+
+static const struct WindowTemplate LumaDebugMenu_AddItemsWindowTemplate = {
+	.bg = 0,
+	.tilemapLeft = 1,
+	.tilemapTop = 1,
+	.width = 16,
+	.height = 6,
+	.baseBlock = 1,
+	.paletteNum = 15
+};
+
+static u16 lastItem;
+static const u8 Str_AddItemsHeader[] = _("{COLOR GREEN}Add items {B_BUTTON} Cancel");
+
+// Port of Make items menu, slightly inspired by xaman
+static void LumaDebugMenu_AddItems_Init(u8 addOrRemove) {
+	u8 winId = AddWindow(&LumaDebugMenu_AddItemsWindowTemplate);
+	DrawStdWindowFrame(winId, FALSE);
+	CopyWindowToVram(winId, 3);
+	AddTextPrinterParameterized(winId, 1, Str_AddItemsHeader, 0, 0, 0, NULL);
+	u8 taskid = CreateTask(LumaDebugMenu_AddItems_ProcessInput, 10);
+	if (!lastItem) lastItem = 1;
+	gTasks[taskid].data[0] = winId;
+	gTasks[taskid].data[1] = 0;
+	gTasks[taskid].data[2] = lastItem;
+	gTasks[taskid].data[3] = 1;
+	// TODO Item icon
+	gTasks[taskid].data[5] = addOrRemove;
+	LumaDebugMenu_AddItems_Redraw(taskid);
+}
+
+static void LumaDebugMenu_AddItems_ProcessInput(u8 taskid) {
+	struct Task* task = &gTasks[taskid];
+	u8 mode = task->data[1];
+	u16 keys = gMain.newKeys;
+	u16 heldKeys = gMain.newAndRepeatedKeys;
+	if (keys & B_BUTTON) {
+		if (mode == 0) {
+			ClearStdWindowAndFrame(task->data[0], TRUE);
+			lastItem = task->data[2];
+			RemoveWindow(task->data[0]);
+			DestroyTask(taskid);
+			EnableBothScriptContexts();
+			PlaySE(SE_SELECT);
+			return;
+		}
+		else {
+			task->data[1] = 0;
+			LumaDebugMenu_AddItems_Redraw(taskid);
+			PlaySE(SE_SELECT);
+			return;
+		}
+	}
+	if (keys & A_BUTTON) {
+		if (mode == 0) {
+			task->data[1] = 1;
+			LumaDebugMenu_AddItems_Redraw(taskid);
+			PlaySE(SE_SELECT);
+			return;
+		}
+		else {
+			task->data[1] = 0;
+			if (task->data[5] == 0) {
+				if (AddBagItem(task->data[2], task->data[3]))
+					PlaySE(SE_SUCCESS);
+			}
+			else {
+				if (RemoveBagItem(task->data[2], task->data[3]))
+					PlaySE(SE_SUCCESS);
+			}
+			LumaDebugMenu_AddItems_Redraw(taskid);
+			return;
+		}
+	}
+	if (heldKeys & L_BUTTON) {
+		if (mode == 0) {
+			task->data[2] -= 100;
+			if ((s16) task->data[2] < 1)
+				task->data[2] += ITEMS_COUNT;
+		}
+		else {
+			task->data[3] -= 100;
+			if ((s16) task->data[3] < 1)
+				task->data[3] = 1;
+		}
+		LumaDebugMenu_AddItems_Redraw(taskid);
+		PlaySE(SE_SELECT);
+		return;
+	}
+	if (heldKeys & R_BUTTON) {
+		if (mode == 0) {
+			task->data[2] += 100;
+			if (task->data[2] > ITEMS_COUNT)
+				task->data[2] -= ITEMS_COUNT;
+		}
+		else {
+			task->data[3] += 100;
+			if (task->data[3] > 999)
+				task->data[3] = 999;
+		}
+		LumaDebugMenu_AddItems_Redraw(taskid);
+		PlaySE(SE_SELECT);
+		return;
+	}
+	if (heldKeys & DPAD_LEFT) {
+		if (mode == 0) {
+			task->data[2] -= 10;
+			if ((s16) task->data[2] < 1)
+				task->data[2] += ITEMS_COUNT;
+		}
+		else {
+			task->data[3] -= 10;
+			if ((s16) task->data[3] < 1)
+				task->data[3] = 1;
+		}
+		LumaDebugMenu_AddItems_Redraw(taskid);
+		PlaySE(SE_SELECT);
+		return;
+	}
+	if (heldKeys & DPAD_RIGHT) {
+		if (mode == 0) {
+			task->data[2] += 10;
+			if (task->data[2] > ITEMS_COUNT)
+				task->data[2] -= ITEMS_COUNT;
+		}
+		else {
+			task->data[3] += 10;
+			if (task->data[3] > 999)
+				task->data[3] = 999;
+		}
+		LumaDebugMenu_AddItems_Redraw(taskid);
+		PlaySE(SE_SELECT);
+		return;
+	}
+	if (heldKeys & DPAD_DOWN) {
+		if (mode == 0) {
+			task->data[2] -= 1;
+			if (task->data[2] < 1)
+				task->data[2] += ITEMS_COUNT;
+		}
+		else {
+			task->data[3] -= 1;
+			if (task->data[3] < 1)
+				task->data[3] = 1;
+		}
+		LumaDebugMenu_AddItems_Redraw(taskid);
+		PlaySE(SE_SELECT);
+		return;
+	}
+	if (heldKeys & DPAD_UP) {
+		if (mode == 0) {
+			task->data[2] += 1;
+			if ((s16) task->data[2] > ITEMS_COUNT)
+				task->data[2] -= ITEMS_COUNT;
+		}
+		else {
+			task->data[3] += 1;
+			if ((s16) task->data[3] > 999)
+				task->data[3] = 999;
+		}
+		LumaDebugMenu_AddItems_Redraw(taskid);
+		PlaySE(SE_SELECT);
+		return;
+	}
+}
+
+static const u8 Str_WhichItem[] = _("Which item?");
+static const u8 Str_HowMany[] = _("How many?");
+
+// Not a task callback. but we still need the taskid in order to get the menu data.
+static void LumaDebugMenu_AddItems_Redraw(u8 taskid) {
+	struct Task* task = &gTasks[taskid];
+	u8 winId = task->data[0];
+	u8 mode = task->data[1];
+	u16 item = task->data[2];
+	u16 count = task->data[3];
+	if (mode == 0) {
+		FillWindowPixelRect(winId, 0x11, 0, 32, 128, 16);
+		AddTextPrinterParameterized(winId, 0, Str_WhichItem, 0, 16, 0, NULL);
+		ConvertIntToDecimalStringN(gStringVar1, item, STR_CONV_MODE_LEADING_ZEROS, 3);
+		AddTextPrinterParameterized(winId, 7, gStringVar1, 4, 32, 0, NULL);
+		CopyItemName(item, gStringVar1);
+		AddTextPrinterParameterized(winId, 1, gStringVar1, 28, 32, 0, NULL);
+		// TODO Item icon
+	}
+	else {
+		FillWindowPixelRect(winId, 0x11, 0, 16, 88, 16);
+		AddTextPrinterParameterized(winId, 0, Str_HowMany, 0, 16, 0, NULL);
+		ConvertIntToDecimalStringN(gStringVar1, count, STR_CONV_MODE_RIGHT_ALIGN, 3);
+		AddTextPrinterParameterized(winId, 7, gStringVar1, 4, 32, 0, NULL);
 	}
 }
 
