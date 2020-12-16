@@ -1,5 +1,4 @@
 TOOLCHAIN := $(DEVKITARM)
-COMPARE ?= 0
 
 ifeq ($(CC),)
 HOSTCC := gcc
@@ -89,10 +88,13 @@ all: $(LIB)
 	@:
 
 clean:
-	rm -f $(LIB) $(ASM_OBJS)
+	@echo clean
+	@rm -f $(LIB) $(ASM_OBJS)
 
 $(LIB): $(ASM_OBJS)
-	$(AR) $(ARFLAGS) $@ $^
+	@echo Output $@
+	@$(AR) $(ARFLAGS) $@ $^
 
 $(ASM_OBJS): libagbsyscall.s
-	$(AS) $(ASFLAGS) --defsym L_$(*F)=1 -o $@ $<
+	@echo $@
+	@$(AS) $(ASFLAGS) --defsym L_$(*F)=1 -o $@ $<
