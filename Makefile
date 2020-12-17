@@ -109,8 +109,7 @@ MAKEFLAGS += --no-print-directory
 # Secondary expansion is required for dependency variables in object rules.
 .SECONDEXPANSION:
 
-.PHONY: all rom clean tidy tools mostlyclean clean-tools $(TOOLDIRS) berry_fix libagbsyscall modern
-
+.PHONY: all rom clean tidy tools mostlyclean clean-tools $(TOOLDIRS) berry_fix libagbsyscall modern debug modern_debug
 infoshell = $(foreach line, $(shell $1 | sed "s/ /__SPACE__/g"), $(info $(subst __SPACE__, ,$(line))))
 
 # Build tools when building the rom
@@ -358,6 +357,8 @@ $(ROM): $(ELF)
 	$(OBJCOPY) -O binary $< $@
 
 modern: ; @$(MAKE) MODERN=1
+debug: ; @$(MAKE) DEBUG=1 DINFO=1
+modern_debug: ; @$(MAKE) MODERN=1 DEBUG=1 DINFO=1
 
 berry_fix/berry_fix.gba: berry_fix
 

@@ -124,6 +124,7 @@ static const u8 Str_DebugNickname[] = _("Nickname");
 static const u8 Str_DebugEgg[] = _("Breed");
 static const u8 Str_DebugHM[] = _("Use HM");
 static const u8 Str_DebugRNG[] = _("RNG");
+static const u8 Str_DebugXaman[] = _("Xaman Debug Menu");
 
 // Pokedex
 static const u8 Str_NationalDex[] = _("National Dex: ");
@@ -200,6 +201,7 @@ static void LumaDebugMenu_JumpToStorageSystem(u8);
 static void LumaDebugMenu_JumpToPlayerPC(u8);
 static void LumaDebugMenu_ClearStorage(u8);
 static void LumaDebugMenu_FillStorage(u8);
+static void LumaDebugMenu_OpenXaman(u8);
 static void LumaDebugMenu_AddEditPKMN_Init(u8);
 static void LumaDebugMenu_EditPKMN_SetDefaults();
 static void LumaDebugMenu_EditPKMN_PopulateData();
@@ -273,6 +275,7 @@ static const struct ListMenuItem LumaDebugMenu_Items[] = {
 	{Str_DebugTrickHouse, 0},
 	{Str_DebugWalda, 0},
 	{Str_DebugWarp, 0},
+	{Str_DebugXaman, 13},
 	{Str_DebugMemoryEditor, 0},
 	{Str_DebugTownMap, 6},
 	{Str_DebugAllBadges, 0},
@@ -344,6 +347,7 @@ static void(*const LumaDebugMenu_Actions[])(u8) = {
 	LumaDebugMenu_JumpToPlayerPC,
 	LumaDebugMenu_ClearStorage,
 	LumaDebugMenu_FillStorage,
+	LumaDebugMenu_OpenXaman,
 };
 
 static const struct ListMenuTemplate LumaDebugMenu_ListTemplate = {
@@ -570,6 +574,11 @@ static void LumaDebugMenu_FillStorage(u8 taskid) {
 	PlaySE(SE_PIN);
 	LumaDebugMenu_Close(taskid);
 	EnableBothScriptContexts();
+}
+
+static void LumaDebugMenu_RemoveItems(u8 taskid) {
+	LumaDebugMenu_Close(taskid);
+	Debug_ShowMainMenu();
 }
 
 static const u8 Str_Species[] = _("Species");

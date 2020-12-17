@@ -7,5 +7,6 @@ extern const u8 GitHash[];
 
 void OpenLumaDebugMenu();
 void OpenStartDebugMenu();
+void Debug_ShowMainMenu(void);
 #endif
 #endif
