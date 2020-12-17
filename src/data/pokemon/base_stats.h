@@ -4,7 +4,11 @@
 
 const struct BaseStats gBaseStats[] =
 {
-    [SPECIES_NONE] = {0},
+    [SPECIES_NONE] =
+    {
+        .genderRatio = MON_GENDERLESS,
+        .bodyColor = BODY_COLOR_BLACK,
+    },
 
     [SPECIES_BULBASAUR] =
     {
@@ -30432,5 +30436,10 @@ const struct BaseStats gBaseStats[] =
         #endif
         .bodyColor = BODY_COLOR_RED,
         .noFlip = FALSE,
+    },
+    [SPECIES_EGG] =
+    {
+        .genderRatio = MON_GENDERLESS,
+        .bodyColor = BODY_COLOR_WHITE,
     },
 };
