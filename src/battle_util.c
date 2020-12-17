@@ -5749,7 +5749,7 @@ u8 ItemBattleEffects(u8 caseID, u8 battlerId, bool8 moveTurn)
                 if (!(gMoveResultFlags & MOVE_RESULT_NO_EFFECT)
                     && TARGET_TURN_DAMAGED
                     && (Random() % 100) < atkHoldEffectParam
-                    && gBattleMoves[gCurrentMove].flags & FLAG_KINGSROCK_AFFECTED
+                    && gBattleMoves[gCurrentMove].flags & FLAG_KINGS_ROCK_AFFECTED
                     && gBattleMons[gBattlerTarget].hp)
                 {
                     gBattleScripting.moveEffect = MOVE_EFFECT_FLINCH;
