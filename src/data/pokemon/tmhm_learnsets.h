@@ -6,15 +6,6 @@
 // each bit corresponding to a TM or HM.
 const u32 gTMHMLearnsets[][2] =
 {
-    [SPECIES_NONE]        = TMHM_LEARNSET(TMHM(TM14_BLIZZARD)
-                                            | TMHM(HM01_CUT)
-                                            | TMHM(TM26_EARTHQUAKE)
-                                            | TMHM(HM02_FLY)
-                                            | TMHM(TM13_ICE_BEAM)
-                                            | TMHM(TM29_PSYCHIC)
-                                            | TMHM(TM44_REST)
-                                            | TMHM(TM25_THUNDER)
-                                            | TMHM(TM06_TOXIC)),
 
     [SPECIES_BULBASAUR]   = TMHM_LEARNSET(TMHM(TM45_ATTRACT)
                                             | TMHM(TM09_BULLET_SEED)

@@ -1125,4 +1125,5 @@ const u8 gSpeciesNames[][POKEMON_NAME_LENGTH + 1] = {
     [SPECIES_NECROZMA_ULTRA] = _("Necrozma"),
     // Magearna
     [SPECIES_MAGEARNA_ORIGINAL_COLOR] = _("Magearna"),
+	[SPECIES_EGG] = _("Egg"),
 };
