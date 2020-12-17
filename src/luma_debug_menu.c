@@ -213,6 +213,9 @@ static u8 LumaDebugMenu_AddEditPKMN_GiveToPlayer();
 static void LumaDebugMenu_AddItems_Init(u8);
 static void LumaDebugMenu_AddItems_ProcessInput(u8);
 static void LumaDebugMenu_AddItems_Redraw(u8);
+static void LumaDebugMenu_EditMoneyCoins_Init(u8);
+static void LumaDebugMenu_EditMoneyCoins_ProcessInput(u8);
+static void LumaDebugMenu_EditMoneyCoins_Redraw(u8);
 
 static const struct ListMenuItem LumaDebugMenu_Items[] = {
 	{Str_CommonGroup, LIST_HEADER},
@@ -382,6 +385,7 @@ static const struct WindowTemplate LumaDebugMenu_WindowTemplate = {
 static u16 menupos;
 static u16 scrolloffset;
 
+// Minor bug: Menu position isn't remembered.
 // Minor bug: "Player's PC" doesn't display properly.
 void OpenLumaDebugMenu() {
 	struct ListMenuTemplate menuTemplate;
@@ -559,10 +563,8 @@ static void LumaDebugMenu_FillStorage(u8 taskid) {
 		SetBoxMonData(mon, MON_DATA_MET_LOCATION, &data);
 		data = Random() % 15;
 		SetBoxMonData(mon, MON_DATA_MET_GAME, &data);
-		data = (Random() % ITEM_PREMIER_BALL) + 1;
+		data = (Random() % (LAST_BALL - 1)) + 1;
 		SetBoxMonData(mon, MON_DATA_POKEBALL, &data);
-		data = Random32();
-		SetBoxMonData(mon, MON_DATA_RIBBONS, &data);
 		data = Random() % 1;
 		SetBoxMonData(mon, MON_DATA_IS_EGG, &data);
 		if (i % IN_BOX_COUNT == 0) {
@@ -576,9 +578,14 @@ static void LumaDebugMenu_FillStorage(u8 taskid) {
 	EnableBothScriptContexts();
 }
 
-static void LumaDebugMenu_RemoveItems(u8 taskid) {
+static void LumaDebugMenu_OpenXaman(u8 taskid) {
 	LumaDebugMenu_Close(taskid);
 	Debug_ShowMainMenu();
+}
+
+static void LumaDebugMenu_EditMoney(u8 taskid) {
+	LumaDebugMenu_Close(taskid);
+	// LumaDebugMenu_EditMoneyCoins(0);
 }
 
 static const u8 Str_Species[] = _("Species");
@@ -648,6 +655,22 @@ static const u8 Str_Psn2[] = _("PSN2");
 static const u8 Str_Genderless[] = _("-");
 static const u8 Str_Male[] = _("♂");
 static const u8 Str_Female[] = _("♀");
+
+static const u8* GenderIndexes[3] = {
+	Str_Male,
+	Str_Female,
+	Str_Genderless
+};
+
+static const u8* StatusIndexes[7] = {
+	Str_None,
+	Str_Psn,
+	Str_Par,
+	Str_Brn,
+	Str_Slp,
+	Str_Frz,
+	Str_Psn2
+};
 
 struct EditPokemonStruct {
 	const u8* text;
@@ -839,14 +862,15 @@ static void LumaDebugMenu_AddEditPKMN_Init(u8 mode) {
 		ZeroMonData(mons);
 		ZeroMonData(&LumaDebugMenu_EditPKMN_Data.mon);
 		LumaDebugMenu_EditPKMN_Data.monBeingEdited = mons;
+		LumaDebugMenu_EditPKMN_Data.index = 0;
 		break;
 	case 1:
-		mons = &gPlayerParty[0];
+		mons = &gPlayerParty[LumaDebugMenu_EditPKMN_Data.index];
 		CopyMon(&LumaDebugMenu_EditPKMN_Data.mon, mons, sizeof(struct Pokemon));
 		LumaDebugMenu_EditPKMN_Data.monBeingEdited = mons;
 		break;
 	case 2:
-		mons = (struct Pokemon*) &gPokemonStoragePtr->boxes[0][0];
+		mons = (struct Pokemon*) &gPokemonStoragePtr->boxes[0][LumaDebugMenu_EditPKMN_Data.index];
 		CopyMon(&LumaDebugMenu_EditPKMN_Data.mon, mons, sizeof(struct BoxPokemon));
 		CalculateMonStats(&LumaDebugMenu_EditPKMN_Data.mon);
 		LumaDebugMenu_EditPKMN_Data.monBeingEdited = mons;
@@ -1384,9 +1408,35 @@ static void LumaDebugMenu_EditPKMN_Redraw() {
 			AddTextPrinterParameterized(LumaDebugMenu_EditPKMN_menuWindowId, 7, gStringVar2, x, y, 0, NULL);
 			y+= 16;
 			break;
+		case 0: // Species
+			ConvertIntToDecimalStringN(gStringVar1, LumaDebugMenu_EditPKMN_Data.data[index], STR_CONV_MODE_LEADING_ZEROS, data->digitCount);
+			if (data->text != NULL) {
+				bufferPosition = StringCopy(bufferPosition, data->text);
+				bufferPosition = StringCopy(bufferPosition, Str_Spacer1);
+			}
+			*gStringVar3 = EOS;
+			StringExpandPlaceholders(bufferPosition, Str_StringVars);
+			AddTextPrinterParameterized(LumaDebugMenu_EditPKMN_menuWindowId, 7, gStringVar2, x, y, 0, NULL);
+			x = 140;
+			AddTextPrinterParameterized(LumaDebugMenu_EditPKMN_menuWindowId, 1, gSpeciesNames[LumaDebugMenu_EditPKMN_Data.data[index]], x, y, 0, NULL);
+			x = 204;
+			AddTextPrinterParameterized(LumaDebugMenu_EditPKMN_menuWindowId, 7, GenderIndexes[LumaDebugMenu_EditPKMN_Data.data[7]], x, y, 0, NULL);
+			x = 0;
+			y+= 16;
+			break;
+		case 7: // Gender
+			StringCopy(gStringVar1, GenderIndexes[LumaDebugMenu_EditPKMN_Data.data[index]]);
+			if (data->text != NULL) {
+				bufferPosition = StringCopy(bufferPosition, data->text);
+				bufferPosition = StringCopy(bufferPosition, Str_Spacer1);
+			}
+			*gStringVar3 = EOS;
+			StringExpandPlaceholders(bufferPosition, Str_StringVars);
+			AddTextPrinterParameterized(LumaDebugMenu_EditPKMN_menuWindowId, 7, gStringVar2, x, y, 0, NULL);
+			y += 16;
+			break;
 		}
 		/* TODO: Add non-default cases:
-			* Species (species name)
 			* Experience (level)
 			* TID (SID)
 			* PID (Gender, nature, is shiny)
@@ -1406,7 +1456,6 @@ static void LumaDebugMenu_EditPKMN_Redraw() {
 			* Met location (location name)
 			* Ball (item name)
 			* OT Gender (male/female indicator)
-			* Gender (male/female indicator)
 			* Nature (nature name)
 		*/
 	}
@@ -1611,7 +1660,7 @@ static void LumaDebugMenu_EditPKMN_EditModeProcessInput(u8 taskid) {
 	}
 
 	if (keys & B_BUTTON) {
-		FillWindowPixelRect(LumaDebugMenu_EditPKMN_menuWindowId, 0x11, x, y, data->digitCount * 8, 16);
+		FillWindowPixelRect(LumaDebugMenu_EditPKMN_menuWindowId, 0x11, x, y, 124, 16);
 		LumaDebugMenu_EditPKMN_Redraw();
 		task->func = LumaDebugMenu_AddEditPKMN_ProcessInput;
 		PlaySE(SE_SELECT);
@@ -1638,6 +1687,7 @@ static void LumaDebugMenu_EditPKMN_EditModeProcessInput(u8 taskid) {
 				switch (indexBeingEdited) {
 				default:
 					LumaDebugMenu_EditPKMN_SetMonData();
+					LumaDebugMenu_EditPKMN_PopulateData();
 					break;
 				case 0:
 					LumaDebugMenu_EditPKMN_SetMonData();
@@ -1837,7 +1887,7 @@ static void LumaDebugMenu_EditPKMN_EditModeRedraw(u32 digit, u8 editIndex) {
 	const u8* page = LumaDebugMenu_Pages[LumaDebugMenu_EditPKMN_CurrentPage];
 	u8 index;
 
-	if (editIndex && LumaDebugMenu_EditPKMN_AltIndexes[LumaDebugMenu_EditPKMN_CurrentPage][LumaDebugMenu_EditPKMN_CurrentlySelectedOption][editIndex - 1] != 0xff) {
+	if (editIndex != 0 && LumaDebugMenu_EditPKMN_AltIndexes[LumaDebugMenu_EditPKMN_CurrentPage][LumaDebugMenu_EditPKMN_CurrentlySelectedOption][editIndex - 1] != 0xff) {
 		index = LumaDebugMenu_EditPKMN_AltIndexes[LumaDebugMenu_EditPKMN_CurrentPage][LumaDebugMenu_EditPKMN_CurrentlySelectedOption][editIndex - 1];
 		x += 5 * 8 * editIndex;
 	}
@@ -1846,38 +1896,63 @@ static void LumaDebugMenu_EditPKMN_EditModeRedraw(u32 digit, u8 editIndex) {
 	}
 
 	const struct EditPokemonStruct* data = &LumaDebugMenu_EditPKMN_Options[index];
-	/*
+
 	switch (index) {
 	default:
+		switch (data->mode) {
+		case LUMA_EDIT_NORMAL:
+		default:
+			FillWindowPixelRect(LumaDebugMenu_EditPKMN_menuWindowId, 0x11, x, y, data->digitCount * 8, 16);
+			ConvertIntToDecimalStringN(gStringVar1, LumaDebugMenu_EditPKMN_editingVal[editIndex], STR_CONV_MODE_LEADING_ZEROS, data->digitCount);
 			break;
-	}
-	*/
-	switch (data->mode) {
-	case LUMA_EDIT_NORMAL:
-	default:
+		case LUMA_EDIT_HEX:
+			FillWindowPixelRect(LumaDebugMenu_EditPKMN_menuWindowId, 0x11, x, y, data->digitCount * 8, 16);
+			ConvertUIntToHexStringN(gStringVar1, LumaDebugMenu_EditPKMN_editingVal[editIndex], STR_CONV_MODE_LEADING_ZEROS, data->digitCount);
+			bufferPosition = StringCopy(bufferPosition, Str_CursorColor);
+			bufferPosition = StringCopy(bufferPosition, Str_HexPrefix);
+			break;
+		case LUMA_EDIT_NULL:
+			return; // Haha, don't even make the effort...
+		case LUMA_EDIT_BOOL:
+			FillWindowPixelRect(LumaDebugMenu_EditPKMN_menuWindowId, 0x11, x, y, 24, 16);
+			bufferPosition = StringCopy(bufferPosition, Str_Cursor2Color);
+			bufferPosition = StringCopy(bufferPosition, LumaDebugMenu_EditPKMN_editingVal[editIndex] ? Str_On : Str_Off);
+			*bufferPosition = EOS;
+			AddTextPrinterParameterized(LumaDebugMenu_EditPKMN_menuWindowId, 7, gStringVar2, x, y, 0, NULL);
+			return;
+		case LUMA_EDIT_STRING:
+			FillWindowPixelRect(LumaDebugMenu_EditPKMN_menuWindowId, 0x11, x, y, data->digitCount * 8, 16);
+			StringCopyN(gStringVar1, LumaDebugMenu_EditPKMN_NameBuffer, data->digitCount);
+			break;
+		}
+		break;
+	case 0: // Species
+		// Same as the default case, except we draw more data here
 		FillWindowPixelRect(LumaDebugMenu_EditPKMN_menuWindowId, 0x11, x, y, data->digitCount * 8, 16);
 		ConvertIntToDecimalStringN(gStringVar1, LumaDebugMenu_EditPKMN_editingVal[editIndex], STR_CONV_MODE_LEADING_ZEROS, data->digitCount);
+		if (editIndex == 0) {
+			x = 140;
+			FillWindowPixelRect(LumaDebugMenu_EditPKMN_menuWindowId, 0x11, x, y, 72, 16);
+			AddTextPrinterParameterized(LumaDebugMenu_EditPKMN_menuWindowId, 1, gSpeciesNames[LumaDebugMenu_EditPKMN_editingVal[editIndex]], x, y, 0, NULL);
+			x = 204;
+			i = GetGenderFromSpeciesAndPersonality(LumaDebugMenu_EditPKMN_editingVal[editIndex], LumaDebugMenu_EditPKMN_Data.data[1]);
+			if (i == MON_FEMALE) i = 1;
+			else if (i == MON_GENDERLESS) i = 2;
+			AddTextPrinterParameterized(LumaDebugMenu_EditPKMN_menuWindowId, 7, GenderIndexes[i], x, y, 0, NULL);
+			x = 100; // Reset for the actual species number
+		}
 		break;
-	case LUMA_EDIT_HEX:
-		FillWindowPixelRect(LumaDebugMenu_EditPKMN_menuWindowId, 0x11, x, y, data->digitCount * 8, 16);
-		ConvertUIntToHexStringN(gStringVar1, LumaDebugMenu_EditPKMN_editingVal[editIndex], STR_CONV_MODE_LEADING_ZEROS, data->digitCount);
-		bufferPosition = StringCopy(bufferPosition, Str_CursorColor);
-		bufferPosition = StringCopy(bufferPosition, Str_HexPrefix);
-		break;
-	case LUMA_EDIT_NULL:
-		return; // Haha, don't even make the effort...
-	case LUMA_EDIT_BOOL:
-		FillWindowPixelRect(LumaDebugMenu_EditPKMN_menuWindowId, 0x11, x, y, 24, 16);
+	case 7: // Gender
+		if (editIndex != 0 && page[LumaDebugMenu_EditPKMN_CurrentlySelectedOption] == 0)
+			x = 204;
+		FillWindowPixelRect(LumaDebugMenu_EditPKMN_menuWindowId, 0x11, x, y, 8, 16);
 		bufferPosition = StringCopy(bufferPosition, Str_Cursor2Color);
-		bufferPosition = StringCopy(bufferPosition, LumaDebugMenu_EditPKMN_editingVal[editIndex] ? Str_On : Str_Off);
+		bufferPosition = StringCopy(bufferPosition, GenderIndexes[LumaDebugMenu_EditPKMN_editingVal[editIndex]]);
 		*bufferPosition = EOS;
 		AddTextPrinterParameterized(LumaDebugMenu_EditPKMN_menuWindowId, 7, gStringVar2, x, y, 0, NULL);
 		return;
-	case LUMA_EDIT_STRING:
-		FillWindowPixelRect(LumaDebugMenu_EditPKMN_menuWindowId, 0x11, x, y, data->digitCount * 8, 16);
-		StringCopyN(gStringVar1, LumaDebugMenu_EditPKMN_NameBuffer, data->digitCount);
-		break;
 	}
+
 	bufferPosition = StringCopy(bufferPosition, Str_CursorColor);
 	u32 digitToHighlight = data->mode == LUMA_EDIT_STRING ? digit : data->digitCount - digit - 1;
 	for (i = 0; i < data->digitCount; i++) {
@@ -1893,7 +1968,6 @@ static void LumaDebugMenu_EditPKMN_EditModeRedraw(u32 digit, u8 editIndex) {
 	*bufferPosition = EOS;
 	AddTextPrinterParameterized(LumaDebugMenu_EditPKMN_menuWindowId, 7, gStringVar2, x, y, 0, NULL);
 	/* TODO Re-print the following data once edited:
-		* Species (species name)
 		* Experience (level)
 		* TID (SID)
 		* PID (Gender, nature, is shiny)
@@ -1912,7 +1986,6 @@ static void LumaDebugMenu_EditPKMN_EditModeRedraw(u32 digit, u8 editIndex) {
 		* Met location (location name)
 		* Ball (item name)
 		* OT Gender (male/female indicator)
-		* Gender (male/female indicator)
 		* Nature (nature name)
 	*/
 }
@@ -1955,7 +2028,7 @@ static const struct WindowTemplate LumaDebugMenu_AddItemsWindowTemplate = {
 };
 
 static u16 lastItem;
-static const u8 Str_AddItemsHeader[] = _("{COLOR GREEN}Add items {B_BUTTON} Cancel");
+static const u8 Str_AddItemsHeader[] = _("{COLOR GREEN}Add items{CLEAR_TO 80}{B_BUTTON} Cancel");
 
 // Port of Make items menu, slightly inspired by xaman
 static void LumaDebugMenu_AddItems_Init(u8 addOrRemove) {
@@ -1976,6 +2049,7 @@ static void LumaDebugMenu_AddItems_Init(u8 addOrRemove) {
 
 static void LumaDebugMenu_AddItems_ProcessInput(u8 taskid) {
 	struct Task* task = &gTasks[taskid];
+	u8 winId = task->data[0];
 	u8 mode = task->data[1];
 	u16 keys = gMain.newKeys;
 	u16 heldKeys = gMain.newAndRepeatedKeys;
@@ -1983,7 +2057,7 @@ static void LumaDebugMenu_AddItems_ProcessInput(u8 taskid) {
 		if (mode == 0) {
 			ClearStdWindowAndFrame(task->data[0], TRUE);
 			lastItem = task->data[2];
-			RemoveWindow(task->data[0]);
+			RemoveWindow(winId);
 			DestroyTask(taskid);
 			EnableBothScriptContexts();
 			PlaySE(SE_SELECT);
@@ -1991,6 +2065,7 @@ static void LumaDebugMenu_AddItems_ProcessInput(u8 taskid) {
 		}
 		else {
 			task->data[1] = 0;
+			FillWindowPixelRect(winId, 0x11, 0, 32, 128, 16);
 			LumaDebugMenu_AddItems_Redraw(taskid);
 			PlaySE(SE_SELECT);
 			return;
@@ -1999,6 +2074,7 @@ static void LumaDebugMenu_AddItems_ProcessInput(u8 taskid) {
 	if (keys & A_BUTTON) {
 		if (mode == 0) {
 			task->data[1] = 1;
+			FillWindowPixelRect(winId, 0x11, 0, 16, 88, 16);
 			LumaDebugMenu_AddItems_Redraw(taskid);
 			PlaySE(SE_SELECT);
 			return;
@@ -2013,6 +2089,7 @@ static void LumaDebugMenu_AddItems_ProcessInput(u8 taskid) {
 				if (RemoveBagItem(task->data[2], task->data[3]))
 					PlaySE(SE_SUCCESS);
 			}
+			FillWindowPixelRect(winId, 0x11, 0, 32, 128, 16);
 			LumaDebugMenu_AddItems_Redraw(taskid);
 			return;
 		}
@@ -2120,7 +2197,7 @@ static void LumaDebugMenu_AddItems_Redraw(u8 taskid) {
 	u16 item = task->data[2];
 	u16 count = task->data[3];
 	if (mode == 0) {
-		FillWindowPixelRect(winId, 0x11, 0, 32, 128, 16);
+		FillWindowPixelRect(winId, 0x11, 28, 32, 88, 16);
 		AddTextPrinterParameterized(winId, 0, Str_WhichItem, 0, 16, 0, NULL);
 		ConvertIntToDecimalStringN(gStringVar1, item, STR_CONV_MODE_LEADING_ZEROS, 3);
 		AddTextPrinterParameterized(winId, 7, gStringVar1, 4, 32, 0, NULL);
@@ -2129,7 +2206,6 @@ static void LumaDebugMenu_AddItems_Redraw(u8 taskid) {
 		// TODO Item icon
 	}
 	else {
-		FillWindowPixelRect(winId, 0x11, 0, 16, 88, 16);
 		AddTextPrinterParameterized(winId, 0, Str_HowMany, 0, 16, 0, NULL);
 		ConvertIntToDecimalStringN(gStringVar1, count, STR_CONV_MODE_RIGHT_ALIGN, 3);
 		AddTextPrinterParameterized(winId, 7, gStringVar1, 4, 32, 0, NULL);
