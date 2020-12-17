@@ -1,6 +1,6 @@
 const struct LevelUpMove *const gLevelUpLearnsets[NUM_SPECIES] =
 {
-    [SPECIES_NONE] = sBulbasaurLevelUpLearnset,
+    [SPECIES_NONE] = sDummyLevelUpLearnset,
     [SPECIES_BULBASAUR] = sBulbasaurLevelUpLearnset,
     [SPECIES_IVYSAUR] = sIvysaurLevelUpLearnset,
     [SPECIES_VENUSAUR] = sVenusaurLevelUpLearnset,
@@ -1124,4 +1124,5 @@ const struct LevelUpMove *const gLevelUpLearnsets[NUM_SPECIES] =
     [SPECIES_NECROZMA_ULTRA] = sNecrozmaLevelUpLearnset,
     // Magearna
     [SPECIES_MAGEARNA_ORIGINAL_COLOR] = sMagearnaLevelUpLearnset,
+	[SPECIES_EGG] = sDummyLevelUpLearnset,
 };
