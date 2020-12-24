@@ -81,7 +81,7 @@ endif
 
 LDFLAGS = -Map ../../$(MAP)
 
-LIB := $(LIBPATH) -lgcc -lc -L../../libagbsyscall -lagbsyscall
+LIB := $(LIBPATH) -lc -lgcc -L../../libagbsyscall -lagbsyscall
 
 GFX := tools/gbagfx/gbagfx$(EXE)
 AIF := tools/aif2pcm/aif2pcm$(EXE)
