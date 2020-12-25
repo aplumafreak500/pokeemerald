@@ -109,7 +109,7 @@ MAKEFLAGS += --no-print-directory
 # Secondary expansion is required for dependency variables in object rules.
 .SECONDEXPANSION:
 
-.PHONY: all rom clean tidy tools mostlyclean clean-tools $(TOOLDIRS) berry_fix libagbsyscall modern
+.PHONY: all rom clean tidy tools mostlyclean clean-tools $(TOOLDIRS) berry_fix libagbsyscall modern date git_hash
 
 infoshell = $(foreach line, $(shell $1 | sed "s/ /__SPACE__/g"), $(info $(subst __SPACE__, ,$(line))))
 
@@ -172,6 +172,7 @@ clean-tools:
 
 mostlyclean: tidy
 	@echo mostlyclean
+	@rm -f src/data/date.h
 	@rm -f $(SAMPLE_SUBDIR)/*.bin
 	@rm -f $(CRY_SUBDIR)/*.bin
 	@rm -f $(MID_SUBDIR)/*.s
@@ -236,6 +237,13 @@ $(CRY_SUBDIR)/%.bin: $(CRY_SUBDIR)/%.aif
 sound/%.bin: sound/%.aif
 	@echo $<
 	@$(AIF) $< $@
+
+git_hash:
+
+date: get_date.sh
+	./get_date.sh > src/data/date.h
+
+src/data/date.h: date
 
 ifeq ($(MODERN),0)
 $(C_BUILDDIR)/libc.o: CC1 := tools/agbcc/bin/old_agbcc
@@ -346,7 +354,7 @@ $(OBJ_DIR)/ld_script.ld: $(LD_SCRIPT)
 	@echo $<
 	@cd $(OBJ_DIR) && sed "s#tools/#../../tools/#g" ../../$(LD_SCRIPT) > ld_script.ld
 
-$(ELF): $(OBJ_DIR)/ld_script.ld $(OBJS) berry_fix libagbsyscall
+$(ELF): $(OBJ_DIR)/ld_script.ld $(OBJS) berry_fix libagbsyscall date
 	@echo Linking $@
 	@cd $(OBJ_DIR) && $(LD) $(LDFLAGS) -T ld_script.ld -o ../../$@ $(OBJS_REL) $(LIB)
 	$(FIX) $@ -t"$(TITLE)" -c$(GAME_CODE) -m$(MAKER_CODE) -r$(REVISION) --silent
