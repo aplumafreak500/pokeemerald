@@ -328,7 +328,9 @@ static void InitLocalLinkPlayer(void)
     gLocalLinkPlayer.version = gGameVersion + 0x4000;
     gLocalLinkPlayer.lp_field_2 = 0x8000;
     gLocalLinkPlayer.progressFlags = IsNationalPokedexEnabled();
+#ifndef DEBUG
     if (FlagGet(FLAG_IS_CHAMPION))
+#endif
     {
         gLocalLinkPlayer.progressFlags |= 0x10;
     }
@@ -351,6 +353,7 @@ static void InitLink(void)
     }
     gLinkOpen = TRUE;
     EnableSerial();
+    AGBPrint("Link init\r\n");
 }
 
 static void Task_TriggerHandshake(u8 taskId)
@@ -393,6 +396,7 @@ void OpenLink(void)
         gReadyToCloseLink[i] = FALSE;
         gReadyToExitStandby[i] = FALSE;
     }
+	AGBPrint("Link is open!\r\n");
 }
 
 void CloseLink(void)
@@ -404,6 +408,7 @@ void CloseLink(void)
     }
     gLinkOpen = FALSE;
     DisableSerial();
+	AGBPrint("Link has been closed!\r\n");
 }
 
 static void TestBlockTransfer(u8 nothing, u8 is, u8 used)
@@ -538,6 +543,7 @@ static void ProcessRecvCmds(u8 unused)
         {
             continue;
         }
+		AGBPrintf("Processing link command 0x%04x for player %d\r\n", gRecvCmds[i][0], i);
         switch (gRecvCmds[i][0])
         {
             case LINKCMD_SEND_LINK_TYPE:
@@ -1925,6 +1931,7 @@ static void DisableSerial(void)
     REG_SIOMLT_SEND = 0;
     REG_SIOMLT_RECV = 0;
     CpuFill32(0, &gLink, sizeof(gLink));
+    AGBPrint("Serial is now OFF\r\n");
 }
 
 static void EnableSerial(void)
@@ -1943,6 +1950,7 @@ static void EnableSerial(void)
     sHandshakePlayerCount = 0;
     gLastSendQueueCount = 0;
     gLastRecvQueueCount = 0;
+    AGBPrint("Serial is now ON\r\n");
 }
 
 void ResetSerial(void)
@@ -2068,6 +2076,7 @@ static void CheckMasterOrSlave(void)
     {
         gLink.isMaster = LINK_SLAVE;
     }
+	AGBPrintf("CheckMasterOrSlave: %s", gLink.isMaster == LINK_MASTER ? "master" : "slave");
 }
 
 static void InitTimer(void)
@@ -2089,6 +2098,7 @@ static void EnqueueSendCmd(u16 *sendCmd)
     REG_IME = 0;
     if (gLink.sendQueue.count < QUEUE_CAPACITY)
     {
+		AGBPrintf("Adding serial command 0x%04x to the send queue\r\n", *sendCmd);
         offset = gLink.sendQueue.pos + gLink.sendQueue.count;
         if (offset >= QUEUE_CAPACITY)
         {
@@ -2256,6 +2266,7 @@ static bool8 DoHandshake(void)
 
     playerCount = 0;
     minRecv = 0xFFFF;
+	AGBPrintf("Performing serial handshake as %s\r\n", gLink.handshakeAsMaster ? "master" : "slave");
     if (gLink.handshakeAsMaster == TRUE)
     {
         REG_SIOMLT_SEND = MASTER_HANDSHAKE;

@@ -110,8 +110,12 @@ void AgbMain()
 
     gSoftResetDisabled = FALSE;
 
-    if (gFlashMemoryPresent != TRUE)
+	AGBPrintInit();
+	AGBPrintf("pokéemerald (built %s) starting up\r\n", BuildDateTime);
+
+    if (gFlashMemoryPresent != TRUE) {
         SetMainCallback2(NULL);
+	}
 
     gLinkTransferringData = FALSE;
     gUnknown_03000000 = 0xFC0;
