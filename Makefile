@@ -195,7 +195,7 @@ MAKEFLAGS += --no-print-directory
 # Delete files that weren't built properly
 .DELETE_ON_ERROR:
 
-RULES_NO_SCAN += libagbsyscall clean clean-assets tidy tidycheck generated clean-generated
+RULES_NO_SCAN += libagbsyscall clean clean-assets tidy tidycheck generated clean-generated date git_hash
 .PHONY: all rom check debug
 .PHONY: $(RULES_NO_SCAN)
 
@@ -293,6 +293,7 @@ rom: $(ROM)
 syms: $(SYM)
 
 clean: tidy clean-tools clean-check-tools clean-generated clean-assets
+	rm -f src/data/date.h
 	@$(MAKE) clean -C libagbsyscall
 
 clean-assets:
@@ -339,6 +340,13 @@ generated: $(AUTO_GEN_TARGETS)
 %.gbapal: %.png  ; $(GFX) $< $@
 %.lz:     %      ; $(GFX) $< $@
 %.rl:     %      ; $(GFX) $< $@
+
+git_hash:
+
+date: get_date.sh
+	./get_date.sh > src/data/date.h
+
+src/data/date.h: date
 
 clean-generated:
 	@rm -f $(AUTO_GEN_TARGETS)
@@ -461,7 +469,7 @@ libagbsyscall:
 
 # Elf from object files
 LDFLAGS = -Map ../../$(MAP)
-$(ELF): $(LD_SCRIPT) $(LD_SCRIPT_DEPS) $(OBJS) libagbsyscall
+$(ELF): $(LD_SCRIPT) $(LD_SCRIPT_DEPS) $(OBJS) libagbsyscall date
 	@cd $(OBJ_DIR) && $(LD) $(LDFLAGS) -T ../../$< --print-memory-usage -o ../../$@ $(OBJS_REL) $(LIB) | cat
 	@echo "cd $(OBJ_DIR) && $(LD) $(LDFLAGS) -T ../../$< --print-memory-usage -o ../../$@ <objs> <libs> | cat"
 	$(FIX) $@ -t"$(TITLE)" -c$(GAME_CODE) -m$(MAKER_CODE) -r$(REVISION) --silent
