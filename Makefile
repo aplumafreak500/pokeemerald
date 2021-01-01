@@ -270,7 +270,10 @@ else
 $(C_BUILDDIR)/%.o: c_dep = $(shell [[ -f $(C_SUBDIR)/$*.c ]] && $(SCANINC) -I include -I tools/agbcc/include -I gflib $(C_SUBDIR)/$*.c)
 endif
 
-$(C_BUILDDIR)/luma_debug_menu.o: CFLAGS += -Wall -Wextra -Wunused -Wshadow=local
+$(C_BUILDDIR)/luma_debug_menu.o: CFLAGS +=-Wall -Wunused
+ifeq ($(MODERN), 1)
+$(C_BUILDDIR)/luma_debug_menu.o: CFLAGS +=-Wextra -Wshadow=local
+endif
 
 ifeq ($(DINFO),1)
 ifeq ($(MODERN), 1)

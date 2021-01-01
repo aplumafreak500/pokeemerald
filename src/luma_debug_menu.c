@@ -189,7 +189,7 @@ static const u8 Str_HexPrefix[] = _("0x");
 static void LumaDebugMenu_HandleInput(u8);
 static void LumaDebugMenu_Close(u8);
 static void LumaDebugMenu_Cancel(u8);
-static void LumaDebugMenu_Nop(u8);
+static UNUSED void LumaDebugMenu_Nop(u8);
 static void LumaDebugMenu_AddPKMN(u8);
 static void LumaDebugMenu_EditPKMN(u8);
 static void LumaDebugMenu_AddItems(u8);
@@ -213,9 +213,9 @@ static u8 LumaDebugMenu_AddEditPKMN_GiveToPlayer();
 static void LumaDebugMenu_AddItems_Init(u8);
 static void LumaDebugMenu_AddItems_ProcessInput(u8);
 static void LumaDebugMenu_AddItems_Redraw(u8);
-static void LumaDebugMenu_EditMoneyCoins_Init(u8);
-static void LumaDebugMenu_EditMoneyCoins_ProcessInput(u8);
-static void LumaDebugMenu_EditMoneyCoins_Redraw(u8);
+/*static*/ void LumaDebugMenu_EditMoneyCoins_Init(u8);
+/*static*/ void LumaDebugMenu_EditMoneyCoins_ProcessInput(u8);
+/*static*/ void LumaDebugMenu_EditMoneyCoins_Redraw(u8);
 
 static const struct ListMenuItem LumaDebugMenu_Items[] = {
 	{Str_CommonGroup, LIST_HEADER},
@@ -583,7 +583,7 @@ static void LumaDebugMenu_OpenXaman(u8 taskid) {
 	Debug_ShowMainMenu();
 }
 
-static void LumaDebugMenu_EditMoney(u8 taskid) {
+/*static*/ void LumaDebugMenu_EditMoney(u8 taskid) {
 	LumaDebugMenu_Close(taskid);
 	// LumaDebugMenu_EditMoneyCoins(0);
 }
@@ -662,7 +662,7 @@ static const u8* GenderIndexes[3] = {
 	Str_Genderless
 };
 
-static const u8* StatusIndexes[7] = {
+/*static*/ const u8* StatusIndexes[7] = {
 	Str_None,
 	Str_Psn,
 	Str_Par,
@@ -1641,6 +1641,7 @@ static void LumaDebugMenu_EditPKMN_EditModeProcessInput(u8 taskid) {
 
 	u8 index;
 
+	const struct EditPokemonStruct* data;
 	const u8* page = LumaDebugMenu_Pages[LumaDebugMenu_EditPKMN_CurrentPage];
 
 	if (editIndex != 0 && LumaDebugMenu_EditPKMN_AltIndexes[LumaDebugMenu_EditPKMN_CurrentPage][LumaDebugMenu_EditPKMN_CurrentlySelectedOption][editIndex - 1] != 0xff) {
@@ -1650,7 +1651,7 @@ static void LumaDebugMenu_EditPKMN_EditModeProcessInput(u8 taskid) {
 		index = page[LumaDebugMenu_EditPKMN_CurrentlySelectedOption];
 	}
 
-	const struct EditPokemonStruct* data = &LumaDebugMenu_EditPKMN_Options[index];
+	data = &LumaDebugMenu_EditPKMN_Options[index];
 
 	switch (index) {
 	default:
@@ -1885,7 +1886,9 @@ static void LumaDebugMenu_EditPKMN_EditModeRedraw(u32 digit, u8 editIndex) {
 	u32 i = 0;
 	u8* bufferPosition = gStringVar2;
 	const u8* page = LumaDebugMenu_Pages[LumaDebugMenu_EditPKMN_CurrentPage];
+	const struct EditPokemonStruct* data;
 	u8 index;
+	u32 digitToHighlight;
 
 	if (editIndex != 0 && LumaDebugMenu_EditPKMN_AltIndexes[LumaDebugMenu_EditPKMN_CurrentPage][LumaDebugMenu_EditPKMN_CurrentlySelectedOption][editIndex - 1] != 0xff) {
 		index = LumaDebugMenu_EditPKMN_AltIndexes[LumaDebugMenu_EditPKMN_CurrentPage][LumaDebugMenu_EditPKMN_CurrentlySelectedOption][editIndex - 1];
@@ -1895,7 +1898,7 @@ static void LumaDebugMenu_EditPKMN_EditModeRedraw(u32 digit, u8 editIndex) {
 		index = page[LumaDebugMenu_EditPKMN_CurrentlySelectedOption];
 	}
 
-	const struct EditPokemonStruct* data = &LumaDebugMenu_EditPKMN_Options[index];
+	data = &LumaDebugMenu_EditPKMN_Options[index];
 
 	switch (index) {
 	default:
@@ -1954,7 +1957,7 @@ static void LumaDebugMenu_EditPKMN_EditModeRedraw(u32 digit, u8 editIndex) {
 	}
 
 	bufferPosition = StringCopy(bufferPosition, Str_CursorColor);
-	u32 digitToHighlight = data->mode == LUMA_EDIT_STRING ? digit : data->digitCount - digit - 1;
+	digitToHighlight = data->mode == LUMA_EDIT_STRING ? digit : data->digitCount - digit - 1;
 	for (i = 0; i < data->digitCount; i++) {
 		if (i == digitToHighlight) {
 			bufferPosition = StringCopy(bufferPosition, Str_Cursor2Color);
@@ -2033,10 +2036,11 @@ static const u8 Str_AddItemsHeader[] = _("{COLOR GREEN}Add items{CLEAR_TO 80}{B_
 // Port of Make items menu, slightly inspired by xaman
 static void LumaDebugMenu_AddItems_Init(u8 addOrRemove) {
 	u8 winId = AddWindow(&LumaDebugMenu_AddItemsWindowTemplate);
+	u8 taskid;
 	DrawStdWindowFrame(winId, FALSE);
 	CopyWindowToVram(winId, 3);
 	AddTextPrinterParameterized(winId, 1, Str_AddItemsHeader, 0, 0, 0, NULL);
-	u8 taskid = CreateTask(LumaDebugMenu_AddItems_ProcessInput, 10);
+	taskid = CreateTask(LumaDebugMenu_AddItems_ProcessInput, 10);
 	if (!lastItem) lastItem = 1;
 	gTasks[taskid].data[0] = winId;
 	gTasks[taskid].data[1] = 0;
