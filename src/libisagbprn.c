@@ -1,5 +1,6 @@
 #include <stdarg.h>
 #include <stdio.h>
+#include <string.h>
 #include "gba/gba.h"
 #include "config.h"
 
@@ -14,6 +15,10 @@
 #define NOCASHGBAPRINTADDR1 0x4FFFA10 // automatically adds a newline after the string has finished
 #define NOCASHGBAPRINTADDR2 0x4FFFA14 // does not automatically add the newline. by default, NOCASHGBAPRINTADDR2 is used. this is used to keep strings consistent between no$gba and VBA-RR, but a user can choose to forgo this.
 
+#define REG_MGBA_DEBUG_ENABLE (vu16*) 0x4FFF780
+#define REG_MGBA_DEBUG_FLAGS (vu16*) 0x4FFF700
+#define REG_MGBA_DEBUG_STRING (char*) 0x4FFF600
+
 struct AGBPrintStruct
 {
     u16 m_nRequest;
@@ -26,9 +31,12 @@ typedef void (*LPFN_PRINT_FLUSH)(void);
 
 #ifndef NDEBUG
 
-void AGBPrintFlush1Block(void);
+void AGBPrintFlush1Block();
+void NoCashGBAPrint(const char*);
+bool8 mgba_open();
+void mgba_print(const char*, int);
 
-void AGBPrintInit(void)
+void AGBPrintInit()
 {
     volatile struct AGBPrintStruct *pPrint = (struct AGBPrintStruct *)AGB_PRINT_STRUCT_ADDR;
     u16 *pWSCNT = (u16 *)REG_ADDR_WAITCNT;
@@ -40,6 +48,9 @@ void AGBPrintInit(void)
     pPrint->m_nBank = 0xFD;
     *pProtect = 0;
     *pWSCNT = nOldWSCNT;
+#if 1
+	mgba_open();
+#endif
 }
 
 static void AGBPutcInternal(const char cChr)
@@ -50,8 +61,7 @@ static void AGBPutcInternal(const char cChr)
     u16 nData = pPrintBuf[pPrint->m_nPut / 2];
     *pProtect = 0x20;
     nData = (pPrint->m_nPut & 1) ? (nData & 0xFF) | (cChr << 8) : (nData & 0xFF00) | cChr;
-    pPrintBuf[pPrint->m_nPut / 2] = nData;
-    pPrint->m_nPut++;
+    pPrintBuf[pPrint->m_nPut / 2] = nData;    pPrint->m_nPut++;
     *pProtect = 0;
 }
 
@@ -80,11 +90,17 @@ void AGBPrint(const char *pBuf)
         pBuf++;
     }
     *pWSCNT = nOldWSCNT;
+#if 1
+	mgba_print(pBuf, 1);
+#endif
+#if 1
+	NoCashGBAPrint(pBuf);
+#endif
 }
 
 void AGBPrintf(const char *pBuf, ...)
 {
-    char bufPrint[0x100];
+    char bufPrint[1024];
     va_list vArgv;
     va_start(vArgv, pBuf);
     vsprintf(bufPrint, pBuf, vArgv);
@@ -132,12 +148,12 @@ static void AGBPrintTransferDataInternal(u32 bAllData)
     *pIME = nIME;
 }
 
-void AGBPrintFlush1Block(void)
+void AGBPrintFlush1Block()
 {
     AGBPrintTransferDataInternal(FALSE);
 }
 
-void AGBPrintFlush(void)
+void AGBPrintFlush()
 {
     AGBPrintTransferDataInternal(TRUE);
 }
@@ -156,8 +172,9 @@ void AGBAssert(const char *pFile, int nLine, const char *pExpression, int nStopP
     }
 }
 
-// no$gba print functions, uncomment to use
-/*
+// no$gba print functions
+
+#if 1
 void NoCashGBAPrint(const char *pBuf)
 {
     *(volatile u32*)NOCASHGBAPRINTADDR2 = (u32)pBuf;
@@ -165,13 +182,41 @@ void NoCashGBAPrint(const char *pBuf)
 
 void NoCashGBAPrintf(const char *pBuf, ...)
 {
-    char bufPrint[0x100];
+    char bufPrint[1024];
     va_list vArgv;
     va_start(vArgv, pBuf);
     vsprintf(bufPrint, pBuf, vArgv);
     va_end(vArgv);
     NoCashGBAPrint(bufPrint);
 }
-*/
+#endif
+
+// mgba print functions
+
+#if 1
+void mgba_print(const char* pBuf, int level) {
+	level &= 0x7;
+	*REG_MGBA_DEBUG_FLAGS = level | 0x100;
+	strncpy(REG_MGBA_DEBUG_STRING, pBuf, 1024);
+}
+
+void mgba_printf(int level, const char* pBuf, ...) {
+	char bufPrint[1024];
+	va_list vArgv;
+	va_start(vArgv, pBuf);
+	vsprintf(bufPrint, pBuf, vArgv);
+	va_end(vArgv);
+	mgba_print(bufPrint, level);
+}
+
+bool8 mgba_open() {
+	*REG_MGBA_DEBUG_ENABLE = 0xc0de;
+	return *REG_MGBA_DEBUG_ENABLE == 0x1DEA;
+}
+
+void mgba_close() {
+	*REG_MGBA_DEBUG_ENABLE = 0;
+}
+#endif
 
 #endif

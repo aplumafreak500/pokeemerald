@@ -34,7 +34,7 @@ const u8 gGameVersion = GAME_VERSION;
 
 const u8 gGameLanguage = GAME_LANGUAGE; // English
 
-const char BuildDateTime[] = "2005 02 21 11:10";
+#include "data/date.h"
 
 const IntrFunc gIntrTableTemplate[] =
 {
@@ -90,7 +90,7 @@ void AgbMain()
 #if !MODERN
     RegisterRamReset(RESET_ALL);
 #endif //MODERN
-    *(vu16 *)BG_PLTT = 0x7FFF;
+    *(vu16 *)BG_PLTT = 0x0000; // 0x7fff
     InitGpuRegManager();
     REG_WAITCNT = WAITCNT_PREFETCH_ENABLE | WAITCNT_WS0_S_1 | WAITCNT_WS0_N_3;
     InitKeys();
@@ -110,8 +110,12 @@ void AgbMain()
 
     gSoftResetDisabled = FALSE;
 
-    if (gFlashMemoryPresent != TRUE)
+	AGBPrintInit();
+	AGBPrintf("pokéemerald (built %s) starting up\r\n", BuildDateTime);
+
+    if (gFlashMemoryPresent != TRUE) {
         SetMainCallback2(NULL);
+	}
 
     gLinkTransferringData = FALSE;
     gUnknown_03000000 = 0xFC0;

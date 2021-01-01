@@ -44,9 +44,15 @@ SECTIONS {
         *(SORT(.rodata*) SORT(.data*));
     } =0
 
+    .ARM.exidx     : { *(.ARM.exidx) }
+    .ARM.extab     : { *(.ARM.extab) }
+
     /* DWARF debug sections.
        Symbols in the DWARF debugging sections are relative to the beginning
        of the section so we begin them at 0.  */
+
+    .comment          0 : { *(.comment) }
+    .ARM.attributes   0 : { *(.ARM.attributes) }
 
     /* DWARF 1 */
     .debug          0 : { *(.debug) }
