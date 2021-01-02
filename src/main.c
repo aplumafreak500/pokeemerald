@@ -35,6 +35,7 @@ const u8 gGameVersion = GAME_VERSION;
 const u8 gGameLanguage = GAME_LANGUAGE; // English
 
 #include "data/date.h"
+#include "data/git.h"
 
 const IntrFunc gIntrTableTemplate[] =
 {
