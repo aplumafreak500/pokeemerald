@@ -830,9 +830,9 @@ Things that are not implemented yet, or bugs that are caused by unimplemented fe
 	* The Max HP index is drawn outside of the window.
 	* PP are not recalculated when editing PP Up count or moves.
 	* Alternate values aren't drawn until you scroll over to them in edit mode.
-	* You can scroll over to read only values but you can'y edit them. While this is intended behavior, you should not to be able to scroll over to them in the first place.
+	* You can scroll over to read only values but you can'y edit them. While this is intended behavior, you should not be able to scroll over to them in the first place.
 	* Only one of the sleep and toxic counter should be visible and editable at one time, but only if the status is sleep or toxic respectively. (This does not take the separate indexes for these two values into consideration.)
-	* Gender, OT Gender, and Nature should be drawn as a string, not the number representing it.
+	* OT Gender and Nature should be drawn as a string, not the number representing it.
 	* The label for moves should say "Move X" instead of just "Move".
 	* Species, moves, held item, Ability, Language, Origin Game, Met Location, Ball, and Nature (the unused separate index) should be drawn with their names next to them.
 	* Ribbons should have "Ribbon" as part of their label.
@@ -1769,7 +1769,7 @@ static void LumaDebugMenu_EditPKMN_EditModeProcessInput(u8 taskid) {
 			// HACK: Extra check for EOS, as apparently, the "main" comparison uses 0x100 instead of 0x0 due to incrementing something that isn't casted to a u8 before comparing it
 			if (LumaDebugMenu_EditPKMN_NameBuffer[digit] == EOS)
 				LumaDebugMenu_EditPKMN_NameBuffer[digit] = 0;
-			else if (LumaDebugMenu_EditPKMN_NameBuffer[digit] + 1 >= CHAR_DYNAMIC && LumaDebugMenu_EditPKMN_NameBuffer[digit] + 1 <= EOS)
+			else if ((LumaDebugMenu_EditPKMN_NameBuffer[digit] + 1 >= CHAR_DYNAMIC) && (LumaDebugMenu_EditPKMN_NameBuffer[digit] + 1 <= EOS))
 				LumaDebugMenu_EditPKMN_NameBuffer[digit] = EOS;
 			else
 				LumaDebugMenu_EditPKMN_NameBuffer[digit]++;
@@ -1808,7 +1808,7 @@ static void LumaDebugMenu_EditPKMN_EditModeProcessInput(u8 taskid) {
 				LumaDebugMenu_EditPKMN_editingVal[editIndex] -= (1 << (4 * digit));
 			break;
 		case LUMA_EDIT_STRING:
-			if (LumaDebugMenu_EditPKMN_NameBuffer[digit] - 1 >= CHAR_DYNAMIC && LumaDebugMenu_EditPKMN_NameBuffer[digit] - 1 < EOS)
+			if ((LumaDebugMenu_EditPKMN_NameBuffer[digit] - 1 >= CHAR_DYNAMIC) && (LumaDebugMenu_EditPKMN_NameBuffer[digit] - 1 < EOS))
 				LumaDebugMenu_EditPKMN_NameBuffer[digit] = CHAR_DYNAMIC - 1;
 			else
 				LumaDebugMenu_EditPKMN_NameBuffer[digit]--;
