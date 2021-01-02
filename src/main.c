@@ -92,6 +92,8 @@ void AgbMain()
     RegisterRamReset(RESET_ALL);
 #endif //MODERN
     *(vu16 *)BG_PLTT = 0x0000; // 0x7fff
+	AGBPrintInit();
+	AGBPrintf("pokéemerald (built %s) starting up\r\n", BuildDateTime);
     InitGpuRegManager();
     REG_WAITCNT = WAITCNT_PREFETCH_ENABLE | WAITCNT_WS0_S_1 | WAITCNT_WS0_N_3;
     InitKeys();
@@ -111,10 +113,8 @@ void AgbMain()
 
     gSoftResetDisabled = FALSE;
 
-	AGBPrintInit();
-	AGBPrintf("pokéemerald (built %s) starting up\r\n", BuildDateTime);
-
     if (gFlashMemoryPresent != TRUE) {
+		AGBPrint("Warning: gFlashMemoryPresent = false; game will hang.\r\n");
         SetMainCallback2(NULL);
 	}
 
