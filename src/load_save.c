@@ -52,11 +52,13 @@ void CheckForFlashMemory(void)
 {
     if (!IdentifyFlash())
     {
+		AGBPrintf("1M Flash chip id 0x%04x detected!\r\n", gFlash->ids.joined);
         gFlashMemoryPresent = TRUE;
         InitFlashTimer();
     }
     else
     {
+		AGBPrint("Warning! 1M Flash chip not detected!\r\n");
         gFlashMemoryPresent = FALSE;
     }
 }
