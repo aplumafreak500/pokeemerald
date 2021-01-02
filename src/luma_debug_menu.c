@@ -34,7 +34,6 @@ void PlayerPC(); // was not defined in player_pc.h
 bool8 DisableMovementCheck;
 bool8 EnableBattleDebug;
 
-// #include "data/git.h"
 const char AsciiStr_Buildstamp[] = "$ Luma Debug Menu for pokeemerald v0.0a built " __TIME__ " " __DATE__ " $";
 
 // Start Menu Debug
@@ -692,7 +691,7 @@ enum {
 };
 
 static const struct EditPokemonStruct LumaDebugMenu_EditPKMN_Options[] = {
-	{Str_Species, LUMA_EDIT_NORMAL, 0, NUM_SPECIES, SPECIES_TREECKO, MON_DATA_SPECIES, 3},
+	{Str_Species, LUMA_EDIT_NORMAL, 0, NUM_SPECIES, SPECIES_TREECKO, MON_DATA_SPECIES, 4},
 	{Str_Personality, LUMA_EDIT_HEX, 0, 0xffffffff, 0, MON_DATA_PERSONALITY, 8},
 	{Str_TrainerID, LUMA_EDIT_NORMAL, 0, 0xffff, 0, MON_DATA_OT_ID, 5},
 	{Str_SecretID, LUMA_EDIT_NORMAL, 0, 0xffff, 0, MON_DATA_OT_ID, 5}, // SID

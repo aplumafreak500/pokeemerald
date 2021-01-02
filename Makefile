@@ -63,17 +63,16 @@ ASFLAGS := -mcpu=arm7tdmi --defsym MODERN=$(MODERN)
 ifeq ($(MODERN),0)
 CC1             := tools/agbcc/bin/agbcc$(EXE)
 override CFLAGS += -mthumb-interwork -Wimplicit -Wparentheses -Werror -O2 -fhex-asm
-ROM := pokeemerald.gba
+ROM := pokeemerald-edit.gba
 OBJ_DIR := build/emerald
 LIBPATH := -L ../../tools/agbcc/lib
 else
 CC1              = $(shell $(CC) --print-prog-name=cc1) -quiet
 override CFLAGS += -mthumb -mthumb-interwork -O2 -mabi=apcs-gnu -mtune=arm7tdmi -march=armv4t -fno-toplevel-reorder -Wno-pointer-to-int-cast
-ROM := pokeemerald_modern.gba
+ROM := pokeemerald-edit_modern.gba
 OBJ_DIR := build/modern
 LIBPATH := -L "$(dir $(shell $(CC) -mthumb -print-file-name=libgcc.a))" -L "$(dir $(shell $(CC) -mthumb -print-file-name=libc.a))"
 endif
-
 CPPFLAGS := -iquote include -iquote $(GFLIB_SUBDIR) -Wno-trigraphs -DMODERN=$(MODERN)
 ifeq ($(MODERN),0)
 CPPFLAGS += -I tools/agbcc/include -I tools/agbcc
@@ -238,12 +237,14 @@ sound/%.bin: sound/%.aif
 	@echo $<
 	@$(AIF) $< $@
 
-git_hash:
+git_hash: get_hash.sh
+	./get_hash.sh > src/data/git.h
 
 date: get_date.sh
 	./get_date.sh > src/data/date.h
 
 src/data/date.h: date
+src/data/git.h: git_hash
 
 ifeq ($(MODERN),0)
 $(C_BUILDDIR)/libc.o: CC1 := tools/agbcc/bin/old_agbcc
@@ -359,7 +360,7 @@ $(OBJ_DIR)/ld_script.ld: $(LD_SCRIPT)
 	@echo $<
 	@cd $(OBJ_DIR) && sed "s#tools/#../../tools/#g" ../../$(LD_SCRIPT) > ld_script.ld
 
-$(ELF): $(OBJ_DIR)/ld_script.ld $(OBJS) berry_fix libagbsyscall date
+$(ELF): $(OBJ_DIR)/ld_script.ld $(OBJS) berry_fix libagbsyscall date git_hash
 	@echo Linking $@
 	@cd $(OBJ_DIR) && $(LD) $(LDFLAGS) -T ld_script.ld -o ../../$@ $(OBJS_REL) $(LIB)
 	$(FIX) $@ -t"$(TITLE)" -c$(GAME_CODE) -m$(MAKER_CODE) -r$(REVISION) --silent
