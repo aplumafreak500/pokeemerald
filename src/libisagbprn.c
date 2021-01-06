@@ -211,7 +211,7 @@ void mgba_printf(int level, const char* pBuf, ...) {
 
 bool8 mgba_open() {
 	*REG_MGBA_DEBUG_ENABLE = 0xc0de;
-	return *REG_MGBA_DEBUG_ENABLE == 0x1DEA;
+	return *REG_MGBA_DEBUG_ENABLE == 0x1dea;
 }
 
 void mgba_close() {
