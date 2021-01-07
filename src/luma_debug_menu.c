@@ -2215,4 +2215,9 @@ static void LumaDebugMenu_AddItems_Redraw(u8 taskid) {
 	}
 }
 
+void FillScreen(u16 color) {
+	CpuFill32(0, (void*) VRAM, VRAM_SIZE);
+	CpuFill16(color, (void*) BG_PLTT, BG_PLTT_SIZE);
+}
+
 #endif
