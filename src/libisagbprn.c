@@ -36,6 +36,8 @@ void NoCashGBAPrint(const char*);
 bool8 mgba_open();
 void mgba_print(const char*, int);
 
+static EWRAM_DATA char bufPrint[1024] = {0};
+
 void AGBPrintInit()
 {
     volatile struct AGBPrintStruct *pPrint = (struct AGBPrintStruct *)AGB_PRINT_STRUCT_ADDR;
@@ -61,7 +63,8 @@ static void AGBPutcInternal(const char cChr)
     u16 nData = pPrintBuf[pPrint->m_nPut / 2];
     *pProtect = 0x20;
     nData = (pPrint->m_nPut & 1) ? (nData & 0xFF) | (cChr << 8) : (nData & 0xFF00) | cChr;
-    pPrintBuf[pPrint->m_nPut / 2] = nData;    pPrint->m_nPut++;
+    pPrintBuf[pPrint->m_nPut / 2] = nData;
+    pPrint->m_nPut++;
     *pProtect = 0;
 }
 
@@ -100,7 +103,6 @@ void AGBPrint(const char *pBuf)
 
 void AGBPrintf(const char *pBuf, ...)
 {
-    char bufPrint[1024];
     va_list vArgv;
     va_start(vArgv, pBuf);
     vsprintf(bufPrint, pBuf, vArgv);
@@ -182,7 +184,6 @@ void NoCashGBAPrint(const char *pBuf)
 
 void NoCashGBAPrintf(const char *pBuf, ...)
 {
-    char bufPrint[1024];
     va_list vArgv;
     va_start(vArgv, pBuf);
     vsprintf(bufPrint, pBuf, vArgv);
@@ -201,7 +202,6 @@ void mgba_print(const char* pBuf, int level) {
 }
 
 void mgba_printf(int level, const char* pBuf, ...) {
-	char bufPrint[1024];
 	va_list vArgv;
 	va_start(vArgv, pBuf);
 	vsprintf(bufPrint, pBuf, vArgv);
