@@ -271,6 +271,11 @@ else
 $(C_BUILDDIR)/%.o: c_dep = $(shell [[ -f $(C_SUBDIR)/$*.c ]] && $(SCANINC) -I include -I tools/agbcc/include -I gflib $(C_SUBDIR)/$*.c)
 endif
 
+override CFLAGS +=-Wall -Wunused
+ifeq ($(MODERN), 1)
+override CFLAGS +=-Wextra -Wshadow=local
+endif
+
 ifeq ($(DINFO),1)
 ifeq ($(MODERN), 1)
 override CFLAGS += -g3
