@@ -786,7 +786,7 @@ struct EditPokemonRam {
 	u32 data[LUMA_EDIT_OPTION_COUNT];
 };
 
-static EWRAM_DATA struct EditPokemonRam LumaDebugMenu_EditPKMN_Data;
+static EWRAM_DATA struct EditPokemonRam LumaDebugMenu_EditPKMN_Data = {{{0}}};
 static u8 LumaDebugMenu_EditPKMN_CurrentPage;
 static u8 LumaDebugMenu_EditPKMN_CurrentlySelectedOption;
 
