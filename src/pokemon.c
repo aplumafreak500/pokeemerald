@@ -37,6 +37,7 @@
 #include "text.h"
 #include "trainer_hill.h"
 #include "util.h"
+#include "textconv.h"
 #include "constants/abilities.h"
 #include "constants/battle_frontier.h"
 #include "constants/battle_move_effects.h"
@@ -2933,6 +2934,7 @@ void ZeroBoxMonData(struct BoxPokemon *boxMon)
 {
     u8 *raw = (u8 *)boxMon;
     u32 i;
+	AGBPrintf("Clearing mon data at 0x%08x\r\n", (u32) boxMon);
     for (i = 0; i < sizeof(struct BoxPokemon); i++)
         raw[i] = 0;
 }
@@ -3014,7 +3016,6 @@ void CreateBoxMon(struct BoxPokemon *boxMon, u16 species, u8 level, u8 fixedIV, 
               | (gSaveBlock2Ptr->playerTrainerId[1] << 8)
               | (gSaveBlock2Ptr->playerTrainerId[2] << 16)
               | (gSaveBlock2Ptr->playerTrainerId[3] << 24);
-        
         if (CheckBagHasItem(ITEM_SHINY_CHARM, 1))
         {
             u32 shinyValue;
@@ -3087,6 +3088,8 @@ void CreateBoxMon(struct BoxPokemon *boxMon, u16 species, u8 level, u8 fixedIV, 
     }
 
     GiveBoxMonInitialMoveset(boxMon);
+	pokeTextToChar(gStringVar1, gSpeciesNames[species]);
+	AGBPrintf("Made new mon data for level %d %s at 0x%08x\r\n", level, gStringVar1, (u32) boxMon);
 }
 
 void CreateMonWithNature(struct Pokemon *mon, u16 species, u8 level, u8 fixedIV, u8 nature)
@@ -4196,6 +4199,10 @@ u32 GetMonData(struct Pokemon *mon, s32 field, u8* data)
         ret = GetBoxMonData(&mon->box, field, data);
         break;
     }
+	StringCopyN(gStringVar2, &(mon->box.nickname[0]), POKEMON_NAME_LENGTH);
+	gStringVar2[POKEMON_NAME_LENGTH + 1] = EOS;
+	pokeTextToChar(gStringVar1, gStringVar2);
+	AGBPrintf("GetMonData: mon 0x%08x (%s), index %d, return %d\r\n", (u32) mon, gStringVar1, field, ret);
     return ret;
 }
 
@@ -4596,6 +4603,10 @@ void SetMonData(struct Pokemon *mon, s32 field, const void *dataArg)
         SetBoxMonData(&mon->box, field, data);
         break;
     }
+	StringCopyN(gStringVar2, &(mon->box.nickname[0]), POKEMON_NAME_LENGTH);
+	gStringVar2[POKEMON_NAME_LENGTH + 1] = EOS;
+	pokeTextToChar(gStringVar1, gStringVar2);
+	AGBPrintf("SetMonData: mon 0x%08x (%s), index %d, =%d\r\n", (u32) mon, gStringVar1, field, *(u32*) data);
 }
 
 void SetBoxMonData(struct BoxPokemon *boxMon, s32 field, const void *dataArg)
