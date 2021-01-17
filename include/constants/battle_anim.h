@@ -493,7 +493,7 @@
 #define BG_DYNAMAX_CANNON                       76
 #define BG_AURA_SPHERE                          77
 
-// table ids for general animations
+// table ids for general animations (gBattleAnims_General)
 #define B_ANIM_CASTFORM_CHANGE          0x0
 #define B_ANIM_STATS_CHANGE             0x1
 #define B_ANIM_SUBSTITUTE_FADE          0x2
@@ -528,7 +528,7 @@
 #define B_ANIM_RESTORE_BG               0x1F // for Terrain Endings
 #define B_ANIM_TOTEM_FLARE              0x20 // Totem boosts aura flare
 
-// special animations table
+// special animations table (gBattleAnims_Special)
 #define B_ANIM_LVL_UP                   0x0
 #define B_ANIM_SWITCH_OUT_PLAYER_MON    0x1
 #define B_ANIM_SWITCH_OUT_OPPONENT_MON  0x2
@@ -538,17 +538,17 @@
 #define B_ANIM_MON_TO_SUBSTITUTE        0x6
 #define B_ANIM_CRITICAL_CAPTURE_THROW   0x7
 
-// status animation table
-#define B_ANIM_STATUS_PSN               0x0
-#define B_ANIM_STATUS_CONFUSION         0x1
-#define B_ANIM_STATUS_BRN               0x2
-#define B_ANIM_STATUS_INFATUATION       0x3
-#define B_ANIM_STATUS_SLP               0x4
-#define B_ANIM_STATUS_PRZ               0x5
-#define B_ANIM_STATUS_FRZ               0x6
-#define B_ANIM_STATUS_CURSED            0x7
-#define B_ANIM_STATUS_NIGHTMARE         0x8
-#define B_ANIM_STATUS_WRAPPED           0x9 // does not actually exist
+// status animation table (gBattleAnims_StatusConditions)
+#define B_ANIM_STATUS_PSN               0
+#define B_ANIM_STATUS_CONFUSION         1
+#define B_ANIM_STATUS_BRN               2
+#define B_ANIM_STATUS_INFATUATION       3
+#define B_ANIM_STATUS_SLP               4
+#define B_ANIM_STATUS_PRZ               5
+#define B_ANIM_STATUS_FRZ               6
+#define B_ANIM_STATUS_CURSED            7
+#define B_ANIM_STATUS_NIGHTMARE         8
+#define B_ANIM_STATUS_WRAPPED           9 // does not actually exist
 
 // Tasks with return values often assign them to gBattleAnimArgs[7].
 #define ARG_RET_ID 7
