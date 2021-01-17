@@ -161,6 +161,7 @@ static void (*const sLinkOpponentBufferCommands[CONTROLLER_CMDS_COUNT])(void) =
     [CONTROLLER_LINKSTANDBYMSG]           = LinkOpponentHandleLinkStandbyMsg,
     [CONTROLLER_RESETACTIONMOVESELECTION] = LinkOpponentHandleResetActionMoveSelection,
     [CONTROLLER_55]                       = LinkOpponentHandleCmd55,
+    LinkOpponentHandleBattleDebug,
     [CONTROLLER_TERMINATOR_NOP]           = LinkOpponentCmdEnd
 };
 

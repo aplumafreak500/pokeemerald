@@ -158,6 +158,7 @@ static void (*const sLinkPartnerBufferCommands[CONTROLLER_CMDS_COUNT])(void) =
     [CONTROLLER_LINKSTANDBYMSG]           = LinkPartnerHandleLinkStandbyMsg,
     [CONTROLLER_RESETACTIONMOVESELECTION] = LinkPartnerHandleResetActionMoveSelection,
     [CONTROLLER_55]                       = LinkPartnerHandleCmd55,
+    LinkPartnerHandleBattleDebug,
     [CONTROLLER_TERMINATOR_NOP]           = LinkPartnerCmdEnd
 };
 

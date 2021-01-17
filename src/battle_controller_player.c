@@ -183,6 +183,7 @@ static void (*const sPlayerBufferCommands[CONTROLLER_CMDS_COUNT])(void) =
     [CONTROLLER_LINKSTANDBYMSG]           = PlayerHandleLinkStandbyMsg,
     [CONTROLLER_RESETACTIONMOVESELECTION] = PlayerHandleResetActionMoveSelection,
     [CONTROLLER_55]                       = PlayerHandleCmd55,
+    PlayerHandleBattleDebug,
     [CONTROLLER_TERMINATOR_NOP]           = PlayerCmdEnd
 };
 
@@ -330,7 +331,7 @@ static void HandleInputChooseAction(void)
     {
         SwapHpBarsWithHpText();
     }
-    else if (USE_BATTLE_DEBUG && gMain.newKeys & SELECT_BUTTON)
+    else if (B_ENABLE_DEBUG && gMain.newKeys & SELECT_BUTTON)
     {
         BtlController_EmitTwoReturnValues(1, B_ACTION_DEBUG, 0);
         PlayerBufferExecCompleted();

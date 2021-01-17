@@ -166,6 +166,7 @@ static void (*const sOpponentBufferCommands[CONTROLLER_CMDS_COUNT])(void) =
     [CONTROLLER_LINKSTANDBYMSG]           = OpponentHandleLinkStandbyMsg,
     [CONTROLLER_RESETACTIONMOVESELECTION] = OpponentHandleResetActionMoveSelection,
     [CONTROLLER_55]                       = OpponentHandleCmd55,
+    OpponentHandleDebugMenu,
     [CONTROLLER_TERMINATOR_NOP]           = OpponentCmdEnd
 };
 
