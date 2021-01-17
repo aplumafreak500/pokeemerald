@@ -161,6 +161,7 @@ static void (*const sRecordedOpponentBufferCommands[CONTROLLER_CMDS_COUNT])(void
     [CONTROLLER_LINKSTANDBYMSG]           = RecordedOpponentHandleLinkStandbyMsg,
     [CONTROLLER_RESETACTIONMOVESELECTION] = RecordedOpponentHandleResetActionMoveSelection,
     [CONTROLLER_55]                       = RecordedOpponentHandleCmd55,
+    RecordedOpponentHandleBattleDebug,
     [CONTROLLER_TERMINATOR_NOP]           = RecordedOpponentCmdEnd
 };
 
@@ -1236,7 +1237,7 @@ static void RecordedOpponentHandleDrawTrainerPic(void)
         }
         else
         {
-            trainerPicId = PlayerGenderToFrontTrainerPicId(gLinkPlayers[gUnknown_0203C7B4 ^ BIT_SIDE].gender);
+            trainerPicId = PlayerGenderToFrontTrainerPicId(gLinkPlayers[gRecordedBattleMultiplayerId ^ BIT_SIDE].gender);
         }
     }
 

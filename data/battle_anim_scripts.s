@@ -152,7 +152,7 @@ gBattleAnims_Moves::
 	.4byte Move_AMNESIA
 	.4byte Move_KINESIS
 	.4byte Move_SOFT_BOILED
-	.4byte Move_HI_JUMP_KICK
+	.4byte Move_HIGH_JUMP_KICK
 	.4byte Move_GLARE
 	.4byte Move_DREAM_EATER
 	.4byte Move_POISON_GAS
@@ -281,7 +281,7 @@ gBattleAnims_Moves::
 	.4byte Move_MEMENTO
 	.4byte Move_FACADE
 	.4byte Move_FOCUS_PUNCH
-	.4byte Move_SMELLING_SALT
+	.4byte Move_SMELLING_SALTS
 	.4byte Move_FOLLOW_ME
 	.4byte Move_NATURE_POWER
 	.4byte Move_CHARGE
@@ -780,42 +780,42 @@ gBattleAnims_Moves::
 
 	.align 2
 gBattleAnims_StatusConditions::
-	.4byte Status_Poison
-	.4byte Status_Confusion
-	.4byte Status_Burn
-	.4byte Status_Infatuation
-	.4byte Status_Sleep
-	.4byte Status_Paralysis
-	.4byte Status_Freeze
-	.4byte Status_Curse
-	.4byte Status_Nightmare
+	.4byte Status_Poison                    @ B_ANIM_STATUS_PSN
+	.4byte Status_Confusion                 @ B_ANIM_STATUS_CONFUSION
+	.4byte Status_Burn                      @ B_ANIM_STATUS_BRN
+	.4byte Status_Infatuation               @ B_ANIM_STATUS_INFATUATION
+	.4byte Status_Sleep                     @ B_ANIM_STATUS_SLP
+	.4byte Status_Paralysis                 @ B_ANIM_STATUS_PRZ
+	.4byte Status_Freeze                    @ B_ANIM_STATUS_FRZ
+	.4byte Status_Curse                     @ B_ANIM_STATUS_CURSED
+	.4byte Status_Nightmare                 @ B_ANIM_STATUS_NIGHTMARE
 	.4byte Status_Powder
 
 	.align 2
 gBattleAnims_General::
-	.4byte General_CastformChange
-	.4byte General_StatsChange
-	.4byte General_SubstituteFade
-	.4byte General_SubstituteAppear
-	.4byte General_PokeblockThrow
-	.4byte General_ItemKnockoff
-	.4byte General_TurnTrap
-	.4byte General_HeldItemEffect
-	.4byte General_SmokeballEscape
-	.4byte General_FocusBand
-	.4byte General_Rain
-	.4byte General_Sun
-	.4byte General_Sandstorm
-	.4byte General_Hail
-	.4byte General_LeechSeedDrain
-	.4byte General_MonHit
-	.4byte General_ItemSteal
-	.4byte General_SnatchMove
-	.4byte General_FutureSightHit
-	.4byte General_DoomDesireHit
-	.4byte General_FocusPunchSetUp
-	.4byte General_IngrainHeal
-	.4byte General_WishHeal
+	.4byte General_CastformChange           @ B_ANIM_CASTFORM_CHANGE
+	.4byte General_StatsChange              @ B_ANIM_STATS_CHANGE
+	.4byte General_SubstituteFade           @ B_ANIM_SUBSTITUTE_FADE
+	.4byte General_SubstituteAppear         @ B_ANIM_SUBSTITUTE_APPEAR
+	.4byte General_PokeblockThrow           @ B_ANIM_POKEBLOCK_THROW
+	.4byte General_ItemKnockoff             @ B_ANIM_ITEM_KNOCKOFF
+	.4byte General_TurnTrap                 @ B_ANIM_TURN_TRAP
+	.4byte General_HeldItemEffect           @ B_ANIM_HELD_ITEM_EFFECT
+	.4byte General_SmokeballEscape          @ B_ANIM_SMOKEBALL_ESCAPE
+	.4byte General_FocusBand                @ B_ANIM_FOCUS_BAND
+	.4byte General_Rain                     @ B_ANIM_RAIN_CONTINUES
+	.4byte General_Sun                      @ B_ANIM_SUN_CONTINUES
+	.4byte General_Sandstorm                @ B_ANIM_SANDSTORM_CONTINUES
+	.4byte General_Hail                     @ B_ANIM_HAIL_CONTINUES
+	.4byte General_LeechSeedDrain           @ B_ANIM_LEECH_SEED_DRAIN
+	.4byte General_MonHit                   @ B_ANIM_MON_HIT
+	.4byte General_ItemSteal                @ B_ANIM_ITEM_STEAL
+	.4byte General_SnatchMove               @ B_ANIM_SNATCH_MOVE
+	.4byte General_FutureSightHit           @ B_ANIM_FUTURE_SIGHT_HIT
+	.4byte General_DoomDesireHit            @ B_ANIM_DOOM_DESIRE_HIT
+	.4byte General_FocusPunchSetUp          @ B_ANIM_FOCUS_PUNCH_SETUP
+	.4byte General_IngrainHeal              @ B_ANIM_INGRAIN_HEAL
+	.4byte General_WishHeal                 @ B_ANIM_WISH_HEAL
 	.4byte General_MegaEvolution
 	.4byte General_TerrainMisty
 	.4byte General_TerrainGrassy
@@ -825,6 +825,7 @@ gBattleAnims_General::
 	.4byte General_FormChange
 	.4byte General_SlideOffScreen
 	.4byte General_RestoreBg
+	.4byte General_TotemFlare
 
 	.align 2
 gBattleAnims_Special::
@@ -2373,8 +2374,8 @@ Move_FOCUS_BLAST:
 	loadspritegfx ANIM_TAG_CIRCLE_OF_LIGHT
 	loadspritegfx ANIM_TAG_METEOR
 	loadspritegfx ANIM_TAG_FLAT_ROCK
-	monbg ANIM_TARGET
-	monbgprio_28 ANIM_TARGET
+	monbg ANIM_ATK_PARTNER
+	monbgprio_28 ANIM_ATTACKER
 	setalpha 12, 8
 	call SetHighSpeedBg
 	createsprite gSuperpowerOrbSpriteTemplate, ANIM_TARGET, 2, 0
@@ -2384,7 +2385,7 @@ Move_FOCUS_BLAST:
 	playsewithpan SE_M_MEGA_KICK2, SOUND_PAN_TARGET
 	waitforvisualfinish
 	call UnsetHighSpeedBg
-	clearmonbg ANIM_TARGET
+	clearmonbg ANIM_ATK_PARTNER
 	blendoff
 	delay 1
 	end
@@ -17166,7 +17167,7 @@ Move_FACADE:
 	loopsewithpan SE_M_SWAGGER, SOUND_PAN_ATTACKER, 24, 3
 	end
 
-Move_SMELLING_SALT:
+Move_SMELLING_SALTS:
 	loadspritegfx ANIM_TAG_TAG_HAND
 	loadspritegfx ANIM_TAG_SMELLINGSALT_EFFECT
 	createsprite gSmellingSaltsHandSpriteTemplate, ANIM_TARGET, 2, ANIM_TARGET, 0, 2
@@ -20113,7 +20114,7 @@ Move_JUMP_KICK:
 	blendoff
 	end
 
-Move_HI_JUMP_KICK:
+Move_HIGH_JUMP_KICK:
 	loadspritegfx ANIM_TAG_HANDS_AND_FEET
 	loadspritegfx ANIM_TAG_IMPACT
 	monbg ANIM_DEF_PARTNER
@@ -24399,6 +24400,36 @@ General_RestoreBg:
 	restorebg
 	waitbgfadein
 	end
+
+General_TotemFlare::
+	loadspritegfx ANIM_TAG_FOCUS_ENERGY
+	loadspritegfx ANIM_TAG_WHIP_HIT @green color
+	loadspritegfx ANIM_TAG_SWEAT_BEAD @blue color
+	loadspritegfx ANIM_TAG_PAW_PRINT @yellow color
+	monbg ANIM_ATTACKER
+	setblends 0x80c
+	playsewithpan SE_M_DRAGON_RAGE, SOUND_PAN_ATTACKER
+	launchtask AnimTask_BlendColorCycle 0x2 0x6 ANIM_PAL_ATK 0x0 0x6 0x0 0xb 0x1f
+	call RainbowEndureEffect
+	call RainbowEndureEffect
+	call RainbowEndureEffect
+	call RainbowEndureEffect
+	call RainbowEndureEffect
+	waitforvisualfinish
+	blendoff
+	clearmonbg ANIM_ATTACKER
+	end
+
+RainbowEndureEffect:
+	launchtemplate gBlueEndureEnergySpriteTemplate 0x2 0x4 0x0 0xffe8 0x1a 0x2
+	delay 0x3
+	launchtemplate gEndureEnergySpriteTemplate 0x2 0x4 0x0 0xe 0x1c 0x1 @Red Buff
+	delay 0x3
+	launchtemplate gGreenEndureEnergySpriteTemplate 0x2 0x4 0x0 0xfffb 0xa 0x2
+	delay 0x3
+	launchtemplate gYellowEndureEnergySpriteTemplate 0x2 0x4 0x0 0x1c 0x1a 0x3
+	delay 0x3
+	return
 
 SnatchMoveTrySwapFromSubstitute:
 	createvisualtask AnimTask_IsAttackerBehindSubstitute, 2

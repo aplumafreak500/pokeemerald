@@ -162,6 +162,7 @@ static void (*const sPlayerPartnerBufferCommands[CONTROLLER_CMDS_COUNT])(void) =
     [CONTROLLER_LINKSTANDBYMSG]           = PlayerPartnerHandleLinkStandbyMsg,
     [CONTROLLER_RESETACTIONMOVESELECTION] = PlayerPartnerHandleResetActionMoveSelection,
     [CONTROLLER_55]                       = PlayerPartnerHandleCmd55,
+    PlayerPartnerHandleBattleDebug,
     [CONTROLLER_TERMINATOR_NOP]           = PlayerPartnerCmdEnd
 };
 

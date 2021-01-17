@@ -48,6 +48,7 @@
 #include "constants/songs.h"
 #include "constants/trainers.h"
 #include "constants/weather.h"
+#include "constants/battle_config.h"
 
 struct SpeciesItem
 {
@@ -2858,7 +2859,11 @@ static const u8 sGetMonDataEVConstants[] =
 // For stat-raising items
 static const u8 sStatsToRaise[] =
 {
+#ifndef ITEM_EXPANSION
     STAT_ATK, STAT_ATK, STAT_SPEED, STAT_DEF, STAT_SPATK, STAT_ACC
+#else
+    STAT_ATK, STAT_ATK, STAT_DEF, STAT_SPEED, STAT_SPATK, STAT_SPDEF, STAT_ACC
+#endif
 };
 
 // 3 modifiers each for how much to change friendship for different ranges
@@ -3044,7 +3049,7 @@ void CreateBoxMon(struct BoxPokemon *boxMon, u16 species, u8 level, u8 fixedIV, 
     SetBoxMonData(boxMon, MON_DATA_POKEBALL, &value);
     SetBoxMonData(boxMon, MON_DATA_OT_GENDER, &gSaveBlock2Ptr->playerGender);
 
-    if (fixedIV < 32)
+    if (fixedIV < USE_RANDOM_IVS)
     {
         SetBoxMonData(boxMon, MON_DATA_HP_IV, &fixedIV);
         SetBoxMonData(boxMon, MON_DATA_ATK_IV, &fixedIV);
@@ -3058,20 +3063,20 @@ void CreateBoxMon(struct BoxPokemon *boxMon, u16 species, u8 level, u8 fixedIV, 
         u32 iv;
         value = Random();
 
-        iv = value & 0x1F;
+        iv = value & MAX_IV_MASK;
         SetBoxMonData(boxMon, MON_DATA_HP_IV, &iv);
-        iv = (value & 0x3E0) >> 5;
+        iv = (value & (MAX_IV_MASK << 5)) >> 5;
         SetBoxMonData(boxMon, MON_DATA_ATK_IV, &iv);
-        iv = (value & 0x7C00) >> 10;
+        iv = (value & (MAX_IV_MASK << 10)) >> 10;
         SetBoxMonData(boxMon, MON_DATA_DEF_IV, &iv);
 
         value = Random();
 
-        iv = value & 0x1F;
+        iv = value & MAX_IV_MASK;
         SetBoxMonData(boxMon, MON_DATA_SPEED_IV, &iv);
-        iv = (value & 0x3E0) >> 5;
+        iv = (value & (MAX_IV_MASK << 5)) >> 5;
         SetBoxMonData(boxMon, MON_DATA_SPATK_IV, &iv);
-        iv = (value & 0x7C00) >> 10;
+        iv = (value & (MAX_IV_MASK << 10)) >> 10;
         SetBoxMonData(boxMon, MON_DATA_SPDEF_IV, &iv);
     }
 
@@ -3139,7 +3144,7 @@ void CreateMaleMon(struct Pokemon *mon, u16 species, u8 level)
         personality = Random32();
     }
     while (GetGenderFromSpeciesAndPersonality(species, personality) != MON_MALE);
-    CreateMon(mon, species, level, 32, 1, personality, OT_ID_PRESET, otId);
+    CreateMon(mon, species, level, USE_RANDOM_IVS, 1, personality, OT_ID_PRESET, otId);
 }
 
 void CreateMonWithIVsPersonality(struct Pokemon *mon, u16 species, u8 level, u32 ivs, u32 personality)
@@ -3321,7 +3326,7 @@ void CreateApprenticeMon(struct Pokemon *mon, const struct Apprentice *src, u8 m
     CreateMon(mon,
               src->party[monId].species,
               GetFrontierEnemyMonLevel(src->lvlMode - 1),
-              0x1F,
+              MAX_PER_STAT_IVS,
               TRUE,
               personality,
               OT_ID_PRESET,
@@ -3482,7 +3487,7 @@ static u16 GetDeoxysStat(struct Pokemon *mon, s32 statId)
     u16 statValue = 0;
     u8 nature;
 
-    if (gBattleTypeFlags & BATTLE_TYPE_20 || GetMonData(mon, MON_DATA_SPECIES, NULL) != SPECIES_DEOXYS)
+    if (gBattleTypeFlags & BATTLE_TYPE_LINK_IN_BATTLE || GetMonData(mon, MON_DATA_SPECIES, NULL) != SPECIES_DEOXYS)
         return 0;
 
     ivVal = GetMonData(mon, MON_DATA_HP_IV + statId, NULL);
@@ -3526,8 +3531,8 @@ u16 GetUnionRoomTrainerPic(void)
     u8 linkId;
     u32 arrId;
 
-    if (gBattleTypeFlags & BATTLE_TYPE_x2000000)
-        linkId = gUnknown_0203C7B4 ^ 1;
+    if (gBattleTypeFlags & BATTLE_TYPE_RECORDED_LINK)
+        linkId = gRecordedBattleMultiplayerId ^ 1;
     else
         linkId = GetMultiplayerId() ^ 1;
 
@@ -3541,8 +3546,8 @@ u16 GetUnionRoomTrainerClass(void)
     u8 linkId;
     u32 arrId;
 
-    if (gBattleTypeFlags & BATTLE_TYPE_x2000000)
-        linkId = gUnknown_0203C7B4 ^ 1;
+    if (gBattleTypeFlags & BATTLE_TYPE_RECORDED_LINK)
+        linkId = gRecordedBattleMultiplayerId ^ 1;
     else
         linkId = GetMultiplayerId() ^ 1;
 
@@ -3558,7 +3563,7 @@ void CreateObedientEnemyMon(void)
     s32 itemId = gSpecialVar_0x8006;
 
     ZeroEnemyPartyMons();
-    CreateObedientMon(&gEnemyParty[0], species, level, 32, 0, 0, 0, 0);
+    CreateObedientMon(&gEnemyParty[0], species, level, USE_RANDOM_IVS, 0, 0, 0, 0);
     if (itemId)
     {
         u8 heldItem[2];
@@ -3656,13 +3661,14 @@ void CalculateMonStats(struct Pokemon *mon)
     {
         if (currentHP == 0 && oldMaxHP == 0)
             currentHP = newMaxHP;
-        else if (currentHP != 0)
+        else if (currentHP != 0) {
             // BUG: currentHP is unintentionally able to become <= 0 after the instruction below. This causes the pomeg berry glitch.
             currentHP += newMaxHP - oldMaxHP;
             #ifdef BUGFIX
             if (currentHP <= 0)
                 currentHP = 1;
             #endif
+        }
         else
             return;
     }
@@ -4844,12 +4850,12 @@ void SetBoxMonData(struct BoxPokemon *boxMon, s32 field, const void *dataArg)
     case MON_DATA_IVS:
     {
         u32 ivs = data[0] | (data[1] << 8) | (data[2] << 16) | (data[3] << 24);
-        substruct3->hpIV = ivs & 0x1F;
-        substruct3->attackIV = (ivs >> 5) & 0x1F;
-        substruct3->defenseIV = (ivs >> 10) & 0x1F;
-        substruct3->speedIV = (ivs >> 15) & 0x1F;
-        substruct3->spAttackIV = (ivs >> 20) & 0x1F;
-        substruct3->spDefenseIV = (ivs >> 25) & 0x1F;
+        substruct3->hpIV = ivs & MAX_IV_MASK;
+        substruct3->attackIV = (ivs >> 5) & MAX_IV_MASK;
+        substruct3->defenseIV = (ivs >> 10) & MAX_IV_MASK;
+        substruct3->speedIV = (ivs >> 15) & MAX_IV_MASK;
+        substruct3->spAttackIV = (ivs >> 20) & MAX_IV_MASK;
+        substruct3->spDefenseIV = (ivs >> 25) & MAX_IV_MASK;
         break;
     }
     default:
@@ -5264,21 +5270,30 @@ bool8 PokemonUseItemEffects(struct Pokemon *mon, u16 item, u8 partyIndex, u8 mov
                 gBattleMons[gActiveBattler].status2 |= STATUS2_FOCUS_ENERGY;
                 retVal = FALSE;
             }
+        #ifndef ITEM_EXPANSION
             if ((itemEffect[cmdIndex] & ITEM0_X_ATTACK)
              && gBattleMons[gActiveBattler].statStages[STAT_ATK] < MAX_STAT_STAGE)
             {
-                gBattleMons[gActiveBattler].statStages[STAT_ATK] += itemEffect[cmdIndex] & ITEM0_X_ATTACK;
+                if (B_X_ITEMS_BUFF == GEN_7)
+                    gBattleMons[gActiveBattler].statStages[STAT_ATK] += 2;
+                else
+                    gBattleMons[gActiveBattler].statStages[STAT_ATK] += itemEffect[cmdIndex] & ITEM0_X_ATTACK;
                 if (gBattleMons[gActiveBattler].statStages[STAT_ATK] > MAX_STAT_STAGE)
                     gBattleMons[gActiveBattler].statStages[STAT_ATK] = MAX_STAT_STAGE;
                 retVal = FALSE;
             }
+        #endif
             break;
         // in-battle stat boosting effects
+        #ifndef ITEM_EXPANSION
         case 1:
             if ((itemEffect[cmdIndex] & ITEM1_X_DEFEND)
              && gBattleMons[gActiveBattler].statStages[STAT_DEF] < MAX_STAT_STAGE)
             {
-                gBattleMons[gActiveBattler].statStages[STAT_DEF] += (itemEffect[cmdIndex] & ITEM1_X_DEFEND) >> 4;
+                if (B_X_ITEMS_BUFF == GEN_7)
+                    gBattleMons[gActiveBattler].statStages[STAT_DEF] += 2;
+                else
+                    gBattleMons[gActiveBattler].statStages[STAT_DEF] += (itemEffect[cmdIndex] & ITEM1_X_DEFEND) >> 4;
                 if (gBattleMons[gActiveBattler].statStages[STAT_DEF] > MAX_STAT_STAGE)
                     gBattleMons[gActiveBattler].statStages[STAT_DEF] = MAX_STAT_STAGE;
                 retVal = FALSE;
@@ -5286,7 +5301,10 @@ bool8 PokemonUseItemEffects(struct Pokemon *mon, u16 item, u8 partyIndex, u8 mov
             if ((itemEffect[cmdIndex] & ITEM1_X_SPEED)
              && gBattleMons[gActiveBattler].statStages[STAT_SPEED] < MAX_STAT_STAGE)
             {
-                gBattleMons[gActiveBattler].statStages[STAT_SPEED] += itemEffect[cmdIndex] & ITEM1_X_SPEED;
+                if (B_X_ITEMS_BUFF == GEN_7)
+                    gBattleMons[gActiveBattler].statStages[STAT_SPEED] += 2;
+                else
+                    gBattleMons[gActiveBattler].statStages[STAT_SPEED] += itemEffect[cmdIndex] & ITEM1_X_SPEED;
                 if (gBattleMons[gActiveBattler].statStages[STAT_SPEED] > MAX_STAT_STAGE)
                     gBattleMons[gActiveBattler].statStages[STAT_SPEED] = MAX_STAT_STAGE;
                 retVal = FALSE;
@@ -5297,7 +5315,10 @@ bool8 PokemonUseItemEffects(struct Pokemon *mon, u16 item, u8 partyIndex, u8 mov
             if ((itemEffect[cmdIndex] & ITEM2_X_ACCURACY)
              && gBattleMons[gActiveBattler].statStages[STAT_ACC] < MAX_STAT_STAGE)
             {
-                gBattleMons[gActiveBattler].statStages[STAT_ACC] += (itemEffect[cmdIndex] & ITEM2_X_ACCURACY) >> 4;
+                if (B_X_ITEMS_BUFF == GEN_7)
+                    gBattleMons[gActiveBattler].statStages[STAT_ACC] += 2;
+                else
+                    gBattleMons[gActiveBattler].statStages[STAT_ACC] += (itemEffect[cmdIndex] & ITEM2_X_ACCURACY) >> 4;
                 if (gBattleMons[gActiveBattler].statStages[STAT_ACC] > MAX_STAT_STAGE)
                     gBattleMons[gActiveBattler].statStages[STAT_ACC] = MAX_STAT_STAGE;
                 retVal = FALSE;
@@ -5305,12 +5326,89 @@ bool8 PokemonUseItemEffects(struct Pokemon *mon, u16 item, u8 partyIndex, u8 mov
             if ((itemEffect[cmdIndex] & ITEM2_X_SPATK)
              && gBattleMons[gActiveBattler].statStages[STAT_SPATK] < MAX_STAT_STAGE)
             {
-                gBattleMons[gActiveBattler].statStages[STAT_SPATK] += itemEffect[cmdIndex] & ITEM2_X_SPATK;
+                if (B_X_ITEMS_BUFF == GEN_7)
+                    gBattleMons[gActiveBattler].statStages[STAT_SPATK] += 2;
+                else
+                    gBattleMons[gActiveBattler].statStages[STAT_SPATK] += itemEffect[cmdIndex] & ITEM2_X_SPATK;
                 if (gBattleMons[gActiveBattler].statStages[STAT_SPATK] > MAX_STAT_STAGE)
                     gBattleMons[gActiveBattler].statStages[STAT_SPATK] = MAX_STAT_STAGE;
                 retVal = FALSE;
             }
             break;
+        #else
+        // in-battle stat boosting effects
+        case 1:
+            if ((itemEffect[cmdIndex] & ITEM1_X_ATTACK)
+             && gBattleMons[gActiveBattler].statStages[STAT_ATK] < MAX_STAT_STAGE)
+            {
+                if (B_X_ITEMS_BUFF == GEN_7)
+                    gBattleMons[gActiveBattler].statStages[STAT_ATK] += 2;
+                else
+                    gBattleMons[gActiveBattler].statStages[STAT_ATK] += 1;
+                if (gBattleMons[gActiveBattler].statStages[STAT_ATK] > MAX_STAT_STAGE)
+                    gBattleMons[gActiveBattler].statStages[STAT_ATK] = MAX_STAT_STAGE;
+                retVal = FALSE;
+            }
+            if ((itemEffect[cmdIndex] & ITEM1_X_DEFENSE)
+             && gBattleMons[gActiveBattler].statStages[STAT_DEF] < MAX_STAT_STAGE)
+            {
+                if (B_X_ITEMS_BUFF == GEN_7)
+                    gBattleMons[gActiveBattler].statStages[STAT_DEF] += 2;
+                else
+                    gBattleMons[gActiveBattler].statStages[STAT_DEF] += 1;
+                if (gBattleMons[gActiveBattler].statStages[STAT_DEF] > MAX_STAT_STAGE)
+                    gBattleMons[gActiveBattler].statStages[STAT_DEF] = MAX_STAT_STAGE;
+                retVal = FALSE;
+            }
+            if ((itemEffect[cmdIndex] & ITEM1_X_SPEED)
+             && gBattleMons[gActiveBattler].statStages[STAT_SPEED] < MAX_STAT_STAGE)
+            {
+                if (B_X_ITEMS_BUFF == GEN_7)
+                    gBattleMons[gActiveBattler].statStages[STAT_SPEED] += 2;
+                else
+                    gBattleMons[gActiveBattler].statStages[STAT_SPEED] += 1;
+                if (gBattleMons[gActiveBattler].statStages[STAT_SPEED] > MAX_STAT_STAGE)
+                    gBattleMons[gActiveBattler].statStages[STAT_SPEED] = MAX_STAT_STAGE;
+                retVal = FALSE;
+            }
+            if ((itemEffect[cmdIndex] & ITEM1_X_SPATK)
+             && gBattleMons[gActiveBattler].statStages[STAT_SPATK] < MAX_STAT_STAGE)
+            {
+                if (B_X_ITEMS_BUFF == GEN_7)
+                    gBattleMons[gActiveBattler].statStages[STAT_SPATK] += 2;
+                else
+                    gBattleMons[gActiveBattler].statStages[STAT_SPATK] += 1;
+                if (gBattleMons[gActiveBattler].statStages[STAT_SPATK] > MAX_STAT_STAGE)
+                    gBattleMons[gActiveBattler].statStages[STAT_SPATK] = MAX_STAT_STAGE;
+                retVal = FALSE;
+            }
+            if ((itemEffect[cmdIndex] & ITEM1_X_SPDEF)
+             && gBattleMons[gActiveBattler].statStages[STAT_SPDEF] < MAX_STAT_STAGE)
+            {
+                if (B_X_ITEMS_BUFF == GEN_7)
+                    gBattleMons[gActiveBattler].statStages[STAT_SPDEF] += 2;
+                else
+                    gBattleMons[gActiveBattler].statStages[STAT_SPDEF] += 1;
+                if (gBattleMons[gActiveBattler].statStages[STAT_SPDEF] > MAX_STAT_STAGE)
+                    gBattleMons[gActiveBattler].statStages[STAT_SPDEF] = MAX_STAT_STAGE;
+                retVal = FALSE;
+            }
+            if ((itemEffect[cmdIndex] & ITEM1_X_ACCURACY)
+             && gBattleMons[gActiveBattler].statStages[STAT_ACC] < MAX_STAT_STAGE)
+            {
+                if (B_X_ITEMS_BUFF == GEN_7)
+                    gBattleMons[gActiveBattler].statStages[STAT_ACC] += 2;
+                else
+                    gBattleMons[gActiveBattler].statStages[STAT_ACC] += 1;
+                if (gBattleMons[gActiveBattler].statStages[STAT_ACC] > MAX_STAT_STAGE)
+                    gBattleMons[gActiveBattler].statStages[STAT_ACC] = MAX_STAT_STAGE;
+                retVal = FALSE;
+            }
+            break;
+        // formerly used by the item effects of the X Sp. Atk and the X Accuracy
+        case 2:
+            break;
+        #endif
         case 3:
             if ((itemEffect[cmdIndex] & ITEM3_GUARD_SPEC)
              && gSideTimers[GetBattlerSide(gActiveBattler)].mistTimer == 0)
@@ -5870,7 +5968,15 @@ static void BufferStatRoseMessage(s32 arg0)
 {
     gBattlerTarget = gBattlerInMenuId;
     StringCopy(gBattleTextBuff1, gStatNamesTable[sStatsToRaise[arg0]]);
-    StringCopy(gBattleTextBuff2, gText_StatRose);
+    if (B_X_ITEMS_BUFF == GEN_7)
+    {
+        StringCopy(gBattleTextBuff2, gText_StatSharply);
+        StringAppend(gBattleTextBuff2, gText_StatRose);
+    }
+    else
+    {
+        StringCopy(gBattleTextBuff2, gText_StatRose);
+    }
     BattleStringExpandPlaceholdersToDisplayedString(gText_PkmnsStatChanged2);
 }
 
@@ -5893,6 +5999,7 @@ u8 *UseStatIncreaseItem(u16 itemId)
 
     gPotentialItemEffectBattler = gBattlerInMenuId;
 
+#ifndef ITEM_EXPANSION
     for (i = 0; i < 3; i++)
     {
         if (itemEffect[i] & (ITEM0_X_ATTACK | ITEM1_X_SPEED | ITEM2_X_SPATK))
@@ -5917,6 +6024,41 @@ u8 *UseStatIncreaseItem(u16 itemId)
         gBattlerAttacker = gBattlerInMenuId;
         BattleStringExpandPlaceholdersToDisplayedString(gText_PkmnShroudedInMist);
     }
+#else
+    if (itemEffect[0] & ITEM0_DIRE_HIT)
+    {
+        gBattlerAttacker = gBattlerInMenuId;
+        BattleStringExpandPlaceholdersToDisplayedString(gText_PkmnGettingPumped);
+    }
+
+    switch (itemEffect[1])
+    {
+        case ITEM1_X_ATTACK:
+            BufferStatRoseMessage(STAT_ATK);
+            break;
+        case ITEM1_X_DEFENSE:
+            BufferStatRoseMessage(STAT_DEF);
+            break;
+        case ITEM1_X_SPEED:
+            BufferStatRoseMessage(STAT_SPEED);
+            break;
+        case ITEM1_X_SPATK:
+            BufferStatRoseMessage(STAT_SPATK);
+            break;
+        case ITEM1_X_SPDEF:
+            BufferStatRoseMessage(STAT_SPDEF);
+            break;
+        case ITEM1_X_ACCURACY:
+            BufferStatRoseMessage(STAT_ACC);
+            break;
+    }
+
+    if (itemEffect[3] & ITEM3_GUARD_SPEC)
+    {
+        gBattlerAttacker = gBattlerInMenuId;
+        BattleStringExpandPlaceholdersToDisplayedString(gText_PkmnShroudedInMist);
+    }
+#endif
 
     return gDisplayedStringBattle;
 }
@@ -6931,7 +7073,7 @@ u16 GetBattleBGM(void)
         return MUS_VS_KYOGRE_GROUDON;
     else if (gBattleTypeFlags & BATTLE_TYPE_REGI)
         return MUS_VS_REGI;
-    else if (gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_x2000000))
+    else if (gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED_LINK))
         return MUS_VS_TRAINER;
     else if (gBattleTypeFlags & BATTLE_TYPE_TRAINER)
     {
@@ -7321,7 +7463,7 @@ static void Task_PokemonSummaryAnimateAfterDelay(u8 taskId)
 
 void BattleAnimateFrontSprite(struct Sprite* sprite, u16 species, bool8 noCry, u8 arg3)
 {
-    if (gHitMarker & HITMARKER_NO_ANIMATIONS && !(gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_x2000000)))
+    if (gHitMarker & HITMARKER_NO_ANIMATIONS && !(gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED_LINK)))
         DoMonFrontSpriteAnimation(sprite, species, noCry, arg3 | 0x80);
     else
         DoMonFrontSpriteAnimation(sprite, species, noCry, arg3);
@@ -7399,7 +7541,7 @@ void StopPokemonAnimationDelayTask(void)
 
 void BattleAnimateBackSprite(struct Sprite* sprite, u16 species)
 {
-    if (gHitMarker & HITMARKER_NO_ANIMATIONS && !(gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_x2000000)))
+    if (gHitMarker & HITMARKER_NO_ANIMATIONS && !(gBattleTypeFlags & (BATTLE_TYPE_LINK | BATTLE_TYPE_RECORDED_LINK)))
     {
         sprite->callback = SpriteCallbackDummy;
     }

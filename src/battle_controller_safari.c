@@ -146,6 +146,7 @@ static void (*const sSafariBufferCommands[CONTROLLER_CMDS_COUNT])(void) =
     [CONTROLLER_LINKSTANDBYMSG]           = SafariHandleLinkStandbyMsg,
     [CONTROLLER_RESETACTIONMOVESELECTION] = SafariHandleResetActionMoveSelection,
     [CONTROLLER_55]                       = SafariHandleCmd55,
+    SafariHandleBattleDebug,
     [CONTROLLER_TERMINATOR_NOP]           = SafariCmdEnd
 };
 

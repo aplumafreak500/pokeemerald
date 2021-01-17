@@ -166,6 +166,7 @@ static void (*const sOpponentBufferCommands[CONTROLLER_CMDS_COUNT])(void) =
     [CONTROLLER_LINKSTANDBYMSG]           = OpponentHandleLinkStandbyMsg,
     [CONTROLLER_RESETACTIONMOVESELECTION] = OpponentHandleResetActionMoveSelection,
     [CONTROLLER_55]                       = OpponentHandleCmd55,
+    OpponentHandleDebugMenu,
     [CONTROLLER_TERMINATOR_NOP]           = OpponentCmdEnd
 };
 
@@ -1260,7 +1261,7 @@ static void OpponentHandleDrawTrainerPic(void)
     }
     else if (gBattleTypeFlags & BATTLE_TYPE_FRONTIER)
     {
-        if (gBattleTypeFlags & (BATTLE_TYPE_TWO_OPPONENTS | BATTLE_TYPE_x800000))
+        if (gBattleTypeFlags & (BATTLE_TYPE_TWO_OPPONENTS | BATTLE_TYPE_TOWER_LINK_MULTI))
         {
             if (gActiveBattler == 1)
                 trainerPicId = GetFrontierTrainerFrontSpriteId(gTrainerBattleOpponent_A);
@@ -1344,7 +1345,7 @@ static void OpponentHandleTrainerSlide(void)
     }
     else if (gBattleTypeFlags & BATTLE_TYPE_FRONTIER)
     {
-        if (gBattleTypeFlags & (BATTLE_TYPE_TWO_OPPONENTS | BATTLE_TYPE_x800000))
+        if (gBattleTypeFlags & (BATTLE_TYPE_TWO_OPPONENTS | BATTLE_TYPE_TOWER_LINK_MULTI))
         {
             if (gActiveBattler == 1)
                 trainerPicId = GetFrontierTrainerFrontSpriteId(gTrainerBattleOpponent_A);
