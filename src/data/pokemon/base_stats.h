@@ -23555,7 +23555,7 @@ const struct BaseStats gBaseStats[] =
         .catchRate = 45,
         .expYield = 253,
         .evYield_SpDefense = 3,
-        #ifdef BATTLE_ENGINE
+        #ifdef ITEM_EXPANSION
             .item2 = ITEM_PSYCHIC_SEED,
         #endif
         .genderRatio = PERCENT_FEMALE(50),
@@ -24872,7 +24872,7 @@ const struct BaseStats gBaseStats[] =
         .catchRate = 190,
         .expYield = 37,
         .evYield_SpAttack  = 1,
-        #ifdef BATTLE_ENGINE
+        #ifdef ITEM_EXPANSION
             .item2 = ITEM_SNOWBALL,
         #endif
         .genderRatio = PERCENT_FEMALE(50),
@@ -25040,7 +25040,7 @@ const struct BaseStats gBaseStats[] =
         .catchRate = 190,
         .expYield = 66,
         .evYield_Attack    = 1,
-        #ifdef BATTLE_ENGINE
+        #ifdef ITEM_EXPANSION
             .item2 = ITEM_LAGGING_TAIL,
         #endif
         .genderRatio = PERCENT_FEMALE(50),
@@ -25072,7 +25072,7 @@ const struct BaseStats gBaseStats[] =
         .catchRate = 90,
         .expYield = 175,
         .evYield_Attack    = 2,
-        #ifdef BATTLE_ENGINE
+        #ifdef ITEM_EXPANSION
             .item2 = ITEM_LAGGING_TAIL,
         #endif
         .genderRatio = PERCENT_FEMALE(50),
