@@ -10,6 +10,8 @@
 #include "constants/battle_anim.h"
 #include "constants/rgb.h"
 
+#define RGB_PURPLE RGB(24, 0, 24)
+
 struct UnkAnimStruct
 {
     u16 field_0;
