@@ -587,7 +587,6 @@ static void BattleLoadMonSpriteGfx(struct Pokemon *mon, u32 battlerId, bool32 op
         HandleLoadSpecialPokePic(&gMonBackPicTable[species],
                                  gMonSpritesGfxPtr->sprites.ptr[position],
                                  species, currentPersonality);
-        }
     }
 
     paletteOffset = 0x100 + battlerId * 16;
