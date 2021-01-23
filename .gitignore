@@ -17,6 +17,7 @@
 *.hwjpnfont
 *.fwjpnfont
 src/data/date.h
+src/data/git.h
 sound/**/*.bin
 sound/songs/midi/*.s
 tools/agbcc
