@@ -290,7 +290,7 @@ static const struct ListMenuItem LumaDebugMenu_Items[] = {
 	{Str_DebugScreen, 0},
 	{Str_DebugSaveFailTest, 0},
 	{Str_DebugPC, 9},
-	{Str_DebugPlayerPC, 10},
+	{gStringVar1, 10}, /* Player's PC */
 	{Str_DebugTileInfo, 0},
 	{Str_DebugFixChecksums, 0},
 	{Str_DebugClearStorage, 11},
@@ -384,8 +384,6 @@ static const struct WindowTemplate LumaDebugMenu_WindowTemplate = {
 static u16 menupos;
 static u16 scrolloffset;
 
-// Minor bug: Menu position isn't remembered.
-// Minor bug: "Player's PC" doesn't display properly.
 void OpenLumaDebugMenu() {
 	struct ListMenuTemplate menuTemplate;
 	struct Task* inputTask;
@@ -401,7 +399,10 @@ void OpenLumaDebugMenu() {
 	menuTemplate = LumaDebugMenu_ListTemplate;
 	menuTemplate.windowId = winId;
 
-	if (menupos == 0) menupos = 1;
+	StringExpandPlaceholders(gStringVar1, Str_DebugPlayerPC);
+
+	if (menupos == 0)
+		menupos = 1; // Skip the first header option
 
 	menuTaskID = ListMenuInit(&menuTemplate, scrolloffset, menupos);
 
@@ -420,6 +421,8 @@ static void LumaDebugMenu_HandleInput(u8 taskid) {
 
 	input = ListMenu_ProcessInput(task->data[0]);
 
+	ListMenuGetScrollAndRow(task->data[0], &scrolloffset, &menupos);
+
 	switch (input) {
 	default:
 		if (gMain.newKeys & A_BUTTON) {
@@ -428,6 +431,7 @@ static void LumaDebugMenu_HandleInput(u8 taskid) {
 				func = LumaDebugMenu_Actions[input];
 				func(taskid);
 			}
+
 		}
 		else if (gMain.newKeys & B_BUTTON) {
 			PlaySE(SE_SELECT);
@@ -435,8 +439,6 @@ static void LumaDebugMenu_HandleInput(u8 taskid) {
 		}
 		break;
 	}
-
-	ListMenuGetScrollAndRow(taskid, &scrolloffset, &menupos);
 
 }
 
@@ -821,16 +823,14 @@ static u8 LumaDebugMenu_EditPKMN_menuWindowId;
 
 // Port of Watanabe Debug Menu -> Create Pokemon Menu
 /* TODO Known Bugs and Todo List:
-	* EXP can only be edited within the bounds of the current level. Level itself can be freely edited.
-	* Changing IVs (or EVs in the IV "slot") does not recalculate stats like it's supposed to.
-	* Changing something in index 0, then scrolling over to index 1, then pressing A, does not update the value in index 0. Scrolling back to index 0 does update all values.
+	* None as of right now
 Things that are not implemented yet, or bugs that are caused by unimplemented features:
 	* Fade into and out of this menu instead of drawing it over the overworld. (Possible custom GFX?)
 	* If you scroll over to Nature when editing PID, the Nature draws over the last two PID digits.
 	* The Max HP index is drawn outside of the window.
 	* PP are not recalculated when editing PP Up count or moves.
 	* Alternate values aren't drawn until you scroll over to them in edit mode.
-	* You can scroll over to read only values but you can'y edit them. While this is intended behavior, you should not be able to scroll over to them in the first place.
+	* You can scroll over to read only values but you can't edit them. While this is intended behavior, you should not be able to scroll over to them in the first place.
 	* Only one of the sleep and toxic counter should be visible and editable at one time, but only if the status is sleep or toxic respectively. (This does not take the separate indexes for these two values into consideration.)
 	* OT Gender and Nature should be drawn as a string, not the number representing it.
 	* The label for moves should say "Move X" instead of just "Move".
@@ -1358,11 +1358,13 @@ static void LumaDebugMenu_EditPKMN_Redraw() {
 	ConvertIntToDecimalStringN(gStringVar1, LumaDebugMenu_EditPKMN_CurrentPage + 1, STR_CONV_MODE_LEFT_ALIGN, 2);
 	StringExpandPlaceholders(gStringVar2, Str_Page);
 	AddTextPrinterParameterized(LumaDebugMenu_EditPKMN_menuWindowId, 0, gStringVar2, x, y, 0, NULL);
-	x = 100;
-	ConvertIntToDecimalStringN(gStringVar1, LumaDebugMenu_EditPKMN_Data.index + 1, STR_CONV_MODE_LEFT_ALIGN, 2);
-	StringExpandPlaceholders(gStringVar2, Str_Slot);
-	AddTextPrinterParameterized(LumaDebugMenu_EditPKMN_menuWindowId, 0, gStringVar2, x, y, 0, NULL);
-	x = 0;
+	if (LumaDebugMenu_EditPKMN_Data.mode != 0) {
+		x = 100;
+		ConvertIntToDecimalStringN(gStringVar1, LumaDebugMenu_EditPKMN_Data.index + 1, STR_CONV_MODE_LEFT_ALIGN, 2);
+		StringExpandPlaceholders(gStringVar2, Str_Slot);
+		AddTextPrinterParameterized(LumaDebugMenu_EditPKMN_menuWindowId, 0, gStringVar2, x, y, 0, NULL);
+		x = 0;
+	}
 	y += 16;
 	for (i = 0; i < 6; i++) {
 		bufferPosition = gStringVar2;
@@ -1672,6 +1674,7 @@ static void LumaDebugMenu_EditPKMN_EditModeProcessInput(u8 taskid) {
 		if (data->mode == LUMA_EDIT_STRING)
 			StringCopyN((u8*) LumaDebugMenu_EditPKMN_Data.data[index], LumaDebugMenu_EditPKMN_NameBuffer, data->digitCount);
 		else {
+			index = page[LumaDebugMenu_EditPKMN_CurrentlySelectedOption]; // Level/EXP mismatch hotfix 1
 #define indexBeingEdited min
 			for (i = 0; i < 4; i++) {
 				if (i == 4) break;
@@ -1682,8 +1685,10 @@ static void LumaDebugMenu_EditPKMN_EditModeProcessInput(u8 taskid) {
 					continue;
 				if (LumaDebugMenu_EditPKMN_Data.data[indexBeingEdited] == LumaDebugMenu_EditPKMN_editingVal[i])
 					continue;
-				LumaDebugMenu_EditPKMN_Data.data[indexBeingEdited] = LumaDebugMenu_EditPKMN_editingVal[i];
 				data = &LumaDebugMenu_EditPKMN_Options[indexBeingEdited];
+				if (data->mode == LUMA_EDIT_READONLY)
+					continue;
+				LumaDebugMenu_EditPKMN_Data.data[indexBeingEdited] = LumaDebugMenu_EditPKMN_editingVal[i];
 				switch (indexBeingEdited) {
 				default:
 					LumaDebugMenu_EditPKMN_SetMonData();
@@ -1726,6 +1731,16 @@ static void LumaDebugMenu_EditPKMN_EditModeProcessInput(u8 taskid) {
 					SetMonData(&LumaDebugMenu_EditPKMN_Data.mon, data->SetMonDataParam, &LumaDebugMenu_EditPKMN_editingVal[i]);
 					CalculateMonStats(&LumaDebugMenu_EditPKMN_Data.mon);
 					LumaDebugMenu_EditPKMN_PopulateData();
+					/* Level/EXP hotfix #2 */
+					if (indexBeingEdited == 16) {
+#define j max
+						for (j = 0; j < 2; j++) {
+							if (LumaDebugMenu_EditPKMN_AltIndexes[LumaDebugMenu_EditPKMN_CurrentPage][LumaDebugMenu_EditPKMN_CurrentlySelectedOption][j] == 15) {
+								LumaDebugMenu_EditPKMN_editingVal[j + 1] = LumaDebugMenu_EditPKMN_Data.data[LumaDebugMenu_EditPKMN_AltIndexes[LumaDebugMenu_EditPKMN_CurrentPage][LumaDebugMenu_EditPKMN_CurrentlySelectedOption][j]]; // Re-enter the recalculated level.
+							}
+						}
+					}
+#undef j
 					break;
 				}
 			}
