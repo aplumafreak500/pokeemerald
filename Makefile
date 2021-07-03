@@ -325,7 +325,7 @@ endif
 
 $(C_BUILDDIR)/luma_debug_menu.o: CFLAGS +=-Wall -Wunused
 ifeq ($(MODERN), 1)
-$(C_BUILDDIR)/luma_debug_menu.o: CFLAGS +=-Wextra -Wshadow=localendif
+$(C_BUILDDIR)/luma_debug_menu.o: CFLAGS +=-Wextra -Wshadow=local
 endif
 
 ifeq ($(DINFO),1)
