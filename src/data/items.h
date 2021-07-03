@@ -1687,7 +1687,7 @@ const struct Item gItems[] =
         .pocket = POCKET_ITEMS,
         .type = 0,
         .fieldUseFunc = ItemUseOutOfBattle_Mail,
-        .secondaryId = 0,
+        .secondaryId = ITEM_TO_MAIL(ITEM_ORANGE_MAIL),
     },
 
     [ITEM_HARBOR_MAIL] =
@@ -1699,7 +1699,7 @@ const struct Item gItems[] =
         .pocket = POCKET_ITEMS,
         .type = 0,
         .fieldUseFunc = ItemUseOutOfBattle_Mail,
-        .secondaryId = 1,
+        .secondaryId = ITEM_TO_MAIL(ITEM_HARBOR_MAIL),
     },
 
     [ITEM_GLITTER_MAIL] =
@@ -1711,7 +1711,7 @@ const struct Item gItems[] =
         .pocket = POCKET_ITEMS,
         .type = 0,
         .fieldUseFunc = ItemUseOutOfBattle_Mail,
-        .secondaryId = 2,
+        .secondaryId = ITEM_TO_MAIL(ITEM_GLITTER_MAIL),
     },
 
     [ITEM_MECH_MAIL] =
@@ -1723,7 +1723,7 @@ const struct Item gItems[] =
         .pocket = POCKET_ITEMS,
         .type = 0,
         .fieldUseFunc = ItemUseOutOfBattle_Mail,
-        .secondaryId = 3,
+        .secondaryId = ITEM_TO_MAIL(ITEM_MECH_MAIL),
     },
 
     [ITEM_WOOD_MAIL] =
@@ -1735,7 +1735,7 @@ const struct Item gItems[] =
         .pocket = POCKET_ITEMS,
         .type = 0,
         .fieldUseFunc = ItemUseOutOfBattle_Mail,
-        .secondaryId = 4,
+        .secondaryId = ITEM_TO_MAIL(ITEM_WOOD_MAIL),
     },
 
     [ITEM_WAVE_MAIL] =
@@ -1747,7 +1747,7 @@ const struct Item gItems[] =
         .pocket = POCKET_ITEMS,
         .type = 0,
         .fieldUseFunc = ItemUseOutOfBattle_Mail,
-        .secondaryId = 5,
+        .secondaryId = ITEM_TO_MAIL(ITEM_WAVE_MAIL),
     },
 
     [ITEM_BEAD_MAIL] =
@@ -1759,7 +1759,7 @@ const struct Item gItems[] =
         .pocket = POCKET_ITEMS,
         .type = 0,
         .fieldUseFunc = ItemUseOutOfBattle_Mail,
-        .secondaryId = 6,
+        .secondaryId = ITEM_TO_MAIL(ITEM_BEAD_MAIL),
     },
 
     [ITEM_SHADOW_MAIL] =
@@ -1771,7 +1771,7 @@ const struct Item gItems[] =
         .pocket = POCKET_ITEMS,
         .type = 0,
         .fieldUseFunc = ItemUseOutOfBattle_Mail,
-        .secondaryId = 7,
+        .secondaryId = ITEM_TO_MAIL(ITEM_SHADOW_MAIL),
     },
 
     [ITEM_TROPIC_MAIL] =
@@ -1783,7 +1783,7 @@ const struct Item gItems[] =
         .pocket = POCKET_ITEMS,
         .type = 0,
         .fieldUseFunc = ItemUseOutOfBattle_Mail,
-        .secondaryId = 8,
+        .secondaryId = ITEM_TO_MAIL(ITEM_TROPIC_MAIL),
     },
 
     [ITEM_DREAM_MAIL] =
@@ -1795,7 +1795,7 @@ const struct Item gItems[] =
         .pocket = POCKET_ITEMS,
         .type = 0,
         .fieldUseFunc = ItemUseOutOfBattle_Mail,
-        .secondaryId = 9,
+        .secondaryId = ITEM_TO_MAIL(ITEM_DREAM_MAIL),
     },
 
     [ITEM_FAB_MAIL] =
@@ -1807,7 +1807,7 @@ const struct Item gItems[] =
         .pocket = POCKET_ITEMS,
         .type = 0,
         .fieldUseFunc = ItemUseOutOfBattle_Mail,
-        .secondaryId = 10,
+        .secondaryId = ITEM_TO_MAIL(ITEM_FAB_MAIL),
     },
 
     [ITEM_RETRO_MAIL] =
@@ -1819,7 +1819,7 @@ const struct Item gItems[] =
         .pocket = POCKET_ITEMS,
         .type = 0,
         .fieldUseFunc = ItemUseOutOfBattle_Mail,
-        .secondaryId = 11,
+        .secondaryId = ITEM_TO_MAIL(ITEM_RETRO_MAIL),
     },
 
 // Berries
@@ -2809,7 +2809,7 @@ const struct Item gItems[] =
         .name = _("Soothe Bell"),
         .itemId = ITEM_SOOTHE_BELL,
         .price = 100,
-        .holdEffect = HOLD_EFFECT_HAPPINESS_UP,
+        .holdEffect = HOLD_EFFECT_FRIENDSHIP_UP,
         .description = sSootheBellDesc,
         .pocket = POCKET_ITEMS,
         .type = 4,
