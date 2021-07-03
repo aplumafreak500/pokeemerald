@@ -110,8 +110,8 @@ static void SetUpItemUseCallback(u8 taskId)
     }
     else
     {
-        gPyramidBagResources->callback2 = sItemUseCallbacks[type];
-        CloseBattlePyramidBagAndSetCallback(taskId);
+        gPyramidBagMenu->exitCallback = sItemUseCallbacks[type];
+        CloseBattlePyramidBag(taskId);
     }
 }
 
@@ -829,8 +829,8 @@ static void RemoveUsedItem(void)
     }
     else
     {
-        sub_81C5924();
-        sub_81C59BC();
+        UpdatePyramidBagList();
+        UpdatePyramidBagCursorPos();
     }
 }
 
@@ -919,7 +919,7 @@ static void ItemUseOnFieldCB_EscapeRope(u8 taskId)
 
 bool8 CanUseDigOrEscapeRopeOnCurMap(void)
 {
-    if (gMapHeader.flags & MAP_ALLOW_ESCAPING)
+    if (gMapHeader.allowEscaping)
         return TRUE;
     else
         return FALSE;
@@ -977,7 +977,7 @@ void ItemUseInBattle_PokeBall(u8 taskId)
         if (!InBattlePyramid())
             Task_FadeAndCloseBagMenu(taskId);
         else
-            CloseBattlePyramidBagAndSetCallback(taskId);
+            CloseBattlePyramidBag(taskId);
     }
     else
     {
@@ -995,7 +995,7 @@ static void Task_CloseStatIncreaseMessage(u8 taskId)
         if (!InBattlePyramid())
             Task_FadeAndCloseBagMenu(taskId);
         else
-            CloseBattlePyramidBagAndSetCallback(taskId);
+            CloseBattlePyramidBag(taskId);
     }
 }
 
@@ -1040,8 +1040,8 @@ static void ItemUseInBattle_ShowPartyMenu(u8 taskId)
     }
     else
     {
-        gPyramidBagResources->callback2 = ChooseMonForInBattleItem;
-        CloseBattlePyramidBagAndSetCallback(taskId);
+        gPyramidBagMenu->exitCallback = ChooseMonForInBattleItem;
+        CloseBattlePyramidBag(taskId);
     }
 }
 
@@ -1074,7 +1074,7 @@ void ItemUseInBattle_Escape(u8 taskId)
         if (!InBattlePyramid())
             DisplayItemMessage(taskId, 1, gStringVar4, Task_FadeAndCloseBagMenu);
         else
-            DisplayItemMessageInBattlePyramid(taskId, gStringVar4, CloseBattlePyramidBagAndSetCallback);
+            DisplayItemMessageInBattlePyramid(taskId, gStringVar4, CloseBattlePyramidBag);
     }
     else
     {
