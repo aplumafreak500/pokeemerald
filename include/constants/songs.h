@@ -276,7 +276,7 @@
 #define SE_PIKE_CURTAIN_CLOSE       267 // SE_CURTAIN
 #define SE_PIKE_CURTAIN_OPEN        268 // SE_CURTAIN1
 #define SE_SUDOWOODO_SHAKE          269 // SE_USSOKI
-
+#define END_SE SE_SUDOWOODO_SHAKE
 // Music
 #define MUS_LITTLEROOT_TEST         350 // MUS_TETSUJI
 #define MUS_GSC_ROUTE38             351 // MUS_FIELD13
@@ -540,6 +540,8 @@
 #define PH_NURSE_BLEND              607
 #define PH_NURSE_HELD               608
 #define PH_NURSE_SOLO               609
+#define START_MUS MUS_LITTLEROOT_TEST
+#define END_MUS PH_NURSE_SOLO
 
 #define MUS_ROUTE118                0x7FFF  // Map is split into 2 music sections. controlled by GetCurrLocationDefaultMusic().
 
