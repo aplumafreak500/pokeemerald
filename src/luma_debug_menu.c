@@ -761,9 +761,9 @@ static const struct EditPokemonStruct LumaDebugMenu_EditPKMN_Options[] = {
 	{Str_Beauty, LUMA_EDIT_NORMAL, 0, 3, 0, MON_DATA_BEAUTY_RIBBON, 1},
 	{Str_Smart, LUMA_EDIT_NORMAL, 0, 3, 0, MON_DATA_SMART_RIBBON, 1},
 	{Str_Tough, LUMA_EDIT_NORMAL, 0, 3, 0, MON_DATA_TOUGH_RIBBON, 1},
-	{Str_GiftRibbon, LUMA_EDIT_HEX, 0, 127, 0, MON_DATA_GIFT_RIBBON_1, 2},
-	{Str_Fateful, LUMA_EDIT_BOOL, 0, 1, 0, MON_DATA_OBEDIENCE, 1},
-	{Str_Fateful2, LUMA_EDIT_NORMAL, 0, 15, 0, MON_DATA_FATEFUL_ENCOUNTER, 2},
+	{Str_GiftRibbon, LUMA_EDIT_HEX, 0, 127, 0, MON_DATA_MARINE_RIBBON, 2},
+	{Str_Fateful, LUMA_EDIT_BOOL, 0, 1, 0, MON_DATA_EVENT_LEGAL, 1},
+	{Str_Fateful2, LUMA_EDIT_NORMAL, 0, 15, 0, MON_DATA_UNUSED_RIBBONS, 2},
 	{Str_Move, LUMA_EDIT_NORMAL, 0, MOVES_COUNT, MOVE_POUND, MON_DATA_MOVE1, 3},
 	{Str_Move, LUMA_EDIT_NORMAL, 0, MOVES_COUNT, 0, MON_DATA_MOVE2, 3},
 	{Str_Move, LUMA_EDIT_NORMAL, 0, MOVES_COUNT, 0, MON_DATA_MOVE3, 3},
@@ -1218,7 +1218,7 @@ static const u8 Str_Slot[] = _("Slot: {STR_VAR_1}");
 static const u8 Str_StringVars[] = _("{STR_VAR_1}{STR_VAR_3}");
 static const u8 Str_Spacer1[] = _(": {CLEAR_TO 100}");
 static const u8 Str_CursorColor[] = _("{COLOR GREEN}");
-static const u8 Str_Cursor2Color[] = _("{COLOR DARK_GREY}{HIGHLIGHT LIGHT_BLUE}");
+static const u8 Str_Cursor2Color[] = _("{COLOR DARK_GRAY}{HIGHLIGHT LIGHT_BLUE}");
 static const u8 Str_CursorColorOff[] = _("{HIGHLIGHT WHITE}{COLOR GREEN}");
 static const u8 Str_JpnCharset[] = _("{JPN}");
 
