@@ -2,7 +2,9 @@
 #include "global.h"
 #include "m4a.h"
 #include "pokemon.h"
+#include "pokemon_summary_screen.h"
 #include "pokemon_storage_system.h"
+#include "battle_main.h"
 #include "debug.h"
 #include "main.h"
 #include "menu.h"
@@ -633,14 +635,18 @@ static const u8 Str_Beauty[] = _("Beauty");
 static const u8 Str_Smart[] = _("Smart");
 static const u8 Str_Sheen[] = _("Sheen");
 static const u8 Str_Fateful[] = _("Fateful");
-static const u8 Str_Fateful2[] = _("Fateful2");
-static const u8 Str_Ribbon[] = _("Ribbon");
-static const u8 Str_ChampRibbon[] = _("Champion");
-static const u8 Str_WinRibbon[] = _("Winning");
-static const u8 Str_VictoryRibbon[] = _("Victory");
-static const u8 Str_ArtistRibbon[] = _("Artist");
-static const u8 Str_EffortRibbon[] = _("Effort");
-static const u8 Str_GiftRibbon[] = _("Gift");
+static const u8 Str_Fateful2[] = _("Unused Ribbons");
+static const u8 Str_CoolRibbon[] = _("Cool Ribbons");
+static const u8 Str_CuteRibbon[] = _("Cute Ribbons");
+static const u8 Str_ToughRibbon[] = _("Tough Ribbons");
+static const u8 Str_BeautyRibbon[] = _("Beauty Ribbons");
+static const u8 Str_SmartRibbon[] = _("Smart Ribbons");
+static const u8 Str_ChampRibbon[] = _("Champion Ribbon");
+static const u8 Str_WinRibbon[] = _("Winning Ribbon");
+static const u8 Str_VictoryRibbon[] = _("Victory Ribbon");
+static const u8 Str_ArtistRibbon[] = _("Artist Ribbon");
+static const u8 Str_EffortRibbon[] = _("Effort Ribbon");
+static const u8 Str_GiftRibbon[] = _("Gift Ribbons");
 static const u8 Str_Move[] = _("Move");
 static const u8 Str_PP[] = _("PP");
 static const u8 Str_PPUp[] = _("PP Up");
@@ -710,7 +716,7 @@ static const struct EditPokemonStruct LumaDebugMenu_EditPKMN_Options[] = {
 	{Str_Item, LUMA_EDIT_NORMAL, 0, ITEMS_COUNT - 1, 0, MON_DATA_HELD_ITEM, 3},
 	{Str_Level, LUMA_EDIT_NORMAL, 0, 100, 10, MON_DATA_LEVEL, 3},
 	{Str_EXP, LUMA_EDIT_NORMAL, 0, 1640000, 1000, MON_DATA_EXP, 7},
-	{Str_Ability, LUMA_EDIT_NORMAL, 0, 1, 0, MON_DATA_ABILITY_NUM, 1},
+	{Str_Ability, LUMA_EDIT_NORMAL, 0, 2, 0, MON_DATA_ABILITY_NUM, 1},
 	{Str_Friendship, LUMA_EDIT_NORMAL, 0, 255, 0, MON_DATA_FRIENDSHIP, 3},
 	{Str_MetLevel, LUMA_EDIT_NORMAL, 0, 100, 10, MON_DATA_MET_LEVEL, 3}, // 0 instead of 1 because 0 means hatched from an Egg
 	{Str_MetLocation, LUMA_EDIT_NORMAL, 0, 255, MAPSEC_LITTLEROOT_TOWN, MON_DATA_MET_LOCATION, 3},
@@ -756,18 +762,18 @@ static const struct EditPokemonStruct LumaDebugMenu_EditPKMN_Options[] = {
 	{Str_VictoryRibbon, LUMA_EDIT_BOOL, 0, 1, 0, MON_DATA_VICTORY_RIBBON, 1},
 	{Str_ArtistRibbon, LUMA_EDIT_BOOL, 0, 1, 0, MON_DATA_ARTIST_RIBBON, 1},
 	{Str_EffortRibbon, LUMA_EDIT_BOOL, 0, 1, 0, MON_DATA_EFFORT_RIBBON, 1},
-	{Str_Cool, LUMA_EDIT_NORMAL, 0, 3, 0, MON_DATA_COOL_RIBBON, 1},
-	{Str_Cute, LUMA_EDIT_NORMAL, 0, 3, 0, MON_DATA_CUTE_RIBBON, 1},
-	{Str_Beauty, LUMA_EDIT_NORMAL, 0, 3, 0, MON_DATA_BEAUTY_RIBBON, 1},
-	{Str_Smart, LUMA_EDIT_NORMAL, 0, 3, 0, MON_DATA_SMART_RIBBON, 1},
-	{Str_Tough, LUMA_EDIT_NORMAL, 0, 3, 0, MON_DATA_TOUGH_RIBBON, 1},
+	{Str_CoolRibbon, LUMA_EDIT_NORMAL, 0, 3, 0, MON_DATA_COOL_RIBBON, 1},
+	{Str_CuteRibbon, LUMA_EDIT_NORMAL, 0, 3, 0, MON_DATA_CUTE_RIBBON, 1},
+	{Str_BeautyRibbon, LUMA_EDIT_NORMAL, 0, 3, 0, MON_DATA_BEAUTY_RIBBON, 1},
+	{Str_SmartRibbon, LUMA_EDIT_NORMAL, 0, 3, 0, MON_DATA_SMART_RIBBON, 1},
+	{Str_ToughRibbon, LUMA_EDIT_NORMAL, 0, 3, 0, MON_DATA_TOUGH_RIBBON, 1},
 	{Str_GiftRibbon, LUMA_EDIT_HEX, 0, 127, 0, MON_DATA_MARINE_RIBBON, 2},
 	{Str_Fateful, LUMA_EDIT_BOOL, 0, 1, 0, MON_DATA_EVENT_LEGAL, 1},
-	{Str_Fateful2, LUMA_EDIT_NORMAL, 0, 15, 0, MON_DATA_UNUSED_RIBBONS, 2},
-	{Str_Move, LUMA_EDIT_NORMAL, 0, MOVES_COUNT, MOVE_POUND, MON_DATA_MOVE1, 3},
-	{Str_Move, LUMA_EDIT_NORMAL, 0, MOVES_COUNT, 0, MON_DATA_MOVE2, 3},
-	{Str_Move, LUMA_EDIT_NORMAL, 0, MOVES_COUNT, 0, MON_DATA_MOVE3, 3},
-	{Str_Move, LUMA_EDIT_NORMAL, 0, MOVES_COUNT, 0, MON_DATA_MOVE4, 3},
+	{Str_Fateful2, LUMA_EDIT_NORMAL, 0, 3, 0, MON_DATA_UNUSED_RIBBONS, 1},
+	{Str_Move, LUMA_EDIT_NORMAL, 0, MOVES_COUNT - 1, MOVE_POUND, MON_DATA_MOVE1, 3},
+	{Str_Move, LUMA_EDIT_NORMAL, 0, MOVES_COUNT - 1, 0, MON_DATA_MOVE2, 3},
+	{Str_Move, LUMA_EDIT_NORMAL, 0, MOVES_COUNT - 1, 0, MON_DATA_MOVE3, 3},
+	{Str_Move, LUMA_EDIT_NORMAL, 0, MOVES_COUNT - 1, 0, MON_DATA_MOVE4, 3},
 	{Str_PP, LUMA_EDIT_NORMAL, 0, 99, 40, MON_DATA_PP1, 2},
 	{Str_PP, LUMA_EDIT_NORMAL, 0, 99, 40, MON_DATA_PP2, 2},
 	{Str_PP, LUMA_EDIT_NORMAL, 0, 99, 40, MON_DATA_PP3, 2},
@@ -830,7 +836,6 @@ Things that are not implemented yet, or bugs that are caused by unimplemented fe
 	* The Max HP index is drawn outside of the window.
 	* PP are not recalculated when editing PP Up count or moves.
 	* Alternate values aren't drawn until you scroll over to them in edit mode.
-	* You can scroll over to read only values but you can't edit them. While this is intended behavior, you should not be able to scroll over to them in the first place.
 	* Only one of the sleep and toxic counter should be visible and editable at one time, but only if the status is sleep or toxic respectively. (This does not take the separate indexes for these two values into consideration.)
 	* OT Gender and Nature should be drawn as a string, not the number representing it.
 	* The label for moves should say "Move X" instead of just "Move".
@@ -1036,7 +1041,7 @@ static void LumaDebugMenu_EditPKMN_SetMonData() {
 		case 15: // Level (set by CalculateMonStats)
 		case 22 ... 24: // Pokerus (set above)
 		case 26 ... 30: // Current stats (readonly). 31 calls CalculateMonStats
-		case 70 ... 76: // Moves, PP Up counts (77 sets all of this at once)
+		case 74 ... 76: // PP Up counts (77 sets all at once)
 			break;
 		case 31: // Stats (and level)
 			CalculateMonStats(mons);
@@ -1093,7 +1098,7 @@ static void LumaDebugMenu_EditPKMN_SetMonData() {
 			data = 0;
 			for (j = 0; j < 4; j++) {
 				data <<= 2;
-				data |= (LumaDebugMenu_EditPKMN_Data.data[74 + j] & 3);
+				data |= (LumaDebugMenu_EditPKMN_Data.data[77 - j] & 3);
 			}
 			SetMonData(mons, LumaDebugMenu_EditPKMN_Options[74].SetMonDataParam, &data);
 			break;
@@ -1197,8 +1202,8 @@ static void LumaDebugMenu_EditPKMN_PopulateData() {
 		case 63: // Gift ribbons
 			data = 0;
 			for (j = 0; j < 7; j++) {
-				data |= GetMonData(mons, LumaDebugMenu_EditPKMN_Options[i].SetMonDataParam + (7 - j), NULL);
 				data <<= 1;
+				data |= GetMonData(mons, LumaDebugMenu_EditPKMN_Options[i].SetMonDataParam - 1 + (7 - j), NULL);
 			}
 			LumaDebugMenu_EditPKMN_Data.data[i] = data;
 			break;
@@ -1425,6 +1430,22 @@ static void LumaDebugMenu_EditPKMN_Redraw() {
 			x = 0;
 			y+= 16;
 			break;
+		case 1: // PID
+			ConvertUIntToHexStringN(gStringVar1, LumaDebugMenu_EditPKMN_Data.data[index], STR_CONV_MODE_LEADING_ZEROS, data->digitCount);
+			if (data->text != NULL) {
+				bufferPosition = StringCopy(bufferPosition, data->text);
+				bufferPosition = StringCopy(bufferPosition, Str_Spacer1);
+			}
+			bufferPosition = StringCopy(bufferPosition, Str_HexPrefix);
+			*gStringVar3 = EOS;
+			StringExpandPlaceholders(bufferPosition, Str_StringVars);
+			AddTextPrinterParameterized(LumaDebugMenu_EditPKMN_menuWindowId, 7, gStringVar2, x, y, 0, NULL);
+			x = 165;
+			AddTextPrinterParameterized(LumaDebugMenu_EditPKMN_menuWindowId, 1, gNatureNamePointers[LumaDebugMenu_EditPKMN_Data.data[8]], x, y, 0, NULL);
+			x = 0;
+			y+= 16;
+			break;
+		case 5: // OT Gender
 		case 7: // Gender
 			StringCopy(gStringVar1, GenderIndexes[LumaDebugMenu_EditPKMN_Data.data[index]]);
 			if (data->text != NULL) {
@@ -1436,27 +1457,70 @@ static void LumaDebugMenu_EditPKMN_Redraw() {
 			AddTextPrinterParameterized(LumaDebugMenu_EditPKMN_menuWindowId, 7, gStringVar2, x, y, 0, NULL);
 			y += 16;
 			break;
+		case 14: // Held Item
+			ConvertIntToDecimalStringN(gStringVar1, LumaDebugMenu_EditPKMN_Data.data[index], STR_CONV_MODE_LEADING_ZEROS, data->digitCount);
+			if (data->text != NULL) {
+				bufferPosition = StringCopy(bufferPosition, data->text);
+				bufferPosition = StringCopy(bufferPosition, Str_Spacer1);
+			}
+			*gStringVar3 = EOS;
+			StringExpandPlaceholders(bufferPosition, Str_StringVars);
+			AddTextPrinterParameterized(LumaDebugMenu_EditPKMN_menuWindowId, 7, gStringVar2, x, y, 0, NULL);
+			x = 140;
+			CopyItemName(LumaDebugMenu_EditPKMN_Data.data[index], gStringVar1);
+			AddTextPrinterParameterized(LumaDebugMenu_EditPKMN_menuWindowId, 1, gStringVar1, x, y, 0, NULL);
+			x = 0;
+			y+= 16;
+			break;
+		case 17: // Ability
+			StringCopy(gStringVar1, gAbilityNames[GetAbilityBySpecies(LumaDebugMenu_EditPKMN_Data.data[0], LumaDebugMenu_EditPKMN_Data.data[index])]);
+			if (data->text != NULL) {
+				bufferPosition = StringCopy(bufferPosition, data->text);
+				bufferPosition = StringCopy(bufferPosition, Str_Spacer1);
+			}
+			*gStringVar3 = EOS;
+			StringExpandPlaceholders(bufferPosition, Str_StringVars);
+			AddTextPrinterParameterized(LumaDebugMenu_EditPKMN_menuWindowId, 7, gStringVar2, x, y, 0, NULL);
+			y += 16;
+			break;
+		case 66 ... 69: // Moves
+			ConvertIntToDecimalStringN(gStringVar1, LumaDebugMenu_EditPKMN_Data.data[index], STR_CONV_MODE_LEADING_ZEROS, data->digitCount);
+			if (data->text != NULL) {
+				bufferPosition = StringCopy(bufferPosition, data->text);
+				*bufferPosition = CHAR_SPACE;
+				bufferPosition++;
+				*bufferPosition = CHAR_1 + (index - 66);
+				bufferPosition++;
+				bufferPosition = StringCopy(bufferPosition, Str_Spacer1);
+			}
+			*gStringVar3 = EOS;
+			StringExpandPlaceholders(bufferPosition, Str_StringVars);
+			AddTextPrinterParameterized(LumaDebugMenu_EditPKMN_menuWindowId, 7, gStringVar2, x, y, 0, NULL);
+			x = 120;
+			ConvertIntToDecimalStringN(gStringVar1, LumaDebugMenu_EditPKMN_Data.data[70 + (index - 66)], STR_CONV_MODE_LEADING_ZEROS, 2);
+			AddTextPrinterParameterized(LumaDebugMenu_EditPKMN_menuWindowId, 7, gStringVar1, x, y, 0, NULL);
+			x = 135;
+			ConvertIntToDecimalStringN(gStringVar1, LumaDebugMenu_EditPKMN_Data.data[74 + (index - 66)], STR_CONV_MODE_LEADING_ZEROS, 1);
+			AddTextPrinterParameterized(LumaDebugMenu_EditPKMN_menuWindowId, 7, gStringVar1, x, y, 0, NULL);
+			x = 145;
+			AddTextPrinterParameterized(LumaDebugMenu_EditPKMN_menuWindowId, 1, gMoveNames[LumaDebugMenu_EditPKMN_Data.data[index]], x, y, 0, NULL);
+			x = 0;
+			y+= 16;
+			break;
 		}
 		/* TODO: Add non-default cases:
 			* Experience (level)
 			* TID (SID)
-			* PID (Gender, nature, is shiny)
-			* Nickname (draw with different font)
-			* OT (OT gender, draw with different font)
+			* PID (Nature, is shiny)
 			* Status (status name, sleep/toxic counter)
 			* Pokerus (counters)
-			* Moves (label oveeride, move name, PP, PP Up)
-			* Held item (item name)
-			* Ability (ability name)
 			* IVs (label override, EVs, current, current HP)
 			* EVs (label override, IVs, current, current HP)
 			* Stats (label override, current HP, IVs, EVs)
-			* Ribbons (label override)
 			* Language (language name)
 			* Origin game (game name)
 			* Met location (location name)
 			* Ball (item name)
-			* OT Gender (male/female indicator)
 			* Nature (nature name)
 		*/
 	}
@@ -1781,13 +1845,14 @@ static void LumaDebugMenu_EditPKMN_EditModeProcessInput(u8 taskid) {
 				LumaDebugMenu_EditPKMN_editingVal[editIndex] += (1 << (4 * digit));
 			break;
 		case LUMA_EDIT_STRING:
-			// HACK: Extra check for EOS, as apparently, the "main" comparison uses 0x100 instead of 0x0 due to incrementing something that isn't casted to a u8 before comparing it
-			if (LumaDebugMenu_EditPKMN_NameBuffer[digit] == EOS)
-				LumaDebugMenu_EditPKMN_NameBuffer[digit] = 0;
-			else if ((LumaDebugMenu_EditPKMN_NameBuffer[digit] + 1 >= CHAR_DYNAMIC) && (LumaDebugMenu_EditPKMN_NameBuffer[digit] + 1 <= EOS))
+			LumaDebugMenu_EditPKMN_NameBuffer[digit]++;
+			LumaDebugMenu_EditPKMN_NameBuffer[digit] &= 0xff;
+			if (LumaDebugMenu_EditPKMN_NameBuffer[digit] >= CHAR_DYNAMIC) {
 				LumaDebugMenu_EditPKMN_NameBuffer[digit] = EOS;
-			else
-				LumaDebugMenu_EditPKMN_NameBuffer[digit]++;
+			}
+			else if (LumaDebugMenu_EditPKMN_NameBuffer[digit] >= CHAR_DYNAMIC && LumaDebugMenu_EditPKMN_NameBuffer[digit] < EOS) {
+				LumaDebugMenu_EditPKMN_NameBuffer[digit] = 0;
+			}
 			break;
 		}
 		LumaDebugMenu_EditPKMN_EditModeRedraw(digit, editIndex);
@@ -1823,10 +1888,11 @@ static void LumaDebugMenu_EditPKMN_EditModeProcessInput(u8 taskid) {
 				LumaDebugMenu_EditPKMN_editingVal[editIndex] -= (1 << (4 * digit));
 			break;
 		case LUMA_EDIT_STRING:
-			if ((LumaDebugMenu_EditPKMN_NameBuffer[digit] - 1 >= CHAR_DYNAMIC) && (LumaDebugMenu_EditPKMN_NameBuffer[digit] - 1 < EOS))
+			LumaDebugMenu_EditPKMN_NameBuffer[digit]--;
+			LumaDebugMenu_EditPKMN_NameBuffer[digit] &= 0xff;
+			if (LumaDebugMenu_EditPKMN_NameBuffer[digit] >= CHAR_DYNAMIC && LumaDebugMenu_EditPKMN_NameBuffer[digit] < EOS) {
 				LumaDebugMenu_EditPKMN_NameBuffer[digit] = CHAR_DYNAMIC - 1;
-			else
-				LumaDebugMenu_EditPKMN_NameBuffer[digit]--;
+			}
 			break;
 		}
 		LumaDebugMenu_EditPKMN_EditModeRedraw(digit, editIndex);
@@ -1876,7 +1942,7 @@ static void LumaDebugMenu_EditPKMN_EditModeProcessInput(u8 taskid) {
 		}
 		else {
 			if ((s16) (digit - 1) < 0) {
-				if (editIndex + 1 < 4 && LumaDebugMenu_EditPKMN_AltIndexes[LumaDebugMenu_EditPKMN_CurrentPage][LumaDebugMenu_EditPKMN_CurrentlySelectedOption][editIndex] != 0xff) {
+				if (editIndex + 1 < 4 && LumaDebugMenu_EditPKMN_AltIndexes[LumaDebugMenu_EditPKMN_CurrentPage][LumaDebugMenu_EditPKMN_CurrentlySelectedOption][editIndex] != 0xff && LumaDebugMenu_EditPKMN_Options[LumaDebugMenu_EditPKMN_AltIndexes[LumaDebugMenu_EditPKMN_CurrentPage][LumaDebugMenu_EditPKMN_CurrentlySelectedOption][editIndex]].mode != LUMA_EDIT_READONLY) {
 					LumaDebugMenu_EditPKMN_EditModeRedraw(data->digitCount, editIndex);
 					digit = LumaDebugMenu_EditPKMN_Options[LumaDebugMenu_EditPKMN_AltIndexes[LumaDebugMenu_EditPKMN_CurrentPage][LumaDebugMenu_EditPKMN_CurrentlySelectedOption][editIndex]].digitCount - 1;
 					editIndex++;
@@ -1959,6 +2025,7 @@ static void LumaDebugMenu_EditPKMN_EditModeRedraw(u32 digit, u8 editIndex) {
 			x = 100; // Reset for the actual species number
 		}
 		break;
+	case 5: // OT Gender
 	case 7: // Gender
 		if (editIndex != 0 && page[LumaDebugMenu_EditPKMN_CurrentlySelectedOption] == 0)
 			x = 204;
@@ -1989,7 +2056,6 @@ static void LumaDebugMenu_EditPKMN_EditModeRedraw(u32 digit, u8 editIndex) {
 		* TID (SID)
 		* PID (Gender, nature, is shiny)
 		* Nickname (draw with different font)
-		* OT (OT gender, draw with different font)
 		* Status (sleep/toxic counter)
 		* Pokerus (counters)
 		* Moves (move name, PP, PP Up)
@@ -2002,7 +2068,6 @@ static void LumaDebugMenu_EditPKMN_EditModeRedraw(u32 digit, u8 editIndex) {
 		* Origin game (game name)
 		* Met location (location name)
 		* Ball (item name)
-		* OT Gender (male/female indicator)
 		* Nature (nature name)
 	*/
 }
