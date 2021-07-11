@@ -20,6 +20,7 @@
 #include "item_icon.h"
 #include "fieldmap.h"
 #include "overworld.h"
+#include "event_data.h"
 #include "field_weather.h"
 #include "data.h"
 void PlayerPC(); // was not defined in player_pc.h
@@ -139,23 +140,20 @@ static const u8 Str_RegionalDexClearSeen[] = _("Clear seen (Regional)");
 static const u8 Str_RegionalDexClearCaught[] = _("Clear caught (Regional)");
 
 // In game functions
-static const u8 Str_Weather[] = _("Weather flag: ");
-static const u8 Str_Safari[] = _("Safari: ");
-static const u8 Str_SafariBalls[] = _("  Safari Balls: ");
-static const u8 Str_SafariSteps[] = _("  Safari Steps: ");
-static const u8 Str_Encounters[] = _("Wild encounters: ");
-static const u8 Str_WeatherField[] = _("Field weather: ");
-static const u8 Str_Music[] = _("Music: ");
-static const u8 Str_Music2[] = _("Field music: ");
-static const u8 Str_TrainerEncounters[] = _("Trainer encounters: ");
-static const u8 Str_Nameplates[] = _("Show nameplates: ");
-static const u8 Str_Music3[] = _("BGM Transitions: ");
-static const u8 Str_RepelSteps[] = _("Repel Steps: ");
-static const u8 Str_SaveStatus[] = _("Save Status: ");
-static const u8 Str_MirageIsland[] = _("Mirage Island: ");
-static const u8 Str_Lottery[] = _("Lottery: ");
-static const u8 Str_EditTrainerID[] = _("Trainer ID: ");
-static const u8 Str_EditSecretID[] = _("Secret ID: ");
+static const u8 Str_Weather[] = _("Weather flag");
+static const u8 Str_Safari[] = _("Safari");
+static const u8 Str_Encounters[] = _("Wild encounters");
+static const u8 Str_WeatherField[] = _("Field weather");
+static const u8 Str_Music[] = _("Music");
+static const u8 Str_Music2[] = _("Field music");
+static const u8 Str_TrainerEncounters[] = _("Trainer encounters");
+static const u8 Str_Nameplates[] = _("Show nameplates");
+static const u8 Str_Music3[] = _("BGM Transitions");
+static const u8 Str_RepelSteps[] = _("Repel Steps");
+static const u8 Str_SaveStatus[] = _("Save Status");
+static const u8 Str_MirageIsland[] = _("Mirage Island");
+static const u8 Str_Lottery[] = _("Lottery");
+static const u8 Str_EditTrainerID[] = _("Trainer ID");
 
 // Data
 static const u8 Str_MonData[] = _("{PKMN}");
@@ -203,6 +201,17 @@ static void LumaDebugMenu_JumpToPlayerPC(u8);
 static void LumaDebugMenu_ClearStorage(u8);
 static void LumaDebugMenu_FillStorage(u8);
 static void LumaDebugMenu_OpenXaman(u8);
+static void LumaDebugMenu_WeatherFlag(u8);
+static void LumaDebugMenu_Encounters(u8);
+static void LumaDebugMenu_Music(u8);
+static void LumaDebugMenu_TrainerEncounters(u8);
+static void LumaDebugMenu_Nameplates(u8);
+static void LumaDebugMenu_BGMTransitions(u8);
+static void LumaDebugMenu_FieldMusic(u8);
+static void LumaDebugMenu_RepelSteps(u8);
+static void LumaDebugMenu_SaveStatus(u8);
+static void LumaDebugMenu_MirageIsland(u8);
+static void LumaDebugMenu_Lottery(u8);
 static void LumaDebugMenu_AddEditPKMN_Init(u8);
 static void LumaDebugMenu_EditPKMN_SetDefaults();
 static void LumaDebugMenu_EditPKMN_PopulateData();
@@ -217,6 +226,8 @@ static void LumaDebugMenu_AddItems_Redraw(u8);
 /*static*/ void LumaDebugMenu_EditMoneyCoins_Init(u8);
 /*static*/ void LumaDebugMenu_EditMoneyCoins_ProcessInput(u8);
 /*static*/ void LumaDebugMenu_EditMoneyCoins_Redraw(u8);
+static void LumaDebugMenu_EditSingleFlag(u8, u8);
+static void LumaDebugMenu_EditSingleFlag_ProcessInput(u8);
 
 static const struct ListMenuItem LumaDebugMenu_Items[] = {
 	{Str_CommonGroup, LIST_HEADER},
@@ -228,23 +239,20 @@ static const struct ListMenuItem LumaDebugMenu_Items[] = {
 	{Str_EditPokedex, 0},
 	{Str_EditRTC, 0},
 	{Str_InGameGroup, LIST_HEADER},
-	{Str_Weather, 0},
+	{Str_Weather, 14},
 	{Str_Safari, 0},
-	{Str_SafariBalls, 0},
-	{Str_SafariSteps, 0},
-	{Str_Encounters, 0},
-	{Str_WeatherField, 0},
-	{Str_Music, 0},
-	{Str_Music2, 0},
-	{Str_TrainerEncounters, 0},
-	{Str_Nameplates, 0},
-	{Str_Music3, 0},
-	{Str_RepelSteps, 0},
-	{Str_SaveStatus, 0},
-	{Str_MirageIsland, 0},
-	{Str_Lottery, 0},
+	{Str_Encounters, 15},
+	{Str_WeatherField, 25},
+	{Str_Music, 16},
+	{Str_Music2, 20},
+	{Str_TrainerEncounters, 17},
+	{Str_Nameplates, 18},
+	{Str_Music3, 19},
+	{Str_RepelSteps, 21},
+	{Str_SaveStatus, 22},
+	{Str_MirageIsland, 23},
+	{Str_Lottery, 24},
 	{Str_EditTrainerID, 0},
-	{Str_EditSecretID, 0},
 	{Str_SaveFileGroup, LIST_HEADER},
 	{Str_FlagEdit, 0},
 	{Str_VarEdit, 0},
@@ -352,6 +360,17 @@ static void(*const LumaDebugMenu_Actions[])(u8) = {
 	LumaDebugMenu_ClearStorage,
 	LumaDebugMenu_FillStorage,
 	LumaDebugMenu_OpenXaman,
+	LumaDebugMenu_WeatherFlag,
+	LumaDebugMenu_Encounters,
+	LumaDebugMenu_Music,
+	LumaDebugMenu_TrainerEncounters,
+	LumaDebugMenu_Nameplates,
+	LumaDebugMenu_BGMTransitions,
+	LumaDebugMenu_FieldMusic,
+	LumaDebugMenu_RepelSteps,
+	LumaDebugMenu_SaveStatus,
+	LumaDebugMenu_MirageIsland,
+	LumaDebugMenu_Lottery
 };
 
 static const struct ListMenuTemplate LumaDebugMenu_ListTemplate = {
@@ -370,7 +389,8 @@ static const struct ListMenuTemplate LumaDebugMenu_ListTemplate = {
 	.itemVerticalPadding = 0,
 	.fontId = 1,
 	.cursorKind = 0,
-	.scrollMultiple = LIST_NO_MULTIPLE_SCROLL
+	.scrollMultiple = LIST_NO_MULTIPLE_SCROLL,
+	.moveCursorFunc = ListMenuDefaultCursorMoveFunc
 };
 
 static const struct WindowTemplate LumaDebugMenu_WindowTemplate = {
@@ -415,7 +435,6 @@ void OpenLumaDebugMenu() {
 	inputTask->data[1] = winId;
 }
 
-// Minor bug: SE_SELECT isn't played on change.
 static void LumaDebugMenu_HandleInput(u8 taskid) {
 	void (*func)(u8);
 	struct Task* task = &gTasks[taskid];
@@ -589,6 +608,67 @@ static void LumaDebugMenu_OpenXaman(u8 taskid) {
 /*static*/ void LumaDebugMenu_EditMoney(u8 taskid) {
 	LumaDebugMenu_Close(taskid);
 	// LumaDebugMenu_EditMoneyCoins(0);
+}
+
+enum {
+	LUMA_FLAG_WEATHER,
+	LUMA_FLAG_ENCOUNTERS,
+	LUMA_FLAG_MUSIC,
+	LUMA_FLAG_TRAINER_ENCOUNTERS,
+	LUMA_FLAG_NAMEPLATES,
+	LUMA_FLAG_BGM,
+};
+
+enum {
+	LUMA_VAR_FIELD_MUSIC,
+	LUMA_VAR_REPEL,
+	LUMA_VAR_SAVE_STATUS,
+	LUMA_VAR_MIRAGE,
+	LUMA_VAR_LOTTERY
+};
+
+void LumaDebugMenu_WeatherFlag(u8 taskid) {
+	LumaDebugMenu_EditSingleFlag(LUMA_FLAG_WEATHER, taskid);
+}
+
+void LumaDebugMenu_Encounters(u8 taskid) {
+	LumaDebugMenu_EditSingleFlag(LUMA_FLAG_ENCOUNTERS, taskid);
+}
+
+void LumaDebugMenu_Music(u8 taskid) {
+	LumaDebugMenu_EditSingleFlag(LUMA_FLAG_MUSIC, taskid);
+}
+
+void LumaDebugMenu_TrainerEncounters(u8 taskid) {
+	LumaDebugMenu_EditSingleFlag(LUMA_FLAG_TRAINER_ENCOUNTERS, taskid);
+}
+
+void LumaDebugMenu_Nameplates(u8 taskid) {
+	LumaDebugMenu_EditSingleFlag(LUMA_FLAG_NAMEPLATES, taskid);
+}
+
+void LumaDebugMenu_BGMTransitions(u8 taskid) {
+	LumaDebugMenu_EditSingleFlag(LUMA_FLAG_BGM, taskid);
+}
+
+void LumaDebugMenu_FieldMusic(u8 taskid) {
+	LumaDebugMenu_EditSingleFlag(LUMA_VAR_FIELD_MUSIC, taskid);
+}
+
+void LumaDebugMenu_RepelSteps(u8 taskid) {
+	LumaDebugMenu_EditSingleFlag(LUMA_VAR_REPEL, taskid);
+}
+
+void LumaDebugMenu_SaveStatus(u8 taskid) {
+	LumaDebugMenu_EditSingleFlag(LUMA_VAR_SAVE_STATUS, taskid);
+}
+
+void LumaDebugMenu_MirageIsland(u8 taskid) {
+	LumaDebugMenu_EditSingleFlag(LUMA_VAR_MIRAGE, taskid);
+}
+
+void LumaDebugMenu_Lottery(u8 taskid) {
+	LumaDebugMenu_EditSingleFlag(LUMA_VAR_LOTTERY, taskid);
 }
 
 static const u8 Str_Species[] = _("Species");
@@ -794,7 +874,7 @@ struct EditPokemonRam {
 	u32 data[LUMA_EDIT_OPTION_COUNT];
 };
 
-static EWRAM_DATA struct EditPokemonRam LumaDebugMenu_EditPKMN_Data = {{{0}}};
+static EWRAM_DATA struct EditPokemonRam LumaDebugMenu_EditPKMN_Data = {{{0}, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, 0, 0, {0}};
 static u8 LumaDebugMenu_EditPKMN_CurrentPage;
 static u8 LumaDebugMenu_EditPKMN_CurrentlySelectedOption;
 
@@ -832,15 +912,10 @@ static u8 LumaDebugMenu_EditPKMN_menuWindowId;
 	* None as of right now
 Things that are not implemented yet, or bugs that are caused by unimplemented features:
 	* Fade into and out of this menu instead of drawing it over the overworld. (Possible custom GFX?)
-	* If you scroll over to Nature when editing PID, the Nature draws over the last two PID digits.
-	* The Max HP index is drawn outside of the window.
 	* PP are not recalculated when editing PP Up count or moves.
 	* Alternate values aren't drawn until you scroll over to them in edit mode.
 	* Only one of the sleep and toxic counter should be visible and editable at one time, but only if the status is sleep or toxic respectively. (This does not take the separate indexes for these two values into consideration.)
-	* OT Gender and Nature should be drawn as a string, not the number representing it.
-	* The label for moves should say "Move X" instead of just "Move".
-	* Species, moves, held item, Ability, Language, Origin Game, Met Location, Ball, and Nature (the unused separate index) should be drawn with their names next to them.
-	* Ribbons should have "Ribbon" as part of their label.
+	* Language, Origin Game, Met Location, Ball, and Nature (the unused separate index) should be drawn with their names next to them.
 	* If the Pokerus Strain is 0, the Days indexes should not be accessible.
 	* Setting "Egg" from Off to On should also update "Egg2", but setting "Egg2" to Off should NOT update "Egg". Also, setting "Egg" to Off should NOT update "Egg2".
 	* Add a "Bad Egg" index as an alternate value for "Present".
@@ -2055,7 +2130,6 @@ static void LumaDebugMenu_EditPKMN_EditModeRedraw(u32 digit, u8 editIndex) {
 		* Experience (level)
 		* TID (SID)
 		* PID (Gender, nature, is shiny)
-		* Nickname (draw with different font)
 		* Status (sleep/toxic counter)
 		* Pokerus (counters)
 		* Moves (move name, PP, PP Up)
@@ -2292,6 +2366,108 @@ static void LumaDebugMenu_AddItems_Redraw(u8 taskid) {
 		AddTextPrinterParameterized(winId, 0, Str_HowMany, 0, 16, 0, NULL);
 		ConvertIntToDecimalStringN(gStringVar1, count, STR_CONV_MODE_RIGHT_ALIGN, 3);
 		AddTextPrinterParameterized(winId, 7, gStringVar1, 4, 32, 0, NULL);
+	}
+}
+
+static const struct WindowTemplate LumaDebugMenu_EditSingleFlagWindowTemplate = {
+    .bg = 0,
+    .tilemapLeft = 27,
+    .tilemapTop = 1,
+    .width = 2,
+    .height = 2,
+    .baseBlock = 361,
+    .paletteNum = 15
+};
+
+extern bool8 gDisableMusic;
+
+static void LumaDebugMenu_EditSingleFlag(u8 flag, u8 taskid) {
+	bool8 flagSet;
+	struct Task* task = &gTasks[taskid];
+	u8 winId;
+
+	switch (flag) {
+	default:
+		return;
+	case LUMA_FLAG_WEATHER:
+		flagSet = FlagGet(FLAG_SYS_WEATHER_CTRL);
+		break;
+	case LUMA_FLAG_ENCOUNTERS:
+		flagSet =  ~FlagGet(FLAG_SYS_NO_ENCOUNTER);
+		break;
+	case LUMA_FLAG_MUSIC:
+		flagSet = ~gDisableMusic;
+		break;
+	case LUMA_FLAG_TRAINER_ENCOUNTERS:
+		flagSet = ~FlagGet(FLAG_SYS_NO_TRAINER_SEE);
+		break;
+	case LUMA_FLAG_NAMEPLATES:
+		flagSet = ~FlagGet(FLAG_HIDE_MAP_NAME_POPUP);
+		break;
+	case LUMA_FLAG_BGM:
+		flagSet = ~FlagGet(FLAG_DONT_TRANSITION_MUSIC);
+		break;
+	}
+
+	winId = AddWindow(&LumaDebugMenu_EditSingleFlagWindowTemplate);
+	DrawStdWindowFrame(winId, FALSE);
+	CopyWindowToVram(winId, 3);
+
+	AddTextPrinterParameterized(winId, 0, flagSet & 1 ? Str_On : Str_Off, 0, 0, 0, NULL);
+
+	task->data[2] = winId;
+	task->data[3] = flag;
+	task->func = LumaDebugMenu_EditSingleFlag_ProcessInput;
+}
+
+static void LumaDebugMenu_EditSingleFlag_ProcessInput(u8 taskid) {
+	u16 input = gMain.newKeys;
+	struct Task* task = &gTasks[taskid];
+	bool8 flagSet;
+	u8 winId = task->data[2];
+	u8 flag = task->data[3];
+
+	if (input & (B_BUTTON | START_BUTTON)) {
+		ClearStdWindowAndFrame(task->data[2], TRUE);
+		RemoveWindow(task->data[2]);
+		task->func = LumaDebugMenu_HandleInput;
+		PlaySE(SE_SELECT);
+		return;
+	}
+	if (input & A_BUTTON) {
+		switch (flag) {
+		default:
+			return;
+		case LUMA_FLAG_WEATHER:
+			FlagToggle(FLAG_SYS_WEATHER_CTRL);
+			flagSet = FlagGet(FLAG_SYS_WEATHER_CTRL);
+			break;
+		case LUMA_FLAG_ENCOUNTERS:
+			FlagToggle(FLAG_SYS_NO_ENCOUNTER);
+			flagSet = ~FlagGet(FLAG_SYS_NO_ENCOUNTER);
+			break;
+		case LUMA_FLAG_MUSIC:
+			gDisableMusic = gDisableMusic ? 0 : 1;
+			flagSet = ~gDisableMusic;
+			if (gDisableMusic & 1) StopMapMusic();
+			break;
+		case LUMA_FLAG_TRAINER_ENCOUNTERS:
+			FlagToggle(FLAG_SYS_NO_TRAINER_SEE);
+			flagSet = ~FlagGet(FLAG_SYS_NO_TRAINER_SEE);
+			break;
+		case LUMA_FLAG_NAMEPLATES:
+			FlagToggle(FLAG_HIDE_MAP_NAME_POPUP);
+			flagSet = ~FlagGet(FLAG_HIDE_MAP_NAME_POPUP);
+			break;
+		case LUMA_FLAG_BGM:
+			FlagToggle(FLAG_DONT_TRANSITION_MUSIC);
+			flagSet = ~FlagGet(FLAG_DONT_TRANSITION_MUSIC);
+			break;
+		}
+		FillWindowPixelRect(winId, 0x11, 0, 0, 16, 16);
+		AddTextPrinterParameterized(winId, 0, flagSet & 1 ? Str_On : Str_Off, 0, 0, 0, NULL);
+		PlaySE(SE_SELECT);
+		return;
 	}
 }
 
