@@ -387,6 +387,10 @@ DirectSoundWaveData_8745A7C::
 	.incbin "sound/direct_sound_samples/8745A7C.bin"
 
 	.align 2
+Cry_Blank::
+	.incbin "sound/direct_sound_samples/cries/cry_blank.bin"
+
+	.align 2
 Cry_Bulbasaur::
 	.incbin "sound/direct_sound_samples/cries/cry_bulbasaur.bin"
 

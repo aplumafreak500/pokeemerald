@@ -1,6 +1,7 @@
 
 	.align 2
 gCryTable:: @ 869DCF4
+	cry Cry_Blank
 	cry Cry_Bulbasaur  @ 869DCF4
 	cry Cry_Ivysaur  @ 869DD00
 	cry Cry_Venusaur  @ 869DD0C
@@ -1272,9 +1273,12 @@ gCryTable:: @ 869DCF4
 	@ Calyrex
 	cry_not Cry_Calyrex_Ice_Rider
 	cry_not Cry_Calyrex_Shadow_Rider
+	@ Egg
+	cry_not Cry_Oshawott
 
 	.align 2
 gCryTable2:: @ 869EF24
+	cry2 Cry_Blank
 	cry2 Cry_Bulbasaur  @ 869EF24
 	cry2 Cry_Ivysaur  @ 869EF30
 	cry2 Cry_Venusaur  @ 869EF3C
@@ -2546,3 +2550,5 @@ gCryTable2:: @ 869EF24
 	@ Calyrex
 	cry2_not Cry_Calyrex_Ice_Rider
 	cry2_not Cry_Calyrex_Shadow_Rider
+	@ Egg
+	cry2_not Cry_Oshawott
