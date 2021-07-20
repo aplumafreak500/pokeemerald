@@ -212,6 +212,7 @@ static void LumaDebugMenu_RepelSteps(u8);
 static void LumaDebugMenu_SaveStatus(u8);
 static void LumaDebugMenu_MirageIsland(u8);
 static void LumaDebugMenu_Lottery(u8);
+static void LumaDebugMenu_FieldWeather(u8);
 static void LumaDebugMenu_AddEditPKMN_Init(u8);
 static void LumaDebugMenu_EditPKMN_SetDefaults();
 static void LumaDebugMenu_EditPKMN_PopulateData();
@@ -228,6 +229,8 @@ static void LumaDebugMenu_AddItems_Redraw(u8);
 /*static*/ void LumaDebugMenu_EditMoneyCoins_Redraw(u8);
 static void LumaDebugMenu_EditSingleFlag(u8, u8);
 static void LumaDebugMenu_EditSingleFlag_ProcessInput(u8);
+static void LumaDebugMenu_EditSingleVar(u8, u8);
+static void LumaDebugMenu_EditSingleVar_ProcessInput(u8);
 
 static const struct ListMenuItem LumaDebugMenu_Items[] = {
 	{Str_CommonGroup, LIST_HEADER},
@@ -370,7 +373,8 @@ static void(*const LumaDebugMenu_Actions[])(u8) = {
 	LumaDebugMenu_RepelSteps,
 	LumaDebugMenu_SaveStatus,
 	LumaDebugMenu_MirageIsland,
-	LumaDebugMenu_Lottery
+	LumaDebugMenu_Lottery,
+	LumaDebugMenu_FieldWeather
 };
 
 static const struct ListMenuTemplate LumaDebugMenu_ListTemplate = {
@@ -611,7 +615,7 @@ static void LumaDebugMenu_OpenXaman(u8 taskid) {
 }
 
 enum {
-	LUMA_FLAG_WEATHER,
+	LUMA_FLAG_WEATHER = 0,
 	LUMA_FLAG_ENCOUNTERS,
 	LUMA_FLAG_MUSIC,
 	LUMA_FLAG_TRAINER_ENCOUNTERS,
@@ -620,11 +624,12 @@ enum {
 };
 
 enum {
-	LUMA_VAR_FIELD_MUSIC,
+	LUMA_VAR_FIELD_MUSIC = 0,
 	LUMA_VAR_REPEL,
 	LUMA_VAR_SAVE_STATUS,
 	LUMA_VAR_MIRAGE,
-	LUMA_VAR_LOTTERY
+	LUMA_VAR_LOTTERY,
+	LUMA_VAR_WEATHER
 };
 
 void LumaDebugMenu_WeatherFlag(u8 taskid) {
@@ -652,23 +657,27 @@ void LumaDebugMenu_BGMTransitions(u8 taskid) {
 }
 
 void LumaDebugMenu_FieldMusic(u8 taskid) {
-	LumaDebugMenu_EditSingleFlag(LUMA_VAR_FIELD_MUSIC, taskid);
+	LumaDebugMenu_EditSingleVar(LUMA_VAR_FIELD_MUSIC, taskid);
 }
 
 void LumaDebugMenu_RepelSteps(u8 taskid) {
-	LumaDebugMenu_EditSingleFlag(LUMA_VAR_REPEL, taskid);
+	LumaDebugMenu_EditSingleVar(LUMA_VAR_REPEL, taskid);
 }
 
 void LumaDebugMenu_SaveStatus(u8 taskid) {
-	LumaDebugMenu_EditSingleFlag(LUMA_VAR_SAVE_STATUS, taskid);
+	LumaDebugMenu_EditSingleVar(LUMA_VAR_SAVE_STATUS, taskid);
 }
 
 void LumaDebugMenu_MirageIsland(u8 taskid) {
-	LumaDebugMenu_EditSingleFlag(LUMA_VAR_MIRAGE, taskid);
+	LumaDebugMenu_EditSingleVar(LUMA_VAR_MIRAGE, taskid);
 }
 
 void LumaDebugMenu_Lottery(u8 taskid) {
-	LumaDebugMenu_EditSingleFlag(LUMA_VAR_LOTTERY, taskid);
+	LumaDebugMenu_EditSingleVar(LUMA_VAR_LOTTERY, taskid);
+}
+
+void LumaDebugMenu_FieldWeather(u8 taskid) {
+	LumaDebugMenu_EditSingleVar(LUMA_VAR_WEATHER, taskid);
 }
 
 static const u8 Str_Species[] = _("Species");
@@ -770,7 +779,7 @@ struct EditPokemonStruct {
 };
 
 enum {
-	LUMA_EDIT_NULL,
+	LUMA_EDIT_NULL = 0,
 	LUMA_EDIT_NORMAL,
 	LUMA_EDIT_READONLY,
 	LUMA_EDIT_STRING,
@@ -931,21 +940,35 @@ Things that are not implemented yet, or bugs that are caused by unimplemented fe
 	* Draw the mon's icon next to the species
 	* An actual cursor (instead of just highlighting the selected option)
 */
+
+/*
+	Mode List:
+	* 0 - Add to party
+	* 1 - Edit party
+	* 2 - Edit PC Box
+	* 3 - Edit enemy party (usable as a sandbox)
+	* 4 - Edit enemy party for debug battle
+	* 5 - Edit party for debug battle
+	* 6 - Add to enemy party (Unused)
+	* 7 - Testing mode (Don't alter parties)
+	* 8 - Testing mode (use first mon as template)
+*/
 static void LumaDebugMenu_AddEditPKMN_Init(u8 mode) {
 	struct Pokemon* mons;
 	LumaDebugMenu_EditPKMN_Data.mode = mode;
 	switch (mode) {
 	case 0:
-	default:
+	case 6:
 		mons = &gEnemyParty[0];
-		ZeroMonData(mons);
+		ZeroMonData(mons); // Is this really necessary?
 		ZeroMonData(&LumaDebugMenu_EditPKMN_Data.mon);
 		LumaDebugMenu_EditPKMN_Data.monBeingEdited = mons;
 		LumaDebugMenu_EditPKMN_Data.index = 0;
 		break;
 	case 1:
+	case 5: // used in Debug Battle
 		mons = &gPlayerParty[LumaDebugMenu_EditPKMN_Data.index];
-		CopyMon(&LumaDebugMenu_EditPKMN_Data.mon, mons, sizeof(struct Pokemon));
+		if (mode == 1) CopyMon(&LumaDebugMenu_EditPKMN_Data.mon, mons, sizeof(struct Pokemon));
 		LumaDebugMenu_EditPKMN_Data.monBeingEdited = mons;
 		break;
 	case 2:
@@ -954,9 +977,23 @@ static void LumaDebugMenu_AddEditPKMN_Init(u8 mode) {
 		CalculateMonStats(&LumaDebugMenu_EditPKMN_Data.mon);
 		LumaDebugMenu_EditPKMN_Data.monBeingEdited = mons;
 		break;
+	case 3:
+	case 4: // used in Debug Battle
+		mons = &gEnemyParty[LumaDebugMenu_EditPKMN_Data.index];
+		if (mode == 3) CopyMon(&LumaDebugMenu_EditPKMN_Data.mon, mons, sizeof(struct Pokemon));
+		LumaDebugMenu_EditPKMN_Data.monBeingEdited = mons;
+		break;
+	case 7:
+	case 8:
+	default:
+		if (mode == 8) CopyMon(&LumaDebugMenu_EditPKMN_Data.mon, &gPlayerParty[0], sizeof(struct Pokemon));
+		else ZeroMonData(&LumaDebugMenu_EditPKMN_Data.mon);
+		LumaDebugMenu_EditPKMN_Data.monBeingEdited = &LumaDebugMenu_EditPKMN_Data.mon;
+		LumaDebugMenu_EditPKMN_Data.index = 0;
+		break;
 	}
 	// Set default data
-	if (mode == 0) {
+	if (mode == 0 || mode == 7) {
 		SetMonData(&LumaDebugMenu_EditPKMN_Data.mon, MON_DATA_OT_NAME, Str_DefaultOTName);
 		LumaDebugMenu_EditPKMN_SetDefaults();
 	}
@@ -1204,7 +1241,6 @@ static void LumaDebugMenu_EditPKMN_SetDefaults() {
 	}
 	LumaDebugMenu_EditPKMN_SetNewMonData(1);
 }
-
 static void LumaDebugMenu_EditPKMN_PopulateData() {
 	struct Pokemon* mons = &LumaDebugMenu_EditPKMN_Data.mon;
 	u32 data, i, j;
@@ -1438,7 +1474,7 @@ static void LumaDebugMenu_EditPKMN_Redraw() {
 	ConvertIntToDecimalStringN(gStringVar1, LumaDebugMenu_EditPKMN_CurrentPage + 1, STR_CONV_MODE_LEFT_ALIGN, 2);
 	StringExpandPlaceholders(gStringVar2, Str_Page);
 	AddTextPrinterParameterized(LumaDebugMenu_EditPKMN_menuWindowId, 0, gStringVar2, x, y, 0, NULL);
-	if (LumaDebugMenu_EditPKMN_Data.mode != 0) {
+	if (LumaDebugMenu_EditPKMN_Data.mode >= 1 && LumaDebugMenu_EditPKMN_Data.mode <= 5) {
 		x = 100;
 		ConvertIntToDecimalStringN(gStringVar1, LumaDebugMenu_EditPKMN_Data.index + 1, STR_CONV_MODE_LEFT_ALIGN, 2);
 		StringExpandPlaceholders(gStringVar2, Str_Slot);
@@ -1658,17 +1694,28 @@ static void LumaDebugMenu_AddEditPKMN_ProcessInput(u8 taskid) {
 		// This check is much simpler than the one below it...
 		if (LumaDebugMenu_EditPKMN_Data.index <= 0) return;
 		LumaDebugMenu_EditPKMN_Data.index--;
-		if (LumaDebugMenu_EditPKMN_Data.mode == 2) {
+		switch (LumaDebugMenu_EditPKMN_Data.mode) {
+		case 2:
 			// We can technically select slot 404 of box 1 (actually box 13 slot 14) but it's still valid behavior provided the max index was set properly above.
 			mons = (struct Pokemon*) &gPokemonStoragePtr->boxes[0][LumaDebugMenu_EditPKMN_Data.index];
 			LumaDebugMenu_EditPKMN_Data.monBeingEdited = mons;
 			CopyMon(&LumaDebugMenu_EditPKMN_Data.mon, mons, sizeof(struct BoxPokemon));
 			CalculateMonStats(&LumaDebugMenu_EditPKMN_Data.mon);
-		}
-		else {
+			break;
+		case 1:
+		case 5:
 			mons = &gPlayerParty[LumaDebugMenu_EditPKMN_Data.index];
 			LumaDebugMenu_EditPKMN_Data.monBeingEdited = mons;
 			CopyMon(&LumaDebugMenu_EditPKMN_Data.mon, mons, sizeof(struct Pokemon));
+			break;
+		case 3:
+		case 4:
+			mons = &gEnemyParty[LumaDebugMenu_EditPKMN_Data.index];
+			LumaDebugMenu_EditPKMN_Data.monBeingEdited = mons;
+			CopyMon(&LumaDebugMenu_EditPKMN_Data.mon, mons, sizeof(struct Pokemon));
+			break;
+		default:
+			break;
 		}
 		LumaDebugMenu_EditPKMN_PopulateData();
 		FillWindowPixelBuffer(LumaDebugMenu_EditPKMN_menuWindowId, 0x11);
@@ -1680,9 +1727,11 @@ static void LumaDebugMenu_AddEditPKMN_ProcessInput(u8 taskid) {
 		u32 max_index;
 		switch (LumaDebugMenu_EditPKMN_Data.mode) {
 		case 0:
+		case 6 ... 8:
 		default:
 			return;
 		case 1:
+		case 3 ... 5:
 			max_index = PARTY_SIZE;
 			break;
 		case 2:
@@ -1691,16 +1740,25 @@ static void LumaDebugMenu_AddEditPKMN_ProcessInput(u8 taskid) {
 		}
 		if (LumaDebugMenu_EditPKMN_Data.index >= max_index - 1) return;
 		LumaDebugMenu_EditPKMN_Data.index++;
-		if (LumaDebugMenu_EditPKMN_Data.mode == 2) {
+		switch (LumaDebugMenu_EditPKMN_Data.mode) {
+		case 2:
 			mons = (struct Pokemon*) &gPokemonStoragePtr->boxes[0][LumaDebugMenu_EditPKMN_Data.index];
 			LumaDebugMenu_EditPKMN_Data.monBeingEdited = mons;
 			CopyMon(&LumaDebugMenu_EditPKMN_Data.mon, mons, sizeof(struct BoxPokemon));
 			CalculateMonStats(&LumaDebugMenu_EditPKMN_Data.mon);
-		}
-		else {
+			break;
+		case 1:
+		case 5:
 			mons = &gPlayerParty[LumaDebugMenu_EditPKMN_Data.index];
 			LumaDebugMenu_EditPKMN_Data.monBeingEdited = mons;
 			CopyMon(&LumaDebugMenu_EditPKMN_Data.mon, mons, sizeof(struct Pokemon));
+			break;
+		case 3:
+		case 4:
+			mons = &gEnemyParty[LumaDebugMenu_EditPKMN_Data.index];
+			LumaDebugMenu_EditPKMN_Data.monBeingEdited = mons;
+			CopyMon(&LumaDebugMenu_EditPKMN_Data.mon, mons, sizeof(struct Pokemon));
+			break;
 		}
 		LumaDebugMenu_EditPKMN_PopulateData();
 		FillWindowPixelBuffer(LumaDebugMenu_EditPKMN_menuWindowId, 0x11);
@@ -2152,7 +2210,6 @@ static u8 LumaDebugMenu_AddEditPKMN_GiveToPlayer() {
 	struct Pokemon* mon = &LumaDebugMenu_EditPKMN_Data.mon;
 	switch (LumaDebugMenu_EditPKMN_Data.mode) {
 	case 0:
-	default:
 		for (i = 0; i < PARTY_SIZE; i++) {
 			if (GetMonData(&gPlayerParty[i], MON_DATA_SPECIES, NULL) == 0)
 				break;
@@ -2165,11 +2222,28 @@ static u8 LumaDebugMenu_AddEditPKMN_GiveToPlayer() {
 		gPlayerPartyCount = i + 1;
 		return MON_GIVEN_TO_PARTY;
 	case 1:
+	case 3 ... 5:
 		CopyMon(LumaDebugMenu_EditPKMN_Data.monBeingEdited, mon, sizeof(struct Pokemon));
 		return MON_GIVEN_TO_PARTY;
 	case 2:
 		CopyMon(LumaDebugMenu_EditPKMN_Data.monBeingEdited, mon, sizeof(struct BoxPokemon));
 		return MON_GIVEN_TO_PC;
+	case 6:
+		for (i = 0; i < PARTY_SIZE; i++) {
+			if (GetMonData(&gEnemyParty[i], MON_DATA_SPECIES, NULL) == 0)
+				break;
+		}
+
+		if (i >= PARTY_SIZE)
+			return MON_CANT_GIVE;
+
+		CopyMon(&gEnemyParty[i], mon, sizeof(*mon));
+		gEnemyPartyCount = i + 1;
+		return MON_GIVEN_TO_PARTY;
+	case 7:
+	case 8:
+	default:
+		return MON_CANT_GIVE;
 	}
 }
 
@@ -2183,8 +2257,9 @@ static const struct WindowTemplate LumaDebugMenu_AddItemsWindowTemplate = {
 	.paletteNum = 15
 };
 
-static u16 lastItem;
+static u16 lastItem[2];
 static const u8 Str_AddItemsHeader[] = _("{COLOR GREEN}Add items{CLEAR_TO 80}{B_BUTTON} Cancel");
+static const u8 Str_RemoveItemsHeader[] = _("{COLOR GREEN}Remove items{CLEAR_TO 80}{B_BUTTON} Cancel");
 
 // Port of Make items menu, slightly inspired by xaman
 static void LumaDebugMenu_AddItems_Init(u8 addOrRemove) {
@@ -2192,15 +2267,15 @@ static void LumaDebugMenu_AddItems_Init(u8 addOrRemove) {
 	u8 taskid;
 	DrawStdWindowFrame(winId, FALSE);
 	CopyWindowToVram(winId, 3);
-	AddTextPrinterParameterized(winId, 1, Str_AddItemsHeader, 0, 0, 0, NULL);
+	AddTextPrinterParameterized(winId, 1, addOrRemove & 1 ? Str_RemoveItemsHeader : Str_AddItemsHeader, 0, 0, 0, NULL);
 	taskid = CreateTask(LumaDebugMenu_AddItems_ProcessInput, 10);
-	if (!lastItem) lastItem = 1;
+	if (!lastItem[addOrRemove & 1]) lastItem[addOrRemove & 1] = 1;
 	gTasks[taskid].data[0] = winId;
 	gTasks[taskid].data[1] = 0;
-	gTasks[taskid].data[2] = lastItem;
+	gTasks[taskid].data[2] = lastItem[addOrRemove & 1];
 	gTasks[taskid].data[3] = 1;
 	// TODO Item icon
-	gTasks[taskid].data[5] = addOrRemove;
+	gTasks[taskid].data[5] = addOrRemove & 1;
 	LumaDebugMenu_AddItems_Redraw(taskid);
 }
 
@@ -2213,7 +2288,7 @@ static void LumaDebugMenu_AddItems_ProcessInput(u8 taskid) {
 	if (keys & B_BUTTON) {
 		if (mode == 0) {
 			ClearStdWindowAndFrame(task->data[0], TRUE);
-			lastItem = task->data[2];
+			lastItem[task->data[5]] = task->data[2];
 			RemoveWindow(winId);
 			DestroyTask(taskid);
 			EnableBothScriptContexts();
@@ -2469,6 +2544,101 @@ static void LumaDebugMenu_EditSingleFlag_ProcessInput(u8 taskid) {
 		PlaySE(SE_SELECT);
 		return;
 	}
+}
+
+static const struct WindowTemplate LumaDebugMenu_EditSingleVarWindowTemplate = {
+    .bg = 0,
+    .tilemapLeft = 23,
+    .tilemapTop = 1,
+    .width = 6,
+    .height = 2,
+    .baseBlock = 361,
+    .paletteNum = 15
+};
+
+static u16 fieldMusic;
+static u8 fieldWeather;
+extern u16 gSaveFileStatus;
+
+static void LumaDebugMenu_EditSingleVar(u8 var, u8 taskid) {
+	struct Task* task = &gTasks[taskid];
+	u8 winId;
+	u16* varPtr = NULL;
+	u8** textPtrs = NULL;
+
+	winId = AddWindow(&LumaDebugMenu_EditSingleVarWindowTemplate);
+	DrawStdWindowFrame(winId, FALSE);
+	CopyWindowToVram(winId, 3);
+
+	switch (var) {
+	default:
+		return;
+	case LUMA_VAR_FIELD_MUSIC:
+		varPtr = &fieldMusic;
+		break;
+	case LUMA_VAR_REPEL:
+		varPtr = GetVarPointer(VAR_REPEL_STEP_COUNT);
+		break;
+	case LUMA_VAR_SAVE_STATUS:
+		varPtr = &gSaveFileStatus;
+		break;
+	case LUMA_VAR_MIRAGE:
+		varPtr = GetVarPointer(VAR_MIRAGE_RND_H);
+		break;
+	case LUMA_VAR_LOTTERY:
+		varPtr = GetVarPointer(VAR_POKELOT_RND2); // Just drop the upper 16 bits, we don't need them anyway
+		break;
+	case LUMA_VAR_WEATHER:
+		varPtr = (u16*) &fieldWeather;
+		break;
+	}
+
+	// Redundant safety check
+	if (varPtr == NULL) return;
+
+	if (textPtrs != NULL) {
+		// TODO
+	}
+	else {
+		if (var == LUMA_VAR_MIRAGE) {
+			ConvertIntToDecimalStringN(gStringVar1, *(u32*) varPtr, STR_CONV_MODE_LEADING_ZEROS, 10);
+		}
+		// Unneeded safety check
+		else if (var == LUMA_VAR_WEATHER) {
+			ConvertIntToDecimalStringN(gStringVar1, *(u8*) varPtr, STR_CONV_MODE_LEADING_ZEROS, 2);
+		}
+		else {
+			ConvertIntToDecimalStringN(gStringVar1, *varPtr, STR_CONV_MODE_LEADING_ZEROS, 5);
+		}
+	}
+
+	AddTextPrinterParameterized(winId, 0, gStringVar1, 0, 0, 0, NULL);
+
+	task->data[2] = winId;
+	task->data[3] = var;
+	task->func = LumaDebugMenu_EditSingleVar_ProcessInput;
+}
+
+static void LumaDebugMenu_EditSingleVar_ProcessInput(u8 taskid) {
+	u16 input = gMain.newKeys;
+	struct Task* task = &gTasks[taskid];
+	bool8 flagSet;
+	u8 winId = task->data[2];
+	u8 var = task->data[3];
+
+	if (input & (B_BUTTON | START_BUTTON)) {
+		ClearStdWindowAndFrame(task->data[2], TRUE);
+		RemoveWindow(task->data[2]);
+		task->func = LumaDebugMenu_HandleInput;
+		PlaySE(SE_SELECT);
+		return;
+	}
+	/*
+		FillWindowPixelRect(winId, 0x11, 0, 0, 16, 16);
+		AddTextPrinterParameterized(winId, 0, gStringVar1, 0, 0, 0, NULL);
+		PlaySE(SE_SELECT);
+		return;
+	}*/
 }
 
 void FillScreen(u16 color) {
