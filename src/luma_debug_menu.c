@@ -993,7 +993,7 @@ static void LumaDebugMenu_AddEditPKMN_Init(u8 mode) {
 		break;
 	}
 	// Set default data
-	if (mode == 0 || mode == 7) {
+	if (mode == 0 || mode == 6 || mode == 7) {
 		SetMonData(&LumaDebugMenu_EditPKMN_Data.mon, MON_DATA_OT_NAME, Str_DefaultOTName);
 		LumaDebugMenu_EditPKMN_SetDefaults();
 	}
