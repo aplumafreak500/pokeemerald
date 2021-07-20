@@ -224,9 +224,9 @@ static u8 LumaDebugMenu_AddEditPKMN_GiveToPlayer();
 static void LumaDebugMenu_AddItems_Init(u8);
 static void LumaDebugMenu_AddItems_ProcessInput(u8);
 static void LumaDebugMenu_AddItems_Redraw(u8);
-/*static*/ void LumaDebugMenu_EditMoneyCoins_Init(u8);
-/*static*/ void LumaDebugMenu_EditMoneyCoins_ProcessInput(u8);
-/*static*/ void LumaDebugMenu_EditMoneyCoins_Redraw(u8);
+//static void LumaDebugMenu_EditMoneyCoins_Init(u8);
+//static void LumaDebugMenu_EditMoneyCoins_ProcessInput(u8);
+//static void LumaDebugMenu_EditMoneyCoins_Redraw(u8);
 static void LumaDebugMenu_EditSingleFlag(u8, u8);
 static void LumaDebugMenu_EditSingleFlag_ProcessInput(u8);
 static void LumaDebugMenu_EditSingleVar(u8, u8);
@@ -480,7 +480,7 @@ static void LumaDebugMenu_Cancel(u8 taskid) {
 	EnableBothScriptContexts();
 }
 
-static UNUSED void LumaDebugMenu_Nop(UNUSED u8 taskid) {
+static void LumaDebugMenu_Nop(UNUSED u8 taskid) {
 }
 
 static void LumaDebugMenu_AddPKMN(u8 taskid) {
@@ -609,7 +609,7 @@ static void LumaDebugMenu_OpenXaman(u8 taskid) {
 	Debug_ShowMainMenu();
 }
 
-/*static*/ void LumaDebugMenu_EditMoney(u8 taskid) {
+static UNUSED void LumaDebugMenu_EditMoney(u8 taskid) {
 	LumaDebugMenu_Close(taskid);
 	// LumaDebugMenu_EditMoneyCoins(0);
 }
@@ -632,51 +632,51 @@ enum {
 	LUMA_VAR_WEATHER
 };
 
-void LumaDebugMenu_WeatherFlag(u8 taskid) {
+static void LumaDebugMenu_WeatherFlag(u8 taskid) {
 	LumaDebugMenu_EditSingleFlag(LUMA_FLAG_WEATHER, taskid);
 }
 
-void LumaDebugMenu_Encounters(u8 taskid) {
+static void LumaDebugMenu_Encounters(u8 taskid) {
 	LumaDebugMenu_EditSingleFlag(LUMA_FLAG_ENCOUNTERS, taskid);
 }
 
-void LumaDebugMenu_Music(u8 taskid) {
+static void LumaDebugMenu_Music(u8 taskid) {
 	LumaDebugMenu_EditSingleFlag(LUMA_FLAG_MUSIC, taskid);
 }
 
-void LumaDebugMenu_TrainerEncounters(u8 taskid) {
+static void LumaDebugMenu_TrainerEncounters(u8 taskid) {
 	LumaDebugMenu_EditSingleFlag(LUMA_FLAG_TRAINER_ENCOUNTERS, taskid);
 }
 
-void LumaDebugMenu_Nameplates(u8 taskid) {
+static void LumaDebugMenu_Nameplates(u8 taskid) {
 	LumaDebugMenu_EditSingleFlag(LUMA_FLAG_NAMEPLATES, taskid);
 }
 
-void LumaDebugMenu_BGMTransitions(u8 taskid) {
+static void LumaDebugMenu_BGMTransitions(u8 taskid) {
 	LumaDebugMenu_EditSingleFlag(LUMA_FLAG_BGM, taskid);
 }
 
-void LumaDebugMenu_FieldMusic(u8 taskid) {
+static void LumaDebugMenu_FieldMusic(u8 taskid) {
 	LumaDebugMenu_EditSingleVar(LUMA_VAR_FIELD_MUSIC, taskid);
 }
 
-void LumaDebugMenu_RepelSteps(u8 taskid) {
+static void LumaDebugMenu_RepelSteps(u8 taskid) {
 	LumaDebugMenu_EditSingleVar(LUMA_VAR_REPEL, taskid);
 }
 
-void LumaDebugMenu_SaveStatus(u8 taskid) {
+static void LumaDebugMenu_SaveStatus(u8 taskid) {
 	LumaDebugMenu_EditSingleVar(LUMA_VAR_SAVE_STATUS, taskid);
 }
 
-void LumaDebugMenu_MirageIsland(u8 taskid) {
+static void LumaDebugMenu_MirageIsland(u8 taskid) {
 	LumaDebugMenu_EditSingleVar(LUMA_VAR_MIRAGE, taskid);
 }
 
-void LumaDebugMenu_Lottery(u8 taskid) {
+static void LumaDebugMenu_Lottery(u8 taskid) {
 	LumaDebugMenu_EditSingleVar(LUMA_VAR_LOTTERY, taskid);
 }
 
-void LumaDebugMenu_FieldWeather(u8 taskid) {
+static void LumaDebugMenu_FieldWeather(u8 taskid) {
 	LumaDebugMenu_EditSingleVar(LUMA_VAR_WEATHER, taskid);
 }
 
@@ -758,7 +758,7 @@ static const u8* GenderIndexes[3] = {
 	Str_Genderless
 };
 
-/*static*/ const u8* StatusIndexes[7] = {
+static UNUSED const u8* StatusIndexes[7] = {
 	Str_None,
 	Str_Psn,
 	Str_Par,
@@ -2622,9 +2622,9 @@ static void LumaDebugMenu_EditSingleVar(u8 var, u8 taskid) {
 static void LumaDebugMenu_EditSingleVar_ProcessInput(u8 taskid) {
 	u16 input = gMain.newKeys;
 	struct Task* task = &gTasks[taskid];
-	bool8 flagSet;
-	u8 winId = task->data[2];
-	u8 var = task->data[3];
+	//bool8 flagSet;
+	//u8 winId = task->data[2];
+	//u8 var = task->data[3];
 
 	if (input & (B_BUTTON | START_BUTTON)) {
 		ClearStdWindowAndFrame(task->data[2], TRUE);
