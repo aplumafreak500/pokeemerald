@@ -2182,7 +2182,7 @@ u8* GetMapName_HandleVersion(u8* dest, u16 mapsec, u8 version) {
 		}
 	case 44 ... 45: // Sw/Sh
 		if (mapsec < 247) {
-			return StringCopy(dest, gLocationNames_LGPE[mapsec]);
+			return StringCopy(dest, gLocationNames_Gen8[mapsec]);
 		}
 		else if ((mapsec > 30000) && (mapsec < 30019)) {
 			return StringCopy(dest, gLocationNames_Gen6_3xxxx[mapsec - 30000]);
