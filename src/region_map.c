@@ -127,6 +127,9 @@ static const u8 sRegionMap_MapSectionLayout[] = INCBIN_U8("graphics/pokenav/regi
 
 #include "data/region_map/region_map_entries.h"
 
+// non-Gen 3 location data
+#include "data/text/locations.h"
+
 static const u16 sRegionMap_SpecialPlaceLocations[][2] =
 {
     {MAPSEC_UNDERWATER_105,             MAPSEC_ROUTE_105},
