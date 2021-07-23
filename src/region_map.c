@@ -2088,7 +2088,7 @@ u8* GetMapName_HandleVersion(u8* dest, u16 mapsec, u8 version) {
 	case 15: // C/XD
 		// TODO
 		return StringCopy(dest, gLocationNames_Gen6_3xxxx[6]);
-	case 20 ... 24: // B/W/B2/W2
+	case 20 ... 23: // B/W/B2/W2
 		// TODO: Cold Storage vs. PWT handling
 		if (mapsec < 154) {
 			return StringCopy(dest, gLocationNames_Gen5[mapsec]);
@@ -2108,7 +2108,7 @@ u8* GetMapName_HandleVersion(u8* dest, u16 mapsec, u8 version) {
 		else {
 			return StringCopy(dest, gLocationNames_Gen5[2]); // Faraway place
 		}
-	case 25 ... 29: // X/Y/OR/AS/DE/Z
+	case 24 ... 29: // X/Y/OR/AS/DE/Z
 		if (mapsec < 355) {
 			return StringCopy(dest, gLocationNames_Gen6[mapsec]);
 		}
@@ -2151,7 +2151,7 @@ u8* GetMapName_HandleVersion(u8* dest, u16 mapsec, u8 version) {
 	case 35 ... 38: // R/B/G/Y
 		// TODO: Index a location table instead
 		return StringCopy(dest, gLocationNames_Gen6_3xxxx[12]);
-	case 39 ... 42: // G/S/C
+	case 39 ... 41: // G/S/C
 		if (mapsec == 127) {
 			return StringCopy(dest, gLocationNames_Gen3[216]);
 		}
@@ -2161,7 +2161,7 @@ u8* GetMapName_HandleVersion(u8* dest, u16 mapsec, u8 version) {
 		else {
 			return StringCopy(dest, gLocationNames_Gen6_3xxxx[16]); // Johto
 		}
-	case 43 ... 44: // LGP/LGE
+	case 42 ... 43: // LGP/LGE
 		if (mapsec < 54) {
 			return StringCopy(dest, gLocationNames_LGPE[mapsec]);
 		}
@@ -2180,7 +2180,7 @@ u8* GetMapName_HandleVersion(u8* dest, u16 mapsec, u8 version) {
 		else {
 			return StringCopy(dest, gLocationNames_LGPE[2]); // Faraway place
 		}
-	case 45 ... 46: // Sw/Sh
+	case 44 ... 45: // Sw/Sh
 		if (mapsec < 247) {
 			return StringCopy(dest, gLocationNames_LGPE[mapsec]);
 		}
@@ -2199,7 +2199,7 @@ u8* GetMapName_HandleVersion(u8* dest, u16 mapsec, u8 version) {
 		else {
 			return StringCopy(dest, gLocationNames_Gen8[4]); // Faraway place
 		}
-	case 47 ... 51: // BD/SP/LA/Pt-Sw
+	case 46 ... 49: // BD/SP/LA/Pt-Sw
 		// TODO: Fill this in when the games release
 		return StringCopy(dest, gLocationNames_Gen6_3xxxx[5]); // Sinnoh		
 	}
