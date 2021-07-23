@@ -67,6 +67,7 @@
 #include "constants/songs.h"
 #include "constants/trainer_hill.h"
 #include "constants/weather.h"
+#include "debug.h"
 
 struct CableClubPlayer
 {
@@ -1701,6 +1702,14 @@ void CB2_ContinueSavedGame(void)
 
     FieldClearVBlankHBlankCallbacks();
     StopMapMusic();
+
+#if DEBUG
+	if (gMain.heldKeys & R_BUTTON) {
+		DisableMovementCheck = TRUE;
+		EnableBattleDebug = TRUE;
+	}
+#endif
+
     ResetSafariZoneFlag_();
     if (gSaveFileStatus == SAVE_STATUS_ERROR)
         ResetWinStreaks();
