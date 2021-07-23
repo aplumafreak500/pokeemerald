@@ -18,6 +18,7 @@
 #include "sound.h"
 #include "item.h"
 #include "item_icon.h"
+#include "region_map.h"
 #include "fieldmap.h"
 #include "overworld.h"
 #include "event_data.h"
@@ -801,14 +802,14 @@ static const struct EditPokemonStruct LumaDebugMenu_EditPKMN_Options[] = {
 	{Str_Egg2, LUMA_EDIT_BOOL, 0, 1, 0, MON_DATA_SANITY_IS_EGG, 1},
 	{Str_HasSpecies, LUMA_EDIT_BOOL, 0, 1, 1, MON_DATA_SANITY_HAS_SPECIES, 1},
 	{Str_Language, LUMA_EDIT_NORMAL, 0, NUM_LANGUAGES - 1, GAME_LANGUAGE, MON_DATA_LANGUAGE, 2},
-	{Str_Game, LUMA_EDIT_NORMAL, 1, 15, GAME_VERSION, MON_DATA_MET_GAME, 2},
+	{Str_Game, LUMA_EDIT_NORMAL, 1, 51, GAME_VERSION, MON_DATA_MET_GAME, 2}, // 47 = Shield
 	{Str_Item, LUMA_EDIT_NORMAL, 0, ITEMS_COUNT - 1, 0, MON_DATA_HELD_ITEM, 3},
 	{Str_Level, LUMA_EDIT_NORMAL, 0, 100, 10, MON_DATA_LEVEL, 3},
 	{Str_EXP, LUMA_EDIT_NORMAL, 0, 1640000, 1000, MON_DATA_EXP, 7},
 	{Str_Ability, LUMA_EDIT_NORMAL, 0, 2, 0, MON_DATA_ABILITY_NUM, 1},
 	{Str_Friendship, LUMA_EDIT_NORMAL, 0, 255, 0, MON_DATA_FRIENDSHIP, 3},
 	{Str_MetLevel, LUMA_EDIT_NORMAL, 0, 100, 10, MON_DATA_MET_LEVEL, 3}, // 0 instead of 1 because 0 means hatched from an Egg
-	{Str_MetLocation, LUMA_EDIT_NORMAL, 0, 255, MAPSEC_LITTLEROOT_TOWN, MON_DATA_MET_LOCATION, 3},
+	{Str_MetLocation, LUMA_EDIT_NORMAL, 0, 65535, MAPSEC_LITTLEROOT_TOWN, MON_DATA_MET_LOCATION, 5},
 	{Str_Ball, LUMA_EDIT_NORMAL, ITEM_MASTER_BALL, LAST_BALL, ITEM_POKE_BALL, MON_DATA_POKEBALL, 2},
 	{Str_PKrus, LUMA_EDIT_NORMAL, 0, 3, 0, MON_DATA_POKERUS, 1}, // 4 different "strains"
 	{Str_PKrus, LUMA_EDIT_NORMAL, 1, 4, 1, MON_DATA_POKERUS, 1}, // "default" days until cured
@@ -1463,6 +1464,9 @@ static const u8 LumaDebugMenu_EditPKMN_AltIndexes[14][6][3] = {
 	}
 };
 
+extern const u8* const gVersionNames[];
+extern const u8* const gLanguageNames[];
+
 static void LumaDebugMenu_EditPKMN_Redraw() {
 	u32 i;
 	u32 x = 0;
@@ -1594,6 +1598,21 @@ static void LumaDebugMenu_EditPKMN_Redraw() {
 			AddTextPrinterParameterized(LumaDebugMenu_EditPKMN_menuWindowId, 7, gStringVar2, x, y, 0, NULL);
 			y += 16;
 			break;
+		case 20: // Met Location
+			ConvertIntToDecimalStringN(gStringVar1, LumaDebugMenu_EditPKMN_Data.data[index], STR_CONV_MODE_LEADING_ZEROS, data->digitCount);
+			if (data->text != NULL) {
+				bufferPosition = StringCopy(bufferPosition, data->text);
+				bufferPosition = StringCopy(bufferPosition, Str_Spacer1);
+			}
+			*gStringVar3 = EOS;
+			StringExpandPlaceholders(bufferPosition, Str_StringVars);
+			AddTextPrinterParameterized(LumaDebugMenu_EditPKMN_menuWindowId, 7, gStringVar2, x, y, 0, NULL);
+			x = 130;
+			GetMapName_HandleVersion(gStringVar1, LumaDebugMenu_EditPKMN_Data.data[index], LumaDebugMenu_EditPKMN_Data.data[13]);
+			AddTextPrinterParameterized(LumaDebugMenu_EditPKMN_menuWindowId, 1, gStringVar1, x, y, 0, NULL);
+			x = 0;
+			y+= 16;
+			break;
 		case 66 ... 69: // Moves
 			ConvertIntToDecimalStringN(gStringVar1, LumaDebugMenu_EditPKMN_Data.data[index], STR_CONV_MODE_LEADING_ZEROS, data->digitCount);
 			if (data->text != NULL) {
@@ -1630,7 +1649,6 @@ static void LumaDebugMenu_EditPKMN_Redraw() {
 			* Stats (label override, current HP, IVs, EVs)
 			* Language (language name)
 			* Origin game (game name)
-			* Met location (location name)
 			* Ball (item name)
 			* Nature (nature name)
 		*/
@@ -2168,6 +2186,18 @@ static void LumaDebugMenu_EditPKMN_EditModeRedraw(u32 digit, u8 editIndex) {
 		*bufferPosition = EOS;
 		AddTextPrinterParameterized(LumaDebugMenu_EditPKMN_menuWindowId, 7, gStringVar2, x, y, 0, NULL);
 		return;
+	case 20: // Met Location
+		FillWindowPixelRect(LumaDebugMenu_EditPKMN_menuWindowId, 0x11, x, y, data->digitCount * 8, 16);
+		ConvertIntToDecimalStringN(gStringVar1, LumaDebugMenu_EditPKMN_editingVal[editIndex], STR_CONV_MODE_LEADING_ZEROS, data->digitCount);
+		if (editIndex == 0) {
+			x = 130;
+			// TODO: Fill all the way to the end?
+			FillWindowPixelRect(LumaDebugMenu_EditPKMN_menuWindowId, 0x11, x, y, 120, 16);
+			GetMapName_HandleVersion(gStringVar2, LumaDebugMenu_EditPKMN_editingVal[editIndex], LumaDebugMenu_EditPKMN_Data.data[13]);
+			AddTextPrinterParameterized(LumaDebugMenu_EditPKMN_menuWindowId, 1, gStringVar2, x, y, 0, NULL);
+			x = 100;
+		}
+		break;
 	}
 
 	bufferPosition = StringCopy(bufferPosition, Str_CursorColor);
@@ -2198,9 +2228,7 @@ static void LumaDebugMenu_EditPKMN_EditModeRedraw(u32 digit, u8 editIndex) {
 		* Stats (current HP, IVs, EVs)
 		* Language (language name)
 		* Origin game (game name)
-		* Met location (location name)
 		* Ball (item name)
-		* Nature (nature name)
 	*/
 }
 

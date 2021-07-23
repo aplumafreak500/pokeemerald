@@ -116,4 +116,7 @@ void SetRegionMapDataForZoom(void);
 
 extern const struct RegionMapLocation gRegionMapEntries[];
 
+// added 7/23/21, luma~
+u8* GetMapName_HandleVersion(u8*, u16, u8);
+
 #endif //GUARD_REGION_MAP_H

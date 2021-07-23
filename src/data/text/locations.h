@@ -2327,6 +2327,82 @@ const u8* const gLocationNames_Gen8[] = {
 	sMapName_CrownTundraStation
 };
 
+// TODO: 2xxx & 3xxxx
+const u8* const gLocationNames_Gen4_2xxx[] = {
+	sMapName_DayCareCouple,
+	sMapName_LinkTrade,
+	sMapName_LinkTrade, // Eggs
+	sMapName_Kanto,
+	sMapName_Johto,
+	sMapName_Hoenn,
+	sMapName_Sinnoh,
+	sMapName_Dashes,
+	sMapName_Orre,
+	sMapName_TravelingMan,
+	sMapName_Riley,
+	sMapName_Cynthia, // Platinum
+	sMapName_MysteryZone,
+	// HG/SS
+	sMapName_MrPokemon,
+	sMapName_Primo
+};
+
+const u8* const gLocationNames_Gen5_3xxxx[] = {
+	sMapName_Dashes, // Day Care Couple, moved to 6xxxx
+	sMapName_LinkTrade,
+	sMapName_LinkTrade, // Eggs
+	sMapName_Kanto,
+	sMapName_Johto,
+	sMapName_Hoenn,
+	sMapName_Sinnoh,
+	sMapName_Orre,
+	sMapName_Dashes,
+	sMapName_Dashes, // Traveling Man
+	sMapName_Dashes, // Riley
+	sMapName_Dashes, // Cynthia
+	sMapName_Dashes, // Mystery Zone
+	sMapName_Entralink,
+	sMapName_DreamRadar
+};
+
+// 3xxxx entries in Gen 6+ are identical, later gens only add to the table
+const u8* const gLocationNames_Gen6_3xxxx[] = {
+	// X/Y
+	sMapName_LinkTrade,
+	sMapName_LinkTrade, // Eggs
+	sMapName_Kanto, // FR/LG
+	sMapName_Johto, // HG/SS
+	sMapName_Hoenn, // R/S/E
+	sMapName_Sinnoh, // D/P/Pt
+	sMapName_Orre, // C/XD
+	sMapName_Dashes,
+	sMapName_Unova, // B/W/B2/W2
+	sMapName_Kalos, // X/Y
+	sMapName_Link,
+	// S/M
+	sMapName_Go,
+	sMapName_Kanto, // VC R/B/G/Y
+	sMapName_Alola, // S/M
+	sMapName_Pelago,
+	// US/UM
+	sMapName_Johto, // VC G/S/C
+	// Sw/Sh
+	sMapName_Home,
+	sMapName_Kanto // LGP/LGE
+};
+
+// TODO: 3xxx & 4xxxx
+
+// The 6xxxx indexes have little variance between generations, so consolidate them into one table.
+const u8* const gLocationNames_6xxxx[] = {
+	sMapName_Stranger,
+	sMapName_DayCareCouple, // Day Care helpers in Gen 6, leave alone for now. Nursery helpers in S/M
+	sMapName_TreasureHunter, // Breeder in B2/W2
+	sMapName_HotSprings,
+	sMapName_Breeder,
+	sMapName_NurseryHelpers // Nursery worker in Sw/Sh, leave alone for now
+};
+
 /* Game List */
 static const u8 sVersionName_None[] = _("");
 static const u8 sVersionName_Dashes[] = _("--------");

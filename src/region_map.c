@@ -2032,3 +2032,175 @@ static void CB_ExitFlyMap(void)
         break;
     }
 }
+
+// added 7/23/21, luma~
+u8* GetMapName_HandleVersion(u8* dest, u16 mapsec, u8 version) {
+	switch (version) {
+	default:
+		if ((mapsec & 255) == METLOC_SPECIAL_EGG) {
+			return StringCopy(dest, gLocationNames_Gen3[214]);
+		}
+		else if ((mapsec & 255) == METLOC_IN_GAME_TRADE) {
+			return StringCopy(dest, gLocationNames_Gen3[215]);
+		}
+		else if ((mapsec & 255) == METLOC_FATEFUL_ENCOUNTER) {
+			return StringCopy(dest, gLocationNames_Gen3[216]);
+		}
+		else if ((mapsec & 255) < MAPSEC_NONE) {
+			return StringCopy(dest, gLocationNames_Gen5[2]); // Faraway Place
+		}
+		else {
+			return GetMapNameGeneric(dest, mapsec & 255);
+		}
+		// TODO: expand R/S Aqua Hideout placeholder
+	case 1 ... 6: // R/S/E/FR/LG/WB
+		if (mapsec == 253) {
+			return StringCopy(dest, gLocationNames_Gen3[214]);
+		}
+		else if (mapsec == 254) {
+			return StringCopy(dest, gLocationNames_Gen3[215]);
+		}
+		else if (mapsec == 255) {
+			return StringCopy(dest, gLocationNames_Gen3[216]);
+		}
+		else if (mapsec < 213) {
+			return StringCopy(dest, gLocationNames_Gen3[mapsec]);
+		}
+		else {
+			return StringCopy(dest, gLocationNames_Gen5[2]); // Faraway Place
+		}
+		// TODO: expand R/S Aqua Hideout placeholder
+	case 7 ... 12: // HG/SS/C/D/P/Pt
+		if (mapsec < 235) {
+			return StringCopy(dest, gLocationNames_Gen4[mapsec]);
+		}
+		else if ((mapsec > 2000) && (mapsec < 2015)) {
+			return StringCopy(dest, gLocationNames_Gen4_2xxx[mapsec - 2000]);
+		}
+		/*
+		else if ((mapsec > 3000) && (mapsec < 3077)) {
+			return StringCopy(dest, gLocationNames_Gen4_3xxx[mapsec - 3000]);
+		}
+		*/
+		else {
+			return StringCopy(dest, gLocationNames_Gen5[2]); // Faraway place
+		}
+	case 15: // C/XD
+		// TODO
+		return StringCopy(dest, gLocationNames_Gen6_3xxxx[6]);
+	case 20 ... 24: // B/W/B2/W2
+		// TODO: Cold Storage vs. PWT handling
+		if (mapsec < 154) {
+			return StringCopy(dest, gLocationNames_Gen5[mapsec]);
+		}
+		else if ((mapsec > 30000) && (mapsec < 30015)) {
+			return StringCopy(dest, gLocationNames_Gen5_3xxxx[mapsec - 30000]);
+		}
+		/*
+		else if ((mapsec > 40000) && (mapsec < 40109)) {
+			return StringCopy(dest, gLocationNames_Gen5_4xxxx[mapsec - 40000]);
+		}
+		*/
+		// TODO: Treasure Hunter vs. Breeder handling
+		else if ((mapsec > 60000) && (mapsec < 60004)) {
+			return StringCopy(dest, gLocationNames_6xxxx[mapsec - 60000]);
+		}
+		else {
+			return StringCopy(dest, gLocationNames_Gen5[2]); // Faraway place
+		}
+	case 25 ... 29: // X/Y/OR/AS/DE/Z
+		if (mapsec < 355) {
+			return StringCopy(dest, gLocationNames_Gen6[mapsec]);
+		}
+		else if ((mapsec > 30000) && (mapsec < 30019)) {
+			return StringCopy(dest, gLocationNames_Gen6_3xxxx[mapsec - 30000]);
+		}
+		/*
+		else if ((mapsec > 40000) && (mapsec < 40079)) {
+			return StringCopy(dest, gLocationNames_Gen6_4xxxx[mapsec - 40000]);
+		}
+		*/
+		else if ((mapsec > 60000) && (mapsec < 60004)) {
+			return StringCopy(dest, gLocationNames_6xxxx[mapsec - 60000]);
+		}
+		else {
+			return StringCopy(dest, gLocationNames_Gen6[4]); // Faraway place
+		}
+	case 30 ... 33: // S/M/US/UM
+		// TODO: Ultra Space vs. Ultra Deep Sea and Secluded Shore vs. Ula'ula Beach handling
+		if (mapsec < 232) {
+			return StringCopy(dest, gLocationNames_Gen7[mapsec]);
+		}
+		else if ((mapsec > 30000) && (mapsec < 30019)) {
+			return StringCopy(dest, gLocationNames_Gen6_3xxxx[mapsec - 30000]);
+		}
+		/*
+		else if ((mapsec > 40000) && (mapsec < 40087)) {
+			return StringCopy(dest, gLocationNames_Gen7_4xxxx[mapsec - 40000]);
+		}
+		*/
+		// 60001 = "Nursery helpers" in this gen
+		else if ((mapsec > 60000) && (mapsec < 60004)) {
+			return StringCopy(dest, gLocationNames_6xxxx[mapsec - 60000]);
+		}
+		else {
+			return StringCopy(dest, gLocationNames_Gen7[4]); // Faraway place
+		}
+	case 34: // Go
+		return StringCopy(dest, gLocationNames_Gen6_3xxxx[11]);
+	case 35 ... 38: // R/B/G/Y
+		// TODO: Index a location table instead
+		return StringCopy(dest, gLocationNames_Gen6_3xxxx[12]);
+	case 39 ... 42: // G/S/C
+		if (mapsec == 127) {
+			return StringCopy(dest, gLocationNames_Gen3[216]);
+		}
+		else if (mapsec < 96) {
+			return StringCopy(dest, gLocationNames_Gen2[mapsec]);
+		}
+		else {
+			return StringCopy(dest, gLocationNames_Gen6_3xxxx[16]); // Johto
+		}
+	case 43 ... 44: // LGP/LGE
+		if (mapsec < 54) {
+			return StringCopy(dest, gLocationNames_LGPE[mapsec]);
+		}
+		else if ((mapsec > 30000) && (mapsec < 30019)) {
+			return StringCopy(dest, gLocationNames_Gen6_3xxxx[mapsec - 30000]);
+		}
+		/*
+		else if ((mapsec > 40000) && (mapsec < 40076)) {
+			return StringCopy(dest, gLocationNames_LGPE_4xxxx[mapsec - 40000]);
+		}
+		*/
+		// 60001 = "Nursery helpers" in this gen
+		else if ((mapsec > 60000) && (mapsec < 60004)) {
+			return StringCopy(dest, gLocationNames_6xxxx[mapsec - 60000]);
+		}
+		else {
+			return StringCopy(dest, gLocationNames_LGPE[2]); // Faraway place
+		}
+	case 45 ... 46: // Sw/Sh
+		if (mapsec < 247) {
+			return StringCopy(dest, gLocationNames_LGPE[mapsec]);
+		}
+		else if ((mapsec > 30000) && (mapsec < 30019)) {
+			return StringCopy(dest, gLocationNames_Gen6_3xxxx[mapsec - 30000]);
+		}
+		/*
+		else if ((mapsec > 40000) && (mapsec < 40087)) {
+			return StringCopy(dest, gLocationNames_Gen8_4xxxx[mapsec - 40000]);
+		}
+		*/
+		// 60001 = "Nursery helpers" in this gen
+		else if ((mapsec > 60000) && (mapsec < 60004)) {
+			return StringCopy(dest, gLocationNames_6xxxx[mapsec - 60000]);
+		}
+		else {
+			return StringCopy(dest, gLocationNames_Gen8[4]); // Faraway place
+		}
+	case 47 ... 51: // BD/SP/LA/Pt-Sw
+		// TODO: Fill this in when the games release
+		return StringCopy(dest, gLocationNames_Gen6_3xxxx[5]); // Sinnoh		
+	}
+}
