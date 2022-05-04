@@ -793,7 +793,7 @@ static const struct EditPokemonStruct LumaDebugMenu_EditPKMN_Options[] = {
 	{Str_Personality, LUMA_EDIT_HEX, 0, 0xffffffff, 0, MON_DATA_PERSONALITY, 8},
 	{Str_TrainerID, LUMA_EDIT_NORMAL, 0, 0xffff, 0, MON_DATA_OT_ID, 5},
 	{Str_SecretID, LUMA_EDIT_NORMAL, 0, 0xffff, 0, MON_DATA_OT_ID, 5}, // SID
-	{Str_OT, LUMA_EDIT_STRING, 0, 0, 0, MON_DATA_OT_NAME, PLAYER_NAME_LENGTH}, // We can't set a default here because the saveblock pointer cam change.
+	{Str_OT, LUMA_EDIT_STRING, 0, 0, 0, MON_DATA_OT_NAME, PLAYER_NAME_LENGTH}, // We can't set a default here because the saveblock pointer can change.
 	{Str_Gender, LUMA_EDIT_NORMAL, 0, 1, 0, MON_DATA_OT_GENDER, 1},
 	{Str_Nick, LUMA_EDIT_STRING, 0, 0, 0, MON_DATA_NICKNAME, POKEMON_NAME_LENGTH},
 	{Str_Gender, LUMA_EDIT_READONLY, 0, 2, 0, MON_DATA_PERSONALITY, 1},
@@ -1572,6 +1572,20 @@ static void LumaDebugMenu_EditPKMN_Redraw() {
 			AddTextPrinterParameterized(LumaDebugMenu_EditPKMN_menuWindowId, 7, gStringVar2, x, y, 0, NULL);
 			y += 16;
 			break;
+		case 13: // Origin Game
+			ConvertIntToDecimalStringN(gStringVar1, LumaDebugMenu_EditPKMN_Data.data[index], STR_CONV_MODE_LEADING_ZEROS, data->digitCount);
+			if (data->text != NULL) {
+				bufferPosition = StringCopy(bufferPosition, data->text);
+				bufferPosition = StringCopy(bufferPosition, Str_Spacer1);
+			}
+			*gStringVar3 = EOS;
+			StringExpandPlaceholders(bufferPosition, Str_StringVars);
+			AddTextPrinterParameterized(LumaDebugMenu_EditPKMN_menuWindowId, 7, gStringVar2, x, y, 0, NULL);
+			x = 130;
+			AddTextPrinterParameterized(LumaDebugMenu_EditPKMN_menuWindowId, 1, gVersionNames[LumaDebugMenu_EditPKMN_Data.data[index]], x, y, 0, NULL);
+			x = 0;
+			y+= 16;
+			break;
 		case 14: // Held Item
 			ConvertIntToDecimalStringN(gStringVar1, LumaDebugMenu_EditPKMN_Data.data[index], STR_CONV_MODE_LEADING_ZEROS, data->digitCount);
 			if (data->text != NULL) {
@@ -1648,7 +1662,6 @@ static void LumaDebugMenu_EditPKMN_Redraw() {
 			* EVs (label override, IVs, current, current HP)
 			* Stats (label override, current HP, IVs, EVs)
 			* Language (language name)
-			* Origin game (game name)
 			* Ball (item name)
 			* Nature (nature name)
 		*/
@@ -2186,6 +2199,17 @@ static void LumaDebugMenu_EditPKMN_EditModeRedraw(u32 digit, u8 editIndex) {
 		*bufferPosition = EOS;
 		AddTextPrinterParameterized(LumaDebugMenu_EditPKMN_menuWindowId, 7, gStringVar2, x, y, 0, NULL);
 		return;
+	case 13: // Origin Game
+		FillWindowPixelRect(LumaDebugMenu_EditPKMN_menuWindowId, 0x11, x, y, data->digitCount * 8, 16);
+		ConvertIntToDecimalStringN(gStringVar1, LumaDebugMenu_EditPKMN_editingVal[editIndex], STR_CONV_MODE_LEADING_ZEROS, data->digitCount);
+		if (editIndex == 0) {
+			x = 130;
+			// TODO: Fill all the way to the end?
+			FillWindowPixelRect(LumaDebugMenu_EditPKMN_menuWindowId, 0x11, x, y, 120, 16);
+			AddTextPrinterParameterized(LumaDebugMenu_EditPKMN_menuWindowId, 1, gVersionNames[LumaDebugMenu_EditPKMN_editingVal[editIndex]], x, y, 0, NULL);
+			x = 100;
+		}
+		break;
 	case 20: // Met Location
 		FillWindowPixelRect(LumaDebugMenu_EditPKMN_menuWindowId, 0x11, x, y, data->digitCount * 8, 16);
 		ConvertIntToDecimalStringN(gStringVar1, LumaDebugMenu_EditPKMN_editingVal[editIndex], STR_CONV_MODE_LEADING_ZEROS, data->digitCount);
@@ -2227,7 +2251,6 @@ static void LumaDebugMenu_EditPKMN_EditModeRedraw(u32 digit, u8 editIndex) {
 		* EVs (IVs, current, current HP)
 		* Stats (current HP, IVs, EVs)
 		* Language (language name)
-		* Origin game (game name)
 		* Ball (item name)
 	*/
 }
