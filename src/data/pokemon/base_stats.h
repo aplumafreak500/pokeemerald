@@ -2349,11 +2349,7 @@ const struct BaseStats gBaseStats[] =
         .catchRate = 45,
         .expYield = 132,
         .evYield_Attack    = 1,
-		#ifdef ITEM_EXPANSION
         .item2 = ITEM_LEEK,
-		#else
-        .item2 = ITEM_STICK,
-		#endif
         .genderRatio = PERCENT_FEMALE(50),
         .eggCycles = 20,
         .friendship = 70,
@@ -24541,7 +24537,7 @@ const struct BaseStats gBaseStats[] =
         .catchRate = 45,
         .expYield = 177,
         .evYield_Attack    = 2,
-        .item2 = ITEM_STICK,
+        .item2 = ITEM_LEEK,
         .genderRatio = PERCENT_FEMALE(50),
         .eggCycles = 20,
         .friendship = 70,
@@ -27566,7 +27562,7 @@ const struct BaseStats gBaseStats[] =
         .catchRate = 45,
         .expYield = 132,
         .evYield_Attack    = 1,
-        .item1 = ITEM_STICK,
+        .item1 = ITEM_LEEK,
         .genderRatio = PERCENT_FEMALE(50),
         .eggCycles = 20,
         .friendship = 70,
