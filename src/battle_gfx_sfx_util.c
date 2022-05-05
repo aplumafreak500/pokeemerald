@@ -914,10 +914,10 @@ void HandleSpeciesGfxDataChange(u8 battlerAtk, u8 battlerDef, bool8 castform, bo
         personalityValue = gContestResources->moveAnim->personality;
         otId = gContestResources->moveAnim->otId;
 
-        HandleLoadSpecialPokePic_DontHandleDeoxys(&gMonBackPicTable[targetSpecies],
-                                                  gMonSpritesGfxPtr->sprites.ptr[position],
-                                                  targetSpecies,
-                                                  gContestResources->moveAnim->targetPersonality);
+        HandleLoadSpecialPokePic(&gMonBackPicTable[targetSpecies],
+                                 gMonSpritesGfxPtr->sprites.ptr[position],
+                                 targetSpecies,
+                                 gContestResources->moveAnim->targetPersonality);
     }
     else
     {

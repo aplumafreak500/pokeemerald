@@ -2618,7 +2618,6 @@ u8 CreateMonIconCustom(u16 species, void (*callback)(struct Sprite *), s16 x, s1
 }
 #endif
 
->>>>>>> temp
 u8 CreateMonIconNoPersonality(u16 species, void (*callback)(struct Sprite *), s16 x, s16 y, u8 subpriority)
 {
     u8 spriteId;

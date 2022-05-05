@@ -437,7 +437,7 @@ $(OBJ_DIR)/ld_script.ld: $(LD_SCRIPT)
 	@echo $<
 	@cd $(OBJ_DIR) && sed "s#tools/#../../tools/#g" ../../$(LD_SCRIPT) > ld_script.ld
 
-$(ELF): $(OBJ_DIR)/ld_script.ld $(OBJS) berry_fix libagbsyscall date git_hash
+$(ELF): $(OBJ_DIR)/ld_script.ld $(OBJS) libagbsyscall date git_hash
 	@echo Linking $@
 	@cd $(OBJ_DIR) && $(LD) $(LDFLAGS) -T ld_script.ld -o ../../$@ $(OBJS_REL) $(LIB)
 	$(FIX) $@ -t"$(TITLE)" -c$(GAME_CODE) -m$(MAKER_CODE) -r$(REVISION) --silent
