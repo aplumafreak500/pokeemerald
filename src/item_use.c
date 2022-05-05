@@ -1007,7 +1007,7 @@ void ItemUseInBattle_PokeBall(u8 taskId)
     #endif
 	case BALL_THROW_UNABLE_NO_CATCHING:
         if (!InBattlePyramid())
-            DisplayItemMessage(taskId, FONT_NORMAL, sText_BallsCannotBeUsed, BagMenu_InitListsMenu);
+            DisplayItemMessage(taskId, FONT_NORMAL, sText_BallsCannotBeUsed, CloseItemMessage);
         else
             DisplayItemMessageInBattlePyramid(taskId, sText_BallsCannotBeUsed, Task_CloseBattlePyramidBagMessage);
 		break;
