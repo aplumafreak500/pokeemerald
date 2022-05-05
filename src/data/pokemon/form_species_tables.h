@@ -1,5 +1,3 @@
-#define FORM_SPECIES_END (0xffff)
-
 static const u16 sVenusaurFormSpeciesIdTable[] = {
     SPECIES_VENUSAUR,
     SPECIES_VENUSAUR_MEGA,
@@ -846,7 +844,7 @@ static const u16 sHoopaFormSpeciesIdTable[] = {
 static const u16 sOricorioFormSpeciesIdTable[] = {
     SPECIES_ORICORIO,
     SPECIES_ORICORIO_POM_POM,
-    SPECIES_ORICORIO_PA_U,
+    SPECIES_ORICORIO_PAU,
     SPECIES_ORICORIO_SENSU,
     FORM_SPECIES_END,
 };

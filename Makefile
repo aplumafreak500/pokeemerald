@@ -144,7 +144,7 @@ MAKEFLAGS += --no-print-directory
 # Secondary expansion is required for dependency variables in object rules.
 .SECONDEXPANSION:
 
-.PHONY: all rom clean tidy tools mostlyclean clean-tools $(TOOLDIRS) berry_fix libagbsyscall modern debug modern_debug tidymodern tidynonmodern date git_hash
+.PHONY: all rom clean tidy tools mostlyclean clean-tools $(TOOLDIRS) libagbsyscall modern debug modern_debug tidymodern tidynonmodern date git_hash
 
 infoshell = $(foreach line, $(shell $1 | sed "s/ /__SPACE__/g"), $(info $(subst __SPACE__, ,$(line))))
 
@@ -152,7 +152,7 @@ infoshell = $(foreach line, $(shell $1 | sed "s/ /__SPACE__/g"), $(info $(subst 
 # Disable dependency scanning for clean/tidy/tools
 # Use a separate minimal makefile for speed
 # Since we don't need to reload most of this makefile
-ifeq (,$(filter-out all rom modern berry_fix libagbsyscall syms,$(MAKECMDGOALS)))
+ifeq (,$(filter-out all rom modern libagbsyscall syms,$(MAKECMDGOALS)))
 $(call infoshell, $(MAKE) -f make_tools.mk)
 else
 NODEP ?= 1
@@ -163,8 +163,8 @@ ifeq (,$(MAKECMDGOALS))
   SCAN_DEPS ?= 1
 else
   # clean, tidy, tools, mostlyclean, clean-tools, $(TOOLDIRS), tidymodern, tidynonmodern don't even build the ROM
-  # berry_fix and libagbsyscall do their own thing
-  ifeq (,$(filter-out clean tidy tools mostlyclean clean-tools $(TOOLDIRS) tidymodern tidynonmodern berry_fix libagbsyscall,$(MAKECMDGOALS)))
+  # libagbsyscall does its own thing
+  ifeq (,$(filter-out clean tidy tools mostlyclean clean-tools $(TOOLDIRS) tidymodern tidynonmodern libagbsyscall,$(MAKECMDGOALS)))
     SCAN_DEPS ?= 0
   else
     SCAN_DEPS ?= 1
@@ -234,7 +234,6 @@ mostlyclean: tidynonmodern tidymodern
 	@rm -f $(DATA_ASM_SUBDIR)/maps/connections.inc $(DATA_ASM_SUBDIR)/maps/events.inc $(DATA_ASM_SUBDIR)/maps/groups.inc $(DATA_ASM_SUBDIR)/maps/headers.inc
 	@find $(DATA_ASM_SUBDIR)/maps \( -iname 'connections.inc' -o -iname 'events.inc' -o -iname 'header.inc' \) -exec rm {} +
 	@rm -f $(AUTO_GEN_TARGETS)
-	@$(MAKE) clean -C berry_fix
 	@$(MAKE) clean -C libagbsyscall
 
 tidy: tidynonmodern tidymodern
@@ -285,7 +284,7 @@ include songs.mk
 %.rl: %
 	@echo $@
 	@$(GFX) $< $@
-$(CRY_SUBDIR)/cry_not_%.bin: $(CRY_SUBDIR)/cry_not_%.aif
+$(CRY_SUBDIR)/uncomp_%.bin: $(CRY_SUBDIR)/uncomp_%.aif
 	@echo $<
 	@$(AIF) $< $@
 $(CRY_SUBDIR)/%.bin: $(CRY_SUBDIR)/%.aif
@@ -456,12 +455,6 @@ modern: all
 
 debug: ; @$(MAKE) DEBUG=1 DINFO=1
 modern_debug: ; @$(MAKE) MODERN=1 DEBUG=1 DINFO=1
-
-berry_fix/berry_fix.gba: berry_fix
-
-berry_fix:
-	@echo berry_fix
-	@$(MAKE) -C berry_fix TOOLCHAIN=$(TOOLCHAIN) MODERN=$(MODERN)
 
 libagbsyscall:
 	@echo libagbsyscall
