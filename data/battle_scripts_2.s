@@ -13,38 +13,7 @@
 	.section script_data, "aw", %progbits
 
 	.align 2
-gBattlescriptsForBallThrow:: @ 82DBD08
-	.4byte BattleScript_BallThrow        @ ITEM_NONE
-	.4byte BattleScript_BallThrow        @ ITEM_MASTER_BALL
-	.4byte BattleScript_BallThrow        @ ITEM_ULTRA_BALL
-	.4byte BattleScript_BallThrow        @ ITEM_GREAT_BALL
-	.4byte BattleScript_BallThrow        @ ITEM_POKE_BALL
-	.4byte BattleScript_SafariBallThrow  @ ITEM_SAFARI_BALL
-	.4byte BattleScript_BallThrow        @ ITEM_NET_BALL
-	.4byte BattleScript_BallThrow        @ ITEM_DIVE_BALL
-	.4byte BattleScript_BallThrow        @ ITEM_NEST_BALL
-	.4byte BattleScript_BallThrow        @ ITEM_REPEAT_BALL
-	.4byte BattleScript_BallThrow        @ ITEM_TIMER_BALL
-	.4byte BattleScript_BallThrow        @ ITEM_LUXURY_BALL
-	.4byte BattleScript_BallThrow        @ ITEM_DUSK_BALL
-	.4byte BattleScript_BallThrow        @ ITEM_HEAL_BALL
-	.4byte BattleScript_BallThrow        @ ITEM_QUICK_BALL
-	.4byte BattleScript_BallThrow        @ ITEM_CHERISH_BALL
-	.4byte BattleScript_BallThrow        @ ITEM_FAST_BALL
-	.4byte BattleScript_BallThrow        @ ITEM_LEVEL_BALL
-	.4byte BattleScript_BallThrow        @ ITEM_LURE_BALL
-	.4byte BattleScript_BallThrow        @ ITEM_HEAVY_BALL
-	.4byte BattleScript_BallThrow        @ ITEM_LOVE_BALL
-	.4byte BattleScript_BallThrow        @ ITEM_FRIEND_BALL
-	.4byte BattleScript_BallThrow        @ ITEM_MOON_BALL
-	.4byte BattleScript_BallThrow        @ ITEM_SPORT_BALL
-	.4byte BattleScript_BallThrow        @ ITEM_PARK_BALL
-	.4byte BattleScript_BallThrow        @ ITEM_DREAM_BALL
-	.4byte BattleScript_BallThrow        @ ITEM_BEAST_BALL
-	.4byte BattleScript_BallThrow        @ ITEM_PREMIER_BALL
-
-	.align 2
-gBattlescriptsForUsingItem:: @ 82DBD3C
+gBattlescriptsForUsingItem::
 	.4byte BattleScript_PlayerUsesItem
 	.4byte BattleScript_OpponentUsesHealItem        @ AI_ITEM_FULL_RESTORE
 	.4byte BattleScript_OpponentUsesHealItem        @ AI_ITEM_HEAL_HP
@@ -53,11 +22,11 @@ gBattlescriptsForUsingItem:: @ 82DBD3C
 	.4byte BattleScript_OpponentUsesGuardSpec       @ AI_ITEM_GUARD_SPEC
 
 	.align 2
-gBattlescriptsForRunningByItem:: @ 82DBD54
+gBattlescriptsForRunningByItem::
 	.4byte BattleScript_RunByUsingItem
 
 	.align 2
-gBattlescriptsForSafariActions:: @ 82DBD58
+gBattlescriptsForSafariActions::
 	.4byte BattleScript_ActionWatchesCarefully
 	.4byte BattleScript_ActionGetNear
 	.4byte BattleScript_ActionThrowPokeblock
@@ -78,8 +47,6 @@ BattleScript_SafariBallThrow::
 	handleballthrow
 
 BattleScript_SuccessBallThrow::
-	setbyte sMON_CAUGHT, TRUE
-	jumpifhalfword CMP_EQUAL, gLastUsedItem, ITEM_SAFARI_BALL, BattleScript_PrintCaughtMonInfo
 	incrementgamestat GAME_STAT_POKEMON_CAPTURES
 BattleScript_PrintCaughtMonInfo::
 	printstring STRINGID_GOTCHAPKMNCAUGHT

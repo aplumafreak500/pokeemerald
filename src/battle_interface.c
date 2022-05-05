@@ -10,7 +10,6 @@
 #include "string_util.h"
 #include "text.h"
 #include "sound.h"
-#include "constants/songs.h"
 #include "decompress.h"
 #include "task.h"
 #include "util.h"
@@ -21,12 +20,18 @@
 #include "international_string_util.h"
 #include "safari_zone.h"
 #include "battle_anim.h"
-#include "constants/battle_anim.h"
-#include "constants/rgb.h"
-#include "battle_debug.h"
-#include "constants/battle_config.h"
 #include "data.h"
 #include "pokemon_summary_screen.h"
+#include "strings.h"
+#include "battle_debug.h"
+#include "item.h"
+#include "item_icon.h"
+#include "item_use.h"
+#include "constants/battle_anim.h"
+#include "constants/rgb.h"
+#include "constants/songs.h"
+#include "constants/battle_config.h"
+#include "constants/items.h"
 
 enum
 {   // Corresponds to gHealthboxElementsGfxTable (and the tables after it) in graphics.c
@@ -97,11 +102,11 @@ enum
     HEALTHBOX_GFX_63, //hp bar red [7 pixels]
     HEALTHBOX_GFX_64, //hp bar red [8 pixels]
     HEALTHBOX_GFX_65, //hp bar frame end
-    HEALTHBOX_GFX_66, //status ball [full]
-    HEALTHBOX_GFX_67, //status ball [empty]
-    HEALTHBOX_GFX_68, //status ball [fainted]
-    HEALTHBOX_GFX_69, //status ball [statused]
-    HEALTHBOX_GFX_70, //status ball [unused extra]
+    HEALTHBOX_GFX_STATUS_BALL, // Full
+    HEALTHBOX_GFX_STATUS_BALL_EMPTY,
+    HEALTHBOX_GFX_STATUS_BALL_FAINTED,
+    HEALTHBOX_GFX_STATUS_BALL_STATUSED,
+    HEALTHBOX_GFX_STATUS_BALL_CAUGHT,
     HEALTHBOX_GFX_STATUS_PSN_BATTLER1, //status2 "PSN"
     HEALTHBOX_GFX_72,
     HEALTHBOX_GFX_73,
@@ -147,18 +152,9 @@ enum
     HEALTHBOX_GFX_STATUS_BRN_BATTLER3, //status4 "BRN"
     HEALTHBOX_GFX_114,
     HEALTHBOX_GFX_115,
-    HEALTHBOX_GFX_116, //unknown_D12FEC
-    HEALTHBOX_GFX_117, //unknown_D1300C
+    HEALTHBOX_GFX_FRAME_END,
+    HEALTHBOX_GFX_FRAME_END_BAR,
 };
-
-// strings
-extern const u8 gText_Slash[];
-extern const u8 gText_HighlightDarkGray[];
-extern const u8 gText_DynColor2[];
-extern const u8 gText_DynColor2Male[];
-extern const u8 gText_DynColor1Female[];
-
-// this file's functions
 
 static const u8 *GetHealthboxElementGfxPtr(u8 elementId);
 static u8* AddTextPrinterAndCreateWindowOnHealthbox(const u8 *str, u32 x, u32 y, u32 bgColor, u32 *windowId);
@@ -172,17 +168,17 @@ static void SafariTextIntoHealthboxObject(void *dest, u8 *windowTileData, u32 wi
 static void HpTextIntoHealthboxObject(void *dest, u8 *windowTileData, u32 windowWidth);
 static void FillHealthboxObject(void *dest, u32 arg1, u32 arg2);
 
-static void sub_8073E08(u8 taskId);
-static void sub_8073F98(u8 taskId);
-static void sub_8073E64(u8 taskId);
+static void Task_HidePartyStatusSummary_BattleStart_1(u8 taskId);
+static void Task_HidePartyStatusSummary_BattleStart_2(u8 taskId);
+static void Task_HidePartyStatusSummary_DuringBattle(u8 taskId);
 
 static void SpriteCB_HealthBoxOther(struct Sprite *sprite);
 static void SpriteCB_HealthBar(struct Sprite *sprite);
-static void sub_8074158(struct Sprite *sprite);
-static void sub_8074090(struct Sprite *sprite);
-static void SpriteCB_StatusSummaryBar(struct Sprite *sprite);
-static void SpriteCB_StatusSummaryBallsOnBattleStart(struct Sprite *sprite);
-static void SpriteCB_StatusSummaryBallsOnSwitchout(struct Sprite *sprite);
+static void SpriteCB_StatusSummaryBar_Enter(struct Sprite *sprite);
+static void SpriteCB_StatusSummaryBar_Exit(struct Sprite *sprite);
+static void SpriteCB_StatusSummaryBalls_Enter(struct Sprite *sprite);
+static void SpriteCB_StatusSummaryBalls_Exit(struct Sprite *sprite);
+static void SpriteCB_StatusSummaryBalls_OnSwitchout(struct Sprite *sprite);
 
 static void SpriteCb_MegaTrigger(struct Sprite *sprite);
 static void SpriteCb_MegaIndicator(struct Sprite *sprite);
@@ -196,8 +192,10 @@ static u8 CalcBarFilledPixels(s32 maxValue, s32 oldValue, s32 receivedValue, s32
 static void SpriteCb_AbilityPopUp(struct Sprite *sprite);
 static void Task_FreeAbilityPopUpGfx(u8 taskId);
 
-// const rom data
-static const struct OamData sUnknown_0832C138 =
+static void SpriteCB_LastUsedBall(struct Sprite *sprite);
+static void SpriteCB_LastUsedBallWin(struct Sprite *sprite);
+
+static const struct OamData sOamData_64x32 =
 {
     .y = 0,
     .affineMode = ST_OAM_AFFINE_OFF,
@@ -219,7 +217,7 @@ static const struct SpriteTemplate sHealthboxPlayerSpriteTemplates[2] =
     {
         .tileTag = TAG_HEALTHBOX_PLAYER1_TILE,
         .paletteTag = TAG_HEALTHBOX_PAL,
-        .oam = &sUnknown_0832C138,
+        .oam = &sOamData_64x32,
         .anims = gDummySpriteAnimTable,
         .images = NULL,
         .affineAnims = gDummySpriteAffineAnimTable,
@@ -228,7 +226,7 @@ static const struct SpriteTemplate sHealthboxPlayerSpriteTemplates[2] =
     {
         .tileTag = TAG_HEALTHBOX_PLAYER2_TILE,
         .paletteTag = TAG_HEALTHBOX_PAL,
-        .oam = &sUnknown_0832C138,
+        .oam = &sOamData_64x32,
         .anims = gDummySpriteAnimTable,
         .images = NULL,
         .affineAnims = gDummySpriteAffineAnimTable,
@@ -241,7 +239,7 @@ static const struct SpriteTemplate sHealthboxOpponentSpriteTemplates[2] =
     {
         .tileTag = TAG_HEALTHBOX_OPPONENT1_TILE,
         .paletteTag = TAG_HEALTHBOX_PAL,
-        .oam = &sUnknown_0832C138,
+        .oam = &sOamData_64x32,
         .anims = gDummySpriteAnimTable,
         .images = NULL,
         .affineAnims = gDummySpriteAffineAnimTable,
@@ -250,7 +248,7 @@ static const struct SpriteTemplate sHealthboxOpponentSpriteTemplates[2] =
     {
         .tileTag = TAG_HEALTHBOX_OPPONENT2_TILE,
         .paletteTag = TAG_HEALTHBOX_PAL,
-        .oam = &sUnknown_0832C138,
+        .oam = &sOamData_64x32,
         .anims = gDummySpriteAnimTable,
         .images = NULL,
         .affineAnims = gDummySpriteAffineAnimTable,
@@ -262,7 +260,7 @@ static const struct SpriteTemplate sHealthboxSafariSpriteTemplate =
 {
     .tileTag = TAG_HEALTHBOX_SAFARI_TILE,
     .paletteTag = TAG_HEALTHBOX_PAL,
-    .oam = &sUnknown_0832C138,
+    .oam = &sOamData_64x32,
     .anims = gDummySpriteAnimTable,
     .images = NULL,
     .affineAnims = gDummySpriteAffineAnimTable,
@@ -326,7 +324,7 @@ static const struct SpriteTemplate sHealthbarSpriteTemplates[MAX_BATTLERS_COUNT]
     }
 };
 
-static const struct Subsprite sUnknown_0832C258[] =
+static const struct Subsprite sHealthBar_Subsprites_Player[] =
 {
     {
         .x = DISPLAY_WIDTH,
@@ -346,7 +344,7 @@ static const struct Subsprite sUnknown_0832C258[] =
     }
 };
 
-static const struct Subsprite sUnknown_0832C260[] =
+static const struct Subsprite sHealthBar_Subsprites_Opponent[] =
 {
     {
         .x = DISPLAY_WIDTH,
@@ -374,16 +372,16 @@ static const struct Subsprite sUnknown_0832C260[] =
     }
 };
 
-static const struct SubspriteTable sUnknown_0832C28C[] =
+static const struct SubspriteTable sHealthBar_SubspriteTables[] =
 {
-    {ARRAY_COUNT(sUnknown_0832C258), sUnknown_0832C258},
-    {ARRAY_COUNT(sUnknown_0832C260), sUnknown_0832C260}
+    [B_SIDE_PLAYER]   = {ARRAY_COUNT(sHealthBar_Subsprites_Player), sHealthBar_Subsprites_Player},
+    [B_SIDE_OPPONENT] = {ARRAY_COUNT(sHealthBar_Subsprites_Opponent), sHealthBar_Subsprites_Opponent}
 };
 
-static const struct Subsprite sStatusSummaryBar_Subsprites_0[] =
+static const struct Subsprite sStatusSummaryBar_Subsprites_Enter[] =
 {
     {
-        .x = 160,
+        .x = 32 * 5,
         .y = 0,
         .shape = SPRITE_SHAPE(32x8),
         .size = SPRITE_SIZE(32x8),
@@ -391,7 +389,7 @@ static const struct Subsprite sStatusSummaryBar_Subsprites_0[] =
         .priority = 1
     },
     {
-        .x = 192,
+        .x = 32 * 6,
         .y = 0,
         .shape = SPRITE_SHAPE(32x8),
         .size = SPRITE_SIZE(32x8),
@@ -399,7 +397,7 @@ static const struct Subsprite sStatusSummaryBar_Subsprites_0[] =
         .priority = 1
     },
     {
-        .x = 224,
+        .x = 32 * 7,
         .y = 0,
         .shape = SPRITE_SHAPE(32x8),
         .size = SPRITE_SIZE(32x8),
@@ -416,10 +414,10 @@ static const struct Subsprite sStatusSummaryBar_Subsprites_0[] =
     }
 };
 
-static const struct Subsprite sUnknown_0832C2AC[] =
+static const struct Subsprite sStatusSummaryBar_Subsprites_Exit[] =
 {
     {
-        .x = 160,
+        .x = 32 * 5,
         .y = 0,
         .shape = SPRITE_SHAPE(32x8),
         .size = SPRITE_SIZE(32x8),
@@ -427,7 +425,7 @@ static const struct Subsprite sUnknown_0832C2AC[] =
         .priority = 1
     },
     {
-        .x = 192,
+        .x = 32 * 6,
         .y = 0,
         .shape = SPRITE_SHAPE(32x8),
         .size = SPRITE_SIZE(32x8),
@@ -435,7 +433,7 @@ static const struct Subsprite sUnknown_0832C2AC[] =
         .priority = 1
     },
     {
-        .x = 224,
+        .x = 32 * 7,
         .y = 0,
         .shape = SPRITE_SHAPE(32x8),
         .size = SPRITE_SIZE(32x8),
@@ -443,7 +441,7 @@ static const struct Subsprite sUnknown_0832C2AC[] =
         .priority = 1
     },
     {
-        .x = 0,
+        .x = 32 * 0,
         .y = 0,
         .shape = SPRITE_SHAPE(32x8),
         .size = SPRITE_SIZE(32x8),
@@ -451,7 +449,7 @@ static const struct Subsprite sUnknown_0832C2AC[] =
         .priority = 1
     },
     {
-        .x = 32,
+        .x = 32 * 1,
         .y = 0,
         .shape = SPRITE_SHAPE(32x8),
         .size = SPRITE_SIZE(32x8),
@@ -459,7 +457,7 @@ static const struct Subsprite sUnknown_0832C2AC[] =
         .priority = 1
     },
     {
-        .x = 64,
+        .x = 32 * 2,
         .y = 0,
         .shape = SPRITE_SHAPE(32x8),
         .size = SPRITE_SIZE(32x8),
@@ -468,14 +466,14 @@ static const struct Subsprite sUnknown_0832C2AC[] =
     }
 };
 
-static const struct SubspriteTable sStatusSummaryBar_SubspriteTable[] =
+static const struct SubspriteTable sStatusSummaryBar_SubspriteTable_Enter[] =
 {
-    {ARRAY_COUNT(sStatusSummaryBar_Subsprites_0), sStatusSummaryBar_Subsprites_0}
+    {ARRAY_COUNT(sStatusSummaryBar_Subsprites_Enter), sStatusSummaryBar_Subsprites_Enter}
 };
 
-static const struct SubspriteTable sUnknown_0832C2CC[] =
+static const struct SubspriteTable sStatusSummaryBar_SubspriteTable_Exit[] =
 {
-    {ARRAY_COUNT(sUnknown_0832C2AC), sUnknown_0832C2AC}
+    {ARRAY_COUNT(sStatusSummaryBar_Subsprites_Exit), sStatusSummaryBar_Subsprites_Exit}
 };
 
 static const struct CompressedSpriteSheet sStatusSummaryBarSpriteSheet =
@@ -495,7 +493,7 @@ static const struct SpritePalette sStatusSummaryBallsSpritePal =
 
 static const struct SpriteSheet sStatusSummaryBallsSpriteSheet =
 {
-    gBattleInterface_BallDisplayGfx, 0x80, TAG_STATUS_SUMMARY_BALLS_TILE
+    &gHealthboxElementsGfxTable[HEALTHBOX_GFX_STATUS_BALL], 0x80, TAG_STATUS_SUMMARY_BALLS_TILE
 };
 
 static const struct OamData sOamData_StatusSummaryBalls =
@@ -517,23 +515,23 @@ static const struct OamData sOamData_StatusSummaryBalls =
 
 static const struct SpriteTemplate sStatusSummaryBarSpriteTemplates[2] =
 {
-    {
+    { // Player
         .tileTag = TAG_STATUS_SUMMARY_BAR_TILE,
         .paletteTag = TAG_STATUS_SUMMARY_BAR_PAL,
-        .oam = &sUnknown_0832C138,
+        .oam = &sOamData_64x32,
         .anims = gDummySpriteAnimTable,
         .images = NULL,
         .affineAnims = gDummySpriteAffineAnimTable,
-        .callback = SpriteCB_StatusSummaryBar
+        .callback = SpriteCB_StatusSummaryBar_Enter
     },
-    {
+    { // Opponent
         .tileTag = TAG_STATUS_SUMMARY_BAR_TILE,
         .paletteTag = TAG_STATUS_SUMMARY_BAR_PAL,
-        .oam = &sUnknown_0832C138,
+        .oam = &sOamData_64x32,
         .anims = gDummySpriteAnimTable,
         .images = NULL,
         .affineAnims = gDummySpriteAffineAnimTable,
-        .callback = SpriteCB_StatusSummaryBar
+        .callback = SpriteCB_StatusSummaryBar_Enter
     }
 };
 
@@ -546,7 +544,7 @@ static const struct SpriteTemplate sStatusSummaryBallsSpriteTemplates[2] =
         .anims = gDummySpriteAnimTable,
         .images = NULL,
         .affineAnims = gDummySpriteAffineAnimTable,
-        .callback = SpriteCB_StatusSummaryBallsOnBattleStart
+        .callback = SpriteCB_StatusSummaryBalls_Enter
     },
     {
         .tileTag = TAG_STATUS_SUMMARY_BALLS_TILE,
@@ -555,25 +553,12 @@ static const struct SpriteTemplate sStatusSummaryBallsSpriteTemplates[2] =
         .anims = gDummySpriteAnimTable,
         .images = NULL,
         .affineAnims = gDummySpriteAffineAnimTable,
-        .callback = SpriteCB_StatusSummaryBallsOnBattleStart
+        .callback = SpriteCB_StatusSummaryBalls_Enter
     }
 };
 
-// possibly text
-static const u8 sUnknown_0832C3C4[] =
-{
-    0xfc, 0x01, 0x01, 0xfc, 0x02, 0x02, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00,
-};
-
-// possibly text
-static const u8 sUnknown_0832C3D8[] =
-{
-    0xfc, 0x01, 0x01, 0xfc, 0x02, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00,
-};
+static const u8 sEmptyWhiteText_GrayHighlight[] = __("{COLOR WHITE}{HIGHLIGHT DARK_GRAY}              ");
+static const u8 sEmptyWhiteText_TransparentHighlight[] = __("{COLOR WHITE}{HIGHLIGHT TRANSPARENT}              ");
 
 enum
 {
@@ -593,7 +578,15 @@ static const u16 sStatusIconColors[] =
     [PAL_STATUS_BRN] = RGB(28, 14, 10),
 };
 
-static const struct WindowTemplate sHealthboxWindowTemplate = {0, 0, 0, 8, 2, 0, 0}; // width = 8, height = 2
+static const struct WindowTemplate sHealthboxWindowTemplate = {
+    .bg = 0,
+    .tilemapLeft = 0,
+    .tilemapTop = 0,
+    .width = 8,
+    .height = 2,
+    .paletteNum = 0,
+    .baseBlock = 0
+};
 
 static const u8 sMegaTriggerGfx[] = INCBIN_U8("graphics/battle_interface/mega_trigger.4bpp");
 static const u16 sMegaTriggerPal[] = INCBIN_U16("graphics/battle_interface/mega_trigger.gbapal");
@@ -665,6 +658,28 @@ static const struct SpritePalette sSpritePalette_MegaIndicator =
     sMegaIndicatorPal, TAG_MEGA_INDICATOR_PAL
 };
 
+static const u8 sAlphaIndicatorGfx[] = INCBIN_U8("graphics/battle_interface/alpha_indicator.4bpp");
+static const u16 sAlphaIndicatorPal[] = INCBIN_U16("graphics/battle_interface/alpha_indicator.gbapal");
+static const u8 sOmegaIndicatorGfx[] = INCBIN_U8("graphics/battle_interface/omega_indicator.4bpp");
+static const u16 sOmegaIndicatorPal[] = INCBIN_U16("graphics/battle_interface/omega_indicator.gbapal");
+
+static const struct SpriteSheet sSpriteSheet_AlphaIndicator =
+{
+    sAlphaIndicatorGfx, sizeof(sAlphaIndicatorGfx), TAG_ALPHA_INDICATOR_TILE
+};
+static const struct SpritePalette sSpritePalette_AlphaIndicator =
+{
+    sAlphaIndicatorPal, TAG_ALPHA_INDICATOR_PAL
+};
+static const struct SpriteSheet sSpriteSheet_OmegaIndicator =
+{
+    sOmegaIndicatorGfx, sizeof(sOmegaIndicatorGfx), TAG_OMEGA_INDICATOR_TILE
+};
+static const struct SpritePalette sSpritePalette_OmegaIndicator =
+{
+    sOmegaIndicatorPal, TAG_OMEGA_INDICATOR_PAL
+};
+
 static const struct OamData sOamData_MegaIndicator =
 {
     .y = 0,
@@ -693,8 +708,27 @@ static const struct SpriteTemplate sSpriteTemplate_MegaIndicator =
     .callback = SpriteCb_MegaIndicator,
 };
 
+static const struct SpriteTemplate sSpriteTemplate_AlphaIndicator =
+{
+    .tileTag = TAG_ALPHA_INDICATOR_TILE,
+    .paletteTag = TAG_ALPHA_INDICATOR_PAL,
+    .oam = &sOamData_MegaIndicator,
+    .anims = gDummySpriteAnimTable,
+    .images = NULL,
+    .affineAnims = gDummySpriteAffineAnimTable,
+    .callback = SpriteCb_MegaIndicator,
+};
 
-// code
+static const struct SpriteTemplate sSpriteTemplate_OmegaIndicator =
+{
+    .tileTag = TAG_OMEGA_INDICATOR_TILE,
+    .paletteTag = TAG_OMEGA_INDICATOR_PAL,
+    .oam = &sOamData_MegaIndicator,
+    .anims = gDummySpriteAnimTable,
+    .images = NULL,
+    .affineAnims = gDummySpriteAffineAnimTable,
+    .callback = SpriteCb_MegaIndicator,
+};
 
 // Because the healthbox is too large to fit into one sprite, it is divided into two sprites.
 // healthboxLeft  or healthboxMain  is the left part that is used as the 'main' sprite.
@@ -721,6 +755,12 @@ u8 GetMegaIndicatorSpriteId(u32 healthboxSpriteId)
     if (spriteId >= MAX_SPRITES)
         return 0xFF;
     return gSprites[spriteId].hOther_IndicatorSpriteId;
+}
+
+static void InitLastUsedBallAssets(void)
+{
+    gBattleStruct->ballSpriteIds[0] = MAX_SPRITES;
+    gBattleStruct->ballSpriteIds[1] = MAX_SPRITES;
 }
 
 u8 CreateBattlerHealthboxSprites(u8 battlerId)
@@ -788,7 +828,7 @@ u8 CreateBattlerHealthboxSprites(u8 battlerId)
 
     healthbarSpriteId = CreateSpriteAtEnd(&sHealthbarSpriteTemplates[gBattlerPositions[battlerId]], 140, 60, 0);
     healthBarSpritePtr = &gSprites[healthbarSpriteId];
-    SetSubspriteTables(healthBarSpritePtr, &sUnknown_0832C28C[GetBattlerSide(battlerId)]);
+    SetSubspriteTables(healthBarSpritePtr, &sHealthBar_SubspriteTables[GetBattlerSide(battlerId)]);
     healthBarSpritePtr->subspriteMode = SUBSPRITES_IGNORE_PRIORITY;
     healthBarSpritePtr->oam.priority = 1;
 
@@ -805,12 +845,16 @@ u8 CreateBattlerHealthboxSprites(u8 battlerId)
     healthBarSpritePtr->hBar_Data6 = data6;
     healthBarSpritePtr->invisible = TRUE;
 
-    // Create mega indicator sprite if is a mega evolved mon.
-    if (gBattleStruct->mega.evolvedPartyIds[GetBattlerSide(battlerId)] & gBitTable[gBattlerPartyIndexes[battlerId]])
+    // Create mega indicator sprite if is a mega evolved or a primal reverted mon.
+    if (gBattleStruct->mega.evolvedPartyIds[GetBattlerSide(battlerId)] & gBitTable[gBattlerPartyIndexes[battlerId]]
+     || gBattleStruct->mega.primalRevertedPartyIds[GetBattlerSide(battlerId)] & gBitTable[gBattlerPartyIndexes[battlerId]])
     {
         megaIndicatorSpriteId = CreateMegaIndicatorSprite(battlerId, 0);
         gSprites[megaIndicatorSpriteId].invisible = TRUE;
     }
+
+    gBattleStruct->ballSpriteIds[0] = MAX_SPRITES;
+    gBattleStruct->ballSpriteIds[1] = MAX_SPRITES;
 
     return healthboxLeftSpriteId;
 }
@@ -850,22 +894,22 @@ static void SpriteCB_HealthBar(struct Sprite *sprite)
     switch (sprite->hBar_Data6)
     {
     case 0:
-        sprite->pos1.x = gSprites[healthboxSpriteId].pos1.x + 16;
-        sprite->pos1.y = gSprites[healthboxSpriteId].pos1.y;
+        sprite->x = gSprites[healthboxSpriteId].x + 16;
+        sprite->y = gSprites[healthboxSpriteId].y;
         break;
     case 1:
-        sprite->pos1.x = gSprites[healthboxSpriteId].pos1.x + 16;
-        sprite->pos1.y = gSprites[healthboxSpriteId].pos1.y;
+        sprite->x = gSprites[healthboxSpriteId].x + 16;
+        sprite->y = gSprites[healthboxSpriteId].y;
         break;
     case 2:
     default:
-        sprite->pos1.x = gSprites[healthboxSpriteId].pos1.x + 8;
-        sprite->pos1.y = gSprites[healthboxSpriteId].pos1.y;
+        sprite->x = gSprites[healthboxSpriteId].x + 8;
+        sprite->y = gSprites[healthboxSpriteId].y;
         break;
     }
 
-    sprite->pos2.x = gSprites[healthboxSpriteId].pos2.x;
-    sprite->pos2.y = gSprites[healthboxSpriteId].pos2.y;
+    sprite->x2 = gSprites[healthboxSpriteId].x2;
+    sprite->y2 = gSprites[healthboxSpriteId].y2;
 }
 
 static void SpriteCB_HealthBoxOther(struct Sprite *sprite)
@@ -873,16 +917,16 @@ static void SpriteCB_HealthBoxOther(struct Sprite *sprite)
     u8 healthboxMainSpriteId = sprite->hOther_HealthBoxSpriteId;
     u8 megaSpriteId = sprite->hOther_IndicatorSpriteId;
 
-    sprite->pos1.x = gSprites[healthboxMainSpriteId].pos1.x + 64;
-    sprite->pos1.y = gSprites[healthboxMainSpriteId].pos1.y;
+    sprite->x = gSprites[healthboxMainSpriteId].x + 64;
+    sprite->y = gSprites[healthboxMainSpriteId].y;
 
-    sprite->pos2.x = gSprites[healthboxMainSpriteId].pos2.x;
-    sprite->pos2.y = gSprites[healthboxMainSpriteId].pos2.y;
+    sprite->x2 = gSprites[healthboxMainSpriteId].x2;
+    sprite->y2 = gSprites[healthboxMainSpriteId].y2;
 
     if (megaSpriteId != 0xFF)
     {
-        gSprites[megaSpriteId].pos2.x = sprite->pos2.x;
-        gSprites[megaSpriteId].pos2.y = sprite->pos2.y;
+        gSprites[megaSpriteId].x2 = sprite->x2;
+        gSprites[megaSpriteId].y2 = sprite->y2;
     }
 }
 
@@ -910,7 +954,8 @@ void SetHealthboxSpriteVisible(u8 healthboxSpriteId)
     gSprites[healthboxSpriteId].invisible = FALSE;
     gSprites[gSprites[healthboxSpriteId].hMain_HealthBarSpriteId].invisible = FALSE;
     gSprites[gSprites[healthboxSpriteId].oam.affineParam].invisible = FALSE;
-    if (gBattleStruct->mega.evolvedPartyIds[GetBattlerSide(battlerId)] & gBitTable[gBattlerPartyIndexes[battlerId]])
+    if (gBattleStruct->mega.evolvedPartyIds[GetBattlerSide(battlerId)] & gBitTable[gBattlerPartyIndexes[battlerId]]
+     || gBattleStruct->mega.primalRevertedPartyIds[GetBattlerSide(battlerId)] & gBitTable[gBattlerPartyIndexes[battlerId]])
     {
         u8 spriteId = GetMegaIndicatorSpriteId(healthboxSpriteId);
         if (spriteId != 0xFF)
@@ -922,8 +967,8 @@ void SetHealthboxSpriteVisible(u8 healthboxSpriteId)
 
 static void UpdateSpritePos(u8 spriteId, s16 x, s16 y)
 {
-    gSprites[spriteId].pos1.x = x;
-    gSprites[spriteId].pos1.y = y;
+    gSprites[spriteId].x = x;
+    gSprites[spriteId].y = y;
 }
 
 void DestoryHealthboxSprite(u8 healthboxSpriteId)
@@ -978,7 +1023,7 @@ void UpdateOamPriorityInAllHealthboxes(u8 priority, bool32 hideHPBoxes)
         if (indicatorSpriteId != 0xFF)
             gSprites[indicatorSpriteId].oam.priority = priority;
 
-        #if B_HIDE_HEALTHBOXES_DURING_ANIMS
+        #if B_HIDE_HEALTHBOX_IN_ANIMS
         if (hideHPBoxes && IsBattlerAlive(i))
             TryToggleHealboxVisibility(priority, healthboxLeftSpriteId, healthboxRightSpriteId, healthbarSpriteId, indicatorSpriteId);
         #endif
@@ -1033,10 +1078,12 @@ static void UpdateLvlInHealthbox(u8 healthboxSpriteId, u8 lvl)
     u8 *objVram;
     u8 battler = gSprites[healthboxSpriteId].hMain_Battler;
 
-    // Don't print Lv char if mon is mega evolved.
-    if (gBattleStruct->mega.evolvedPartyIds[GetBattlerSide(battler)] & gBitTable[gBattlerPartyIndexes[battler]])
+    // Don't print Lv char if mon is mega evolved or primal reverted.
+    if (gBattleStruct->mega.evolvedPartyIds[GetBattlerSide(battler)] & gBitTable[gBattlerPartyIndexes[battler]]
+     || gBattleStruct->mega.primalRevertedPartyIds[GetBattlerSide(battler)] & gBitTable[gBattlerPartyIndexes[battler]])
     {
         objVram = ConvertIntToDecimalStringN(text, lvl, STR_CONV_MODE_LEFT_ALIGN, 3);
+        xPos = 5 * (3 - (objVram - (text + 2))) - 1;
     }
     else
     {
@@ -1044,6 +1091,7 @@ static void UpdateLvlInHealthbox(u8 healthboxSpriteId, u8 lvl)
         text[1] = CHAR_LV_2;
 
         objVram = ConvertIntToDecimalStringN(text + 2, lvl, STR_CONV_MODE_LEFT_ALIGN, 3);
+        xPos = 5 * (3 - (objVram - (text + 2)));
     }
 
     xPos = 5 * (3 - (objVram - (text + 2)));
@@ -1105,7 +1153,7 @@ void UpdateHpTextInHealthbox(u8 healthboxSpriteId, s16 value, u8 maxOrCurrent)
     {
         u8 battler;
 
-        memcpy(text, sUnknown_0832C3C4, sizeof(sUnknown_0832C3C4));
+        memcpy(text, sEmptyWhiteText_GrayHighlight, sizeof(sEmptyWhiteText_GrayHighlight));
         battler = gSprites[healthboxSpriteId].hMain_Battler;
         if (IsDoubleBattle() == TRUE)
         {
@@ -1132,7 +1180,7 @@ void UpdateHpTextInHealthbox(u8 healthboxSpriteId, s16 value, u8 maxOrCurrent)
             }
 
             ConvertIntToDecimalStringN(text + 6, value, STR_CONV_MODE_LEADING_ZEROS, 3);
-            RenderTextFont9(gMonSpritesGfxPtr->barFontGfx, 9, text);
+            RenderTextHandleBold(gMonSpritesGfxPtr->barFontGfx, FONT_BOLD, text);
 
             for (i = 0; i < 3; i++)
             {
@@ -1164,7 +1212,7 @@ static void UpdateHpTextInHealthboxInDoubles(u8 healthboxSpriteId, s16 value, u8
                 windowTileData = AddTextPrinterAndCreateWindowOnHealthbox(text, 0, 5, 0, &windowId);
                 HpTextIntoHealthboxObject((void*)(OBJ_VRAM0) + spriteTileNum + 0xC0, windowTileData, 2);
                 RemoveWindowOnHealthbox(windowId);
-                CpuCopy32(GetHealthboxElementGfxPtr(HEALTHBOX_GFX_116),
+                CpuCopy32(GetHealthboxElementGfxPtr(HEALTHBOX_GFX_FRAME_END),
                           (void*)(OBJ_VRAM0 + 0x680) + (gSprites[healthboxSpriteId].oam.tileNum * TILE_SIZE_4BPP),
                            0x20);
             }
@@ -1184,7 +1232,7 @@ static void UpdateHpTextInHealthboxInDoubles(u8 healthboxSpriteId, s16 value, u8
     {
         u8 battlerId;
 
-        memcpy(text, sUnknown_0832C3D8, sizeof(sUnknown_0832C3D8));
+        memcpy(text, sEmptyWhiteText_TransparentHighlight, sizeof(sEmptyWhiteText_TransparentHighlight));
         battlerId = gSprites[healthboxSpriteId].hMain_Battler;
 
         if (gBattleSpritesDataPtr->battlerData[battlerId].hpNumbersNoBars) // don't print text if only bars are visible
@@ -1201,7 +1249,7 @@ static void UpdateHpTextInHealthboxInDoubles(u8 healthboxSpriteId, s16 value, u8
             txtPtr = ConvertIntToDecimalStringN(text + 6, value, STR_CONV_MODE_RIGHT_ALIGN, 3);
             if (!maxOrCurrent)
                 StringCopy(txtPtr, gText_Slash);
-            RenderTextFont9(gMonSpritesGfxPtr->barFontGfx, 9, text);
+            RenderTextHandleBold(gMonSpritesGfxPtr->barFontGfx, FONT_BOLD, text);
 
             for (i = var; i < var + 3; i++)
             {
@@ -1230,7 +1278,7 @@ static void UpdateHpTextInHealthboxInDoubles(u8 healthboxSpriteId, s16 value, u8
             {
                 if (GetBattlerSide(battlerId) == B_SIDE_PLAYER) // Impossible to reach part, because the battlerId is from the opponent's side.
                 {
-                    CpuCopy32(GetHealthboxElementGfxPtr(HEALTHBOX_GFX_116),
+                    CpuCopy32(GetHealthboxElementGfxPtr(HEALTHBOX_GFX_FRAME_END),
                           (void*)(OBJ_VRAM0) + ((gSprites[healthboxSpriteId].oam.tileNum + 52) * TILE_SIZE_4BPP),
                            0x20);
                 }
@@ -1247,12 +1295,12 @@ static void PrintSafariMonInfo(u8 healthboxSpriteId, struct Pokemon *mon)
     u8 *barFontGfx;
     u8 i, var, nature, healthBarSpriteId;
 
-    memcpy(text, sUnknown_0832C3C4, sizeof(sUnknown_0832C3C4));
+    memcpy(text, sEmptyWhiteText_GrayHighlight, sizeof(sEmptyWhiteText_GrayHighlight));
     barFontGfx = &gMonSpritesGfxPtr->barFontGfx[0x520 + (GetBattlerPosition(gSprites[healthboxSpriteId].hMain_Battler) * 384)];
     var = 5;
     nature = GetNature(mon);
-    StringCopy(text + 6, gNatureNamePointers[nature]);
-    RenderTextFont9(barFontGfx, 9, text);
+    StringCopy(&text[6], gNatureNamePointers[nature]);
+    RenderTextHandleBold(barFontGfx, FONT_BOLD, text);
 
     for (j = 6, i = 0; i < var; i++, j++)
     {
@@ -1280,11 +1328,11 @@ static void PrintSafariMonInfo(u8 healthboxSpriteId, struct Pokemon *mon)
     }
 
     healthBarSpriteId = gSprites[healthboxSpriteId].hMain_HealthBarSpriteId;
-    ConvertIntToDecimalStringN(text + 6, gBattleStruct->safariCatchFactor, STR_CONV_MODE_RIGHT_ALIGN, 2);
-    ConvertIntToDecimalStringN(text + 9, gBattleStruct->safariEscapeFactor, STR_CONV_MODE_RIGHT_ALIGN, 2);
+    ConvertIntToDecimalStringN(&text[6], gBattleStruct->safariCatchFactor, STR_CONV_MODE_RIGHT_ALIGN, 2);
+    ConvertIntToDecimalStringN(&text[9], gBattleStruct->safariEscapeFactor, STR_CONV_MODE_RIGHT_ALIGN, 2);
     text[5] = CHAR_SPACE;
     text[8] = CHAR_SLASH;
-    RenderTextFont9(gMonSpritesGfxPtr->barFontGfx, 9, text);
+    RenderTextHandleBold(gMonSpritesGfxPtr->barFontGfx, FONT_BOLD, text);
 
     j = healthBarSpriteId; // Needed to match for some reason.
     for (j = 0; j < 5; j++)
@@ -1338,7 +1386,7 @@ void SwapHpBarsWithHpText(void)
                 {
                     UpdateStatusIconInHealthbox(gHealthboxSpriteIds[i]);
                     UpdateHealthboxAttribute(gHealthboxSpriteIds[i], &gPlayerParty[gBattlerPartyIndexes[i]], HEALTHBOX_HEALTH_BAR);
-                    CpuCopy32(GetHealthboxElementGfxPtr(HEALTHBOX_GFX_117), (void*)(OBJ_VRAM0 + 0x680 + gSprites[gHealthboxSpriteIds[i]].oam.tileNum * TILE_SIZE_4BPP), 32);
+                    CpuCopy32(GetHealthboxElementGfxPtr(HEALTHBOX_GFX_FRAME_END_BAR), (void*)(OBJ_VRAM0 + 0x680 + gSprites[gHealthboxSpriteIds[i]].oam.tileNum * TILE_SIZE_4BPP), 32);
                 }
             }
             else
@@ -1400,12 +1448,12 @@ void CreateMegaTriggerSprite(u8 battlerId, u8 palId)
     {
         if (gBattleTypeFlags & BATTLE_TYPE_DOUBLE)
             gBattleStruct->mega.triggerSpriteId = CreateSprite(&sSpriteTemplate_MegaTrigger,
-                                                             gSprites[gHealthboxSpriteIds[battlerId]].pos1.x - DOUBLES_MEGA_TRIGGER_POS_X_SLIDE,
-                                                             gSprites[gHealthboxSpriteIds[battlerId]].pos1.y - DOUBLES_MEGA_TRIGGER_POS_Y_DIFF, 0);
+                                                             gSprites[gHealthboxSpriteIds[battlerId]].x - DOUBLES_MEGA_TRIGGER_POS_X_SLIDE,
+                                                             gSprites[gHealthboxSpriteIds[battlerId]].y - DOUBLES_MEGA_TRIGGER_POS_Y_DIFF, 0);
         else
             gBattleStruct->mega.triggerSpriteId = CreateSprite(&sSpriteTemplate_MegaTrigger,
-                                                             gSprites[gHealthboxSpriteIds[battlerId]].pos1.x - SINGLES_MEGA_TRIGGER_POS_X_SLIDE,
-                                                             gSprites[gHealthboxSpriteIds[battlerId]].pos1.y - SINGLES_MEGA_TRIGGER_POS_Y_DIFF, 0);
+                                                             gSprites[gHealthboxSpriteIds[battlerId]].x - SINGLES_MEGA_TRIGGER_POS_X_SLIDE,
+                                                             gSprites[gHealthboxSpriteIds[battlerId]].y - SINGLES_MEGA_TRIGGER_POS_Y_DIFF, 0);
     }
     gSprites[gBattleStruct->mega.triggerSpriteId].tBattler = battlerId;
     gSprites[gBattleStruct->mega.triggerSpriteId].tHide = FALSE;
@@ -1435,31 +1483,31 @@ static void SpriteCb_MegaTrigger(struct Sprite *sprite)
 
     if (sprite->tHide)
     {
-        if (sprite->pos1.x != gSprites[gHealthboxSpriteIds[sprite->tBattler]].pos1.x - xSlide)
-            sprite->pos1.x++;
+        if (sprite->x != gSprites[gHealthboxSpriteIds[sprite->tBattler]].x - xSlide)
+            sprite->x++;
 
-        if (sprite->pos1.x >= gSprites[gHealthboxSpriteIds[sprite->tBattler]].pos1.x - xPriority)
+        if (sprite->x >= gSprites[gHealthboxSpriteIds[sprite->tBattler]].x - xPriority)
             sprite->oam.priority = 2;
         else
             sprite->oam.priority = 1;
 
-        sprite->pos1.y = gSprites[gHealthboxSpriteIds[sprite->tBattler]].pos1.y - yDiff;
-        sprite->pos2.y = gSprites[gHealthboxSpriteIds[sprite->tBattler]].pos2.y - yDiff;
-        if (sprite->pos1.x == gSprites[gHealthboxSpriteIds[sprite->tBattler]].pos1.x - xSlide)
+        sprite->y = gSprites[gHealthboxSpriteIds[sprite->tBattler]].y - yDiff;
+        sprite->y2 = gSprites[gHealthboxSpriteIds[sprite->tBattler]].y2 - yDiff;
+        if (sprite->x == gSprites[gHealthboxSpriteIds[sprite->tBattler]].x - xSlide)
             DestroyMegaTriggerSprite();
     }
     else
     {
-        if (sprite->pos1.x != gSprites[gHealthboxSpriteIds[sprite->tBattler]].pos1.x - xOptimal)
-            sprite->pos1.x--;
+        if (sprite->x != gSprites[gHealthboxSpriteIds[sprite->tBattler]].x - xOptimal)
+            sprite->x--;
 
-        if (sprite->pos1.x >= gSprites[gHealthboxSpriteIds[sprite->tBattler]].pos1.x - xPriority)
+        if (sprite->x >= gSprites[gHealthboxSpriteIds[sprite->tBattler]].x - xPriority)
             sprite->oam.priority = 2;
         else
             sprite->oam.priority = 1;
 
-        sprite->pos1.y = gSprites[gHealthboxSpriteIds[sprite->tBattler]].pos1.y - yDiff;
-        sprite->pos2.y = gSprites[gHealthboxSpriteIds[sprite->tBattler]].pos2.y - yDiff;
+        sprite->y = gSprites[gHealthboxSpriteIds[sprite->tBattler]].y - yDiff;
+        sprite->y2 = gSprites[gHealthboxSpriteIds[sprite->tBattler]].y2 - yDiff;
     }
 }
 
@@ -1491,18 +1539,12 @@ void DestroyMegaTriggerSprite(void)
     gBattleStruct->mega.triggerSpriteId = 0xFF;
 }
 
-static const s8 sIndicatorPosSingles[][2] =
+static const s8 sIndicatorPositions[][2] =
 {
-    [B_POSITION_PLAYER_LEFT] = {53, -8},
-    [B_POSITION_OPPONENT_LEFT] = {45, -8},
-};
-
-static const s8 sIndicatorPosDoubles[][2] =
-{
-    [B_POSITION_PLAYER_LEFT] = {53, -8},
-    [B_POSITION_OPPONENT_LEFT] = {45, -8},
-    [B_POSITION_PLAYER_RIGHT] = {53, -8},
-    [B_POSITION_OPPONENT_RIGHT] = {45, -8},
+    [B_POSITION_PLAYER_LEFT] = {52, -9},
+    [B_POSITION_OPPONENT_LEFT] = {44, -9},
+    [B_POSITION_PLAYER_RIGHT] = {52, -9},
+    [B_POSITION_OPPONENT_RIGHT] = {44, -9},
 };
 
 u32 CreateMegaIndicatorSprite(u32 battlerId, u32 which)
@@ -1510,24 +1552,49 @@ u32 CreateMegaIndicatorSprite(u32 battlerId, u32 which)
     u32 spriteId, position;
     s16 x, y;
 
-    LoadSpritePalette(&sSpritePalette_MegaIndicator);
-    LoadSpriteSheet(&sSpriteSheet_MegaIndicator);
+    if (gBattleStruct->mega.evolvedPartyIds[GetBattlerSide(battlerId)] & gBitTable[gBattlerPartyIndexes[battlerId]])
+    {
+        LoadSpritePalette(&sSpritePalette_MegaIndicator);
+        LoadSpriteSheet(&sSpriteSheet_MegaIndicator);
+    }
+    else if (gBattleStruct->mega.primalRevertedPartyIds[GetBattlerSide(battlerId)] & gBitTable[gBattlerPartyIndexes[battlerId]])
+    {
+        if (GET_BASE_SPECIES_ID(gBattleMons[battlerId].species) == SPECIES_GROUDON)
+        {
+            LoadSpritePalette(&sSpritePalette_OmegaIndicator);
+            LoadSpriteSheet(&sSpriteSheet_OmegaIndicator);
+        }
+        else if (GET_BASE_SPECIES_ID(gBattleMons[battlerId].species) == SPECIES_KYOGRE)
+        {
+            LoadSpritePalette(&sSpritePalette_AlphaIndicator);
+            LoadSpriteSheet(&sSpriteSheet_AlphaIndicator);
+        }
+    }
 
     position = GetBattlerPosition(battlerId);
     GetBattlerHealthboxCoords(battlerId, &x, &y);
-    if (gBattleTypeFlags & BATTLE_TYPE_DOUBLE)
-    {
-        x += sIndicatorPosDoubles[position][0];
-        y += sIndicatorPosDoubles[position][1];
-    }
-    else
-    {
-        x += sIndicatorPosSingles[position][0];
-        y += sIndicatorPosSingles[position][1];
-    }
-    spriteId = CreateSpriteAtEnd(&sSpriteTemplate_MegaIndicator, x, y, 0);
-    gSprites[gSprites[gHealthboxSpriteIds[battlerId]].oam.affineParam].hOther_IndicatorSpriteId = spriteId;
 
+    x += sIndicatorPositions[position][0];
+    y += sIndicatorPositions[position][1];
+
+    if (gBattleMons[battlerId].level >= 100)
+        x -= 4;
+    else if (gBattleMons[battlerId].level < 10)
+        x += 5;
+
+    if (gBattleStruct->mega.evolvedPartyIds[GetBattlerSide(battlerId)] & gBitTable[gBattlerPartyIndexes[battlerId]])
+    {
+        spriteId = CreateSpriteAtEnd(&sSpriteTemplate_MegaIndicator, x, y, 0);
+    }
+    else if (gBattleStruct->mega.primalRevertedPartyIds[GetBattlerSide(battlerId)] & gBitTable[gBattlerPartyIndexes[battlerId]])
+    {
+        if (GET_BASE_SPECIES_ID(gBattleMons[battlerId].species) == SPECIES_GROUDON)
+            spriteId = CreateSpriteAtEnd(&sSpriteTemplate_OmegaIndicator, x, y, 0);
+        else if (GET_BASE_SPECIES_ID(gBattleMons[battlerId].species) == SPECIES_KYOGRE)
+            spriteId = CreateSpriteAtEnd(&sSpriteTemplate_AlphaIndicator, x, y, 0);
+    }
+
+    gSprites[gSprites[gHealthboxSpriteIds[battlerId]].oam.affineParam].hOther_IndicatorSpriteId = spriteId;
     gSprites[spriteId].tBattler = battlerId;
     return spriteId;
 }
@@ -1568,7 +1635,7 @@ static void SpriteCb_MegaIndicator(struct Sprite *sprite)
 #define tSummaryBarSpriteId     data[1]
 #define tBallIconSpriteId(n)    data[3 + n]
 #define tIsBattleStart          data[10]
-#define tData15                 data[15]
+#define tBlend                  data[15]
 
 u8 CreatePartyStatusSummarySprites(u8 battlerId, struct HpAndStatus *partyInfo, u8 arg2, bool8 isBattleStart)
 {
@@ -1615,18 +1682,18 @@ u8 CreatePartyStatusSummarySprites(u8 battlerId, struct HpAndStatus *partyInfo, 
     LoadSpritePalette(&sStatusSummaryBallsSpritePal);
 
     summaryBarSpriteId = CreateSprite(&sStatusSummaryBarSpriteTemplates[isOpponent], bar_X, bar_Y, 10);
-    SetSubspriteTables(&gSprites[summaryBarSpriteId], sStatusSummaryBar_SubspriteTable);
-    gSprites[summaryBarSpriteId].pos2.x = bar_pos2_X;
+    SetSubspriteTables(&gSprites[summaryBarSpriteId], sStatusSummaryBar_SubspriteTable_Enter);
+    gSprites[summaryBarSpriteId].x2 = bar_pos2_X;
     gSprites[summaryBarSpriteId].data[0] = bar_data0;
 
     if (isOpponent)
     {
-        gSprites[summaryBarSpriteId].pos1.x -= 96;
+        gSprites[summaryBarSpriteId].x -= 96;
         gSprites[summaryBarSpriteId].oam.matrixNum = ST_OAM_HFLIP;
     }
     else
     {
-        gSprites[summaryBarSpriteId].pos1.x += 96;
+        gSprites[summaryBarSpriteId].x += 96;
     }
 
     for (i = 0; i < PARTY_SIZE; i++)
@@ -1634,27 +1701,27 @@ u8 CreatePartyStatusSummarySprites(u8 battlerId, struct HpAndStatus *partyInfo, 
         ballIconSpritesIds[i] = CreateSpriteAtEnd(&sStatusSummaryBallsSpriteTemplates[isOpponent], bar_X, bar_Y - 4, 9);
 
         if (!isBattleStart)
-            gSprites[ballIconSpritesIds[i]].callback = SpriteCB_StatusSummaryBallsOnSwitchout;
+            gSprites[ballIconSpritesIds[i]].callback = SpriteCB_StatusSummaryBalls_OnSwitchout;
 
         if (!isOpponent)
         {
-            gSprites[ballIconSpritesIds[i]].pos2.x = 0;
-            gSprites[ballIconSpritesIds[i]].pos2.y = 0;
+            gSprites[ballIconSpritesIds[i]].x2 = 0;
+            gSprites[ballIconSpritesIds[i]].y2 = 0;
         }
 
         gSprites[ballIconSpritesIds[i]].data[0] = summaryBarSpriteId;
 
         if (!isOpponent)
         {
-            gSprites[ballIconSpritesIds[i]].pos1.x += 10 * i + 24;
+            gSprites[ballIconSpritesIds[i]].x += 10 * i + 24;
             gSprites[ballIconSpritesIds[i]].data[1] = i * 7 + 10;
-            gSprites[ballIconSpritesIds[i]].pos2.x = 120;
+            gSprites[ballIconSpritesIds[i]].x2 = 120;
         }
         else
         {
-            gSprites[ballIconSpritesIds[i]].pos1.x -= 10 * (5 - i) + 24;
+            gSprites[ballIconSpritesIds[i]].x -= 10 * (5 - i) + 24;
             gSprites[ballIconSpritesIds[i]].data[1] = (6 - i) * 7 + 10;
-            gSprites[ballIconSpritesIds[i]].pos2.x = -120;
+            gSprites[ballIconSpritesIds[i]].x2 = -120;
         }
 
         gSprites[ballIconSpritesIds[i]].data[2] = isOpponent;
@@ -1666,42 +1733,49 @@ u8 CreatePartyStatusSummarySprites(u8 battlerId, struct HpAndStatus *partyInfo, 
         {
             for (i = 0; i < PARTY_SIZE; i++)
             {
-                if (partyInfo[i].hp == 0xFFFF) // empty slot or an egg
+                if (partyInfo[i].hp == HP_EMPTY_SLOT)
                 {
+                    // empty slot or an egg
                     gSprites[ballIconSpritesIds[i]].oam.tileNum += 1;
                     gSprites[ballIconSpritesIds[i]].data[7] = 1;
                 }
-                else if (partyInfo[i].hp == 0) // fainted mon
+                else if (partyInfo[i].hp == 0)
                 {
+                    // fainted mon
                     gSprites[ballIconSpritesIds[i]].oam.tileNum += 3;
                 }
-                else if (partyInfo[i].status != 0) // mon with major status
+                else if (partyInfo[i].status != 0)
                 {
+                    // mon with major status
                     gSprites[ballIconSpritesIds[i]].oam.tileNum += 2;
                 }
             }
         }
         else
         {
-            for (i = 0, var = 5, j = 0; j < PARTY_SIZE; j++)
+            for (i = 0, var = PARTY_SIZE - 1, j = 0; j < PARTY_SIZE; j++)
             {
-                if (partyInfo[j].hp == 0xFFFF) // empty slot or an egg
+                if (partyInfo[j].hp == HP_EMPTY_SLOT)
                 {
+                     // empty slot or an egg
                     gSprites[ballIconSpritesIds[var]].oam.tileNum += 1;
                     gSprites[ballIconSpritesIds[var]].data[7] = 1;
                     var--;
                     continue;
                 }
-                else if (partyInfo[j].hp == 0) // fainted mon
+                else if (partyInfo[j].hp == 0)
                 {
+                    // fainted mon
                     gSprites[ballIconSpritesIds[i]].oam.tileNum += 3;
                 }
                 else if (gBattleTypeFlags & BATTLE_TYPE_ARENA && gBattleStruct->arenaLostPlayerMons & gBitTable[j])
                 {
+                    // fainted arena mon
                     gSprites[ballIconSpritesIds[i]].oam.tileNum += 3;
                 }
-                else if (partyInfo[j].status != 0) // mon with major status
+                else if (partyInfo[j].status != 0)
                 {
+                    // mon with primary status
                     gSprites[ballIconSpritesIds[i]].oam.tileNum += 2;
                 }
                 i++;
@@ -1712,19 +1786,22 @@ u8 CreatePartyStatusSummarySprites(u8 battlerId, struct HpAndStatus *partyInfo, 
     {
         if (gBattleTypeFlags & (BATTLE_TYPE_MULTI | BATTLE_TYPE_TWO_OPPONENTS))
         {
-            for (var = 5, i = 0; i < PARTY_SIZE; i++)
+            for (var = PARTY_SIZE - 1, i = 0; i < PARTY_SIZE; i++)
             {
-                if (partyInfo[i].hp == 0xFFFF) // empty slot or an egg
+                if (partyInfo[i].hp == HP_EMPTY_SLOT)
                 {
+                    // empty slot or an egg
                     gSprites[ballIconSpritesIds[var]].oam.tileNum += 1;
                     gSprites[ballIconSpritesIds[var]].data[7] = 1;
                 }
-                else if (partyInfo[i].hp == 0) // fainted mon
+                else if (partyInfo[i].hp == 0)
                 {
+                    // fainted mon
                     gSprites[ballIconSpritesIds[var]].oam.tileNum += 3;
                 }
-                else if (partyInfo[i].status != 0) // mon with major status
+                else if (partyInfo[i].status != 0)
                 {
+                    // mon with primary status
                     gSprites[ballIconSpritesIds[var]].oam.tileNum += 2;
                 }
                 var--;
@@ -1734,24 +1811,28 @@ u8 CreatePartyStatusSummarySprites(u8 battlerId, struct HpAndStatus *partyInfo, 
         {
             for (var = 0, i = 0, j = 0; j < PARTY_SIZE; j++)
             {
-                if (partyInfo[j].hp == 0xFFFF) // empty slot or an egg
+                if (partyInfo[j].hp == HP_EMPTY_SLOT)
                 {
+                    // empty slot or an egg
                     gSprites[ballIconSpritesIds[i]].oam.tileNum += 1;
                     gSprites[ballIconSpritesIds[i]].data[7] = 1;
                     i++;
                     continue;
                 }
-                else if (partyInfo[j].hp == 0) // fainted mon
+                else if (partyInfo[j].hp == 0)
                 {
-                    gSprites[ballIconSpritesIds[5 - var]].oam.tileNum += 3;
+                     // fainted mon
+                    gSprites[ballIconSpritesIds[PARTY_SIZE - 1 - var]].oam.tileNum += 3;
                 }
-                else if (gBattleTypeFlags & BATTLE_TYPE_ARENA && gBattleStruct->arenaLostOpponentMons & gBitTable[j]) // hmm...?
+                else if (gBattleTypeFlags & BATTLE_TYPE_ARENA && gBattleStruct->arenaLostOpponentMons & gBitTable[j])
                 {
-                    gSprites[ballIconSpritesIds[5 - var]].oam.tileNum += 3;
+                     // fainted arena mon
+                    gSprites[ballIconSpritesIds[PARTY_SIZE - 1 - var]].oam.tileNum += 3;
                 }
-                else if (partyInfo[j].status != 0) // mon with major status
+                else if (partyInfo[j].status != 0)
                 {
-                    gSprites[ballIconSpritesIds[5 - var]].oam.tileNum += 2;
+                     // mon with primary status
+                    gSprites[ballIconSpritesIds[PARTY_SIZE - 1 - var]].oam.tileNum += 2;
                 }
                 var++;
             }
@@ -1776,6 +1857,7 @@ u8 CreatePartyStatusSummarySprites(u8 battlerId, struct HpAndStatus *partyInfo, 
     return taskId;
 }
 
+// Slide the party summary tray back offscreen
 void Task_HidePartyStatusSummary(u8 taskId)
 {
     u8 ballIconSpriteIds[PARTY_SIZE];
@@ -1794,7 +1876,7 @@ void Task_HidePartyStatusSummary(u8 taskId)
     SetGpuReg(REG_OFFSET_BLDCNT, BLDCNT_TGT2_ALL | BLDCNT_EFFECT_BLEND);
     SetGpuReg(REG_OFFSET_BLDALPHA, BLDALPHA_BLEND(16, 0));
 
-    gTasks[taskId].tData15 = 16;
+    gTasks[taskId].tBlend = 16;
 
     for (i = 0; i < PARTY_SIZE; i++)
         gSprites[ballIconSpriteIds[i]].oam.objMode = ST_OAM_OBJ_BLEND;
@@ -1807,51 +1889,51 @@ void Task_HidePartyStatusSummary(u8 taskId)
         {
             if (GetBattlerSide(battlerId) != B_SIDE_PLAYER)
             {
-                gSprites[ballIconSpriteIds[5 - i]].data[1] = 7 * i;
-                gSprites[ballIconSpriteIds[5 - i]].data[3] = 0;
-                gSprites[ballIconSpriteIds[5 - i]].data[4] = 0;
-                gSprites[ballIconSpriteIds[5 - i]].callback = sub_8074158;
+                gSprites[ballIconSpriteIds[PARTY_SIZE - 1 - i]].data[1] = 7 * i;
+                gSprites[ballIconSpriteIds[PARTY_SIZE - 1 - i]].data[3] = 0;
+                gSprites[ballIconSpriteIds[PARTY_SIZE - 1 - i]].data[4] = 0;
+                gSprites[ballIconSpriteIds[PARTY_SIZE - 1 - i]].callback = SpriteCB_StatusSummaryBalls_Exit;
             }
             else
             {
                 gSprites[ballIconSpriteIds[i]].data[1] = 7 * i;
                 gSprites[ballIconSpriteIds[i]].data[3] = 0;
                 gSprites[ballIconSpriteIds[i]].data[4] = 0;
-                gSprites[ballIconSpriteIds[i]].callback = sub_8074158;
+                gSprites[ballIconSpriteIds[i]].callback = SpriteCB_StatusSummaryBalls_Exit;
             }
         }
         gSprites[summaryBarSpriteId].data[0] /= 2;
         gSprites[summaryBarSpriteId].data[1] = 0;
-        gSprites[summaryBarSpriteId].callback = sub_8074090;
-        SetSubspriteTables(&gSprites[summaryBarSpriteId], sUnknown_0832C2CC);
-        gTasks[taskId].func = sub_8073E08;
+        gSprites[summaryBarSpriteId].callback = SpriteCB_StatusSummaryBar_Exit;
+        SetSubspriteTables(&gSprites[summaryBarSpriteId], sStatusSummaryBar_SubspriteTable_Exit);
+        gTasks[taskId].func = Task_HidePartyStatusSummary_BattleStart_1;
     }
     else
     {
-        gTasks[taskId].func = sub_8073F98;
+        gTasks[taskId].func = Task_HidePartyStatusSummary_DuringBattle;
     }
 }
 
-static void sub_8073E08(u8 taskId)
+static void Task_HidePartyStatusSummary_BattleStart_1(u8 taskId)
 {
     if ((gTasks[taskId].data[11]++ % 2) == 0)
     {
-        if (--gTasks[taskId].tData15 < 0)
+        if (--gTasks[taskId].tBlend < 0)
             return;
 
-        SetGpuReg(REG_OFFSET_BLDALPHA, BLDALPHA_BLEND(gTasks[taskId].data[15], 16 - gTasks[taskId].data[15]));
+        SetGpuReg(REG_OFFSET_BLDALPHA, BLDALPHA_BLEND(gTasks[taskId].tBlend, 16 - gTasks[taskId].tBlend));
     }
-    if (gTasks[taskId].tData15 == 0)
-        gTasks[taskId].func = sub_8073E64;
+    if (gTasks[taskId].tBlend == 0)
+        gTasks[taskId].func = Task_HidePartyStatusSummary_BattleStart_2;
 }
 
-static void sub_8073E64(u8 taskId)
+static void Task_HidePartyStatusSummary_BattleStart_2(u8 taskId)
 {
     u8 ballIconSpriteIds[PARTY_SIZE];
     s32 i;
 
     u8 battlerId = gTasks[taskId].tBattler;
-    if (--gTasks[taskId].tData15 == -1)
+    if (--gTasks[taskId].tBlend == -1)
     {
         u8 summaryBarSpriteId = gTasks[taskId].tSummaryBarSpriteId;
 
@@ -1875,7 +1957,7 @@ static void sub_8073E64(u8 taskId)
         for (i = 1; i < PARTY_SIZE; i++)
             DestroySprite(&gSprites[ballIconSpriteIds[i]]);
     }
-    else if (gTasks[taskId].tData15 == -3)
+    else if (gTasks[taskId].tBlend == -3)
     {
         gBattleSpritesDataPtr->healthBoxesData[battlerId].partyStatusSummaryShown = 0;
         SetGpuReg(REG_OFFSET_BLDCNT, 0);
@@ -1884,17 +1966,17 @@ static void sub_8073E64(u8 taskId)
     }
 }
 
-static void sub_8073F98(u8 taskId)
+static void Task_HidePartyStatusSummary_DuringBattle(u8 taskId)
 {
     u8 ballIconSpriteIds[PARTY_SIZE];
     s32 i;
     u8 battlerId = gTasks[taskId].tBattler;
 
-    if (--gTasks[taskId].tData15 >= 0)
+    if (--gTasks[taskId].tBlend >= 0)
     {
-        SetGpuReg(REG_OFFSET_BLDALPHA, BLDALPHA_BLEND(gTasks[taskId].data[15], 16 - gTasks[taskId].data[15]));
+        SetGpuReg(REG_OFFSET_BLDALPHA, BLDALPHA_BLEND(gTasks[taskId].tBlend, 16 - gTasks[taskId].tBlend));
     }
-    else if (gTasks[taskId].tData15 == -1)
+    else if (gTasks[taskId].tBlend == -1)
     {
         u8 summaryBarSpriteId = gTasks[taskId].tSummaryBarSpriteId;
 
@@ -1907,7 +1989,7 @@ static void sub_8073F98(u8 taskId)
         for (i = 1; i < PARTY_SIZE; i++)
             DestroySprite(&gSprites[ballIconSpriteIds[i]]);
     }
-    else if (gTasks[taskId].tData15 == -3)
+    else if (gTasks[taskId].tBlend == -3)
     {
         gBattleSpritesDataPtr->healthBoxesData[battlerId].partyStatusSummaryShown = 0;
         SetGpuReg(REG_OFFSET_BLDCNT, 0);
@@ -1920,25 +2002,25 @@ static void sub_8073F98(u8 taskId)
 #undef tSummaryBarSpriteId
 #undef tBallIconSpriteId
 #undef tIsBattleStart
-#undef tData15
+#undef tBlend
 
-static void SpriteCB_StatusSummaryBar(struct Sprite *sprite)
+static void SpriteCB_StatusSummaryBar_Enter(struct Sprite *sprite)
 {
-    if (sprite->pos2.x != 0)
-        sprite->pos2.x += sprite->data[0];
+    if (sprite->x2 != 0)
+        sprite->x2 += sprite->data[0];
 }
 
-static void sub_8074090(struct Sprite *sprite)
+static void SpriteCB_StatusSummaryBar_Exit(struct Sprite *sprite)
 {
     sprite->data[1] += 32;
     if (sprite->data[0] > 0)
-        sprite->pos2.x += sprite->data[1] >> 4;
+        sprite->x2 += sprite->data[1] >> 4;
     else
-        sprite->pos2.x -= sprite->data[1] >> 4;
+        sprite->x2 -= sprite->data[1] >> 4;
     sprite->data[1] &= 0xF;
 }
 
-static void SpriteCB_StatusSummaryBallsOnBattleStart(struct Sprite *sprite)
+static void SpriteCB_StatusSummaryBalls_Enter(struct Sprite *sprite)
 {
     u8 var1;
     u16 var2;
@@ -1957,18 +2039,18 @@ static void SpriteCB_StatusSummaryBallsOnBattleStart(struct Sprite *sprite)
 
     if (var1 != 0)
     {
-        sprite->pos2.x += var2 >> 4;
-        if (sprite->pos2.x > 0)
-            sprite->pos2.x = 0;
+        sprite->x2 += var2 >> 4;
+        if (sprite->x2 > 0)
+            sprite->x2 = 0;
     }
     else
     {
-        sprite->pos2.x -= var2 >> 4;
-        if (sprite->pos2.x < 0)
-            sprite->pos2.x = 0;
+        sprite->x2 -= var2 >> 4;
+        if (sprite->x2 < 0)
+            sprite->x2 = 0;
     }
 
-    if (sprite->pos2.x == 0)
+    if (sprite->x2 == 0)
     {
         pan = SOUND_PAN_TARGET;
         if (var1 != 0)
@@ -1983,7 +2065,7 @@ static void SpriteCB_StatusSummaryBallsOnBattleStart(struct Sprite *sprite)
     }
 }
 
-static void sub_8074158(struct Sprite *sprite)
+static void SpriteCB_StatusSummaryBalls_Exit(struct Sprite *sprite)
 {
     u8 var1;
     u16 var2;
@@ -1998,23 +2080,23 @@ static void sub_8074158(struct Sprite *sprite)
     var2 += 56;
     sprite->data[3] = var2 & 0xFFF0;
     if (var1 != 0)
-        sprite->pos2.x += var2 >> 4;
+        sprite->x2 += var2 >> 4;
     else
-        sprite->pos2.x -= var2 >> 4;
-    if (sprite->pos2.x + sprite->pos1.x > 248
-     || sprite->pos2.x + sprite->pos1.x < -8)
+        sprite->x2 -= var2 >> 4;
+    if (sprite->x2 + sprite->x > 248
+     || sprite->x2 + sprite->x < -8)
     {
         sprite->invisible = TRUE;
         sprite->callback = SpriteCallbackDummy;
     }
 }
 
-static void SpriteCB_StatusSummaryBallsOnSwitchout(struct Sprite *sprite)
+static void SpriteCB_StatusSummaryBalls_OnSwitchout(struct Sprite *sprite)
 {
     u8 barSpriteId = sprite->data[0];
 
-    sprite->pos2.x = gSprites[barSpriteId].pos2.x;
-    sprite->pos2.y = gSprites[barSpriteId].pos2.y;
+    sprite->x2 = gSprites[barSpriteId].x2;
+    sprite->y2 = gSprites[barSpriteId].y2;
 }
 
 static void UpdateNickInHealthbox(u8 healthboxSpriteId, struct Pokemon *mon)
@@ -2029,9 +2111,9 @@ static void UpdateNickInHealthbox(u8 healthboxSpriteId, struct Pokemon *mon)
     if (illusionMon != NULL)
         mon = illusionMon;
 
-    StringCopy(gDisplayedStringBattle, gText_HighlightDarkGray);
+    StringCopy(gDisplayedStringBattle, gText_HealthboxNickname);
     GetMonData(mon, MON_DATA_NICKNAME, nickname);
-    StringGetEnd10(nickname);
+    StringGet_Nickname(nickname);
     ptr = StringAppend(gDisplayedStringBattle, nickname);
 
     gender = GetMonGender(mon);
@@ -2045,15 +2127,15 @@ static void UpdateNickInHealthbox(u8 healthboxSpriteId, struct Pokemon *mon)
     switch (gender)
     {
     default:
-        StringCopy(ptr, gText_DynColor2);
+        StringCopy(ptr, gText_HealthboxGender_None);
         windowTileData = AddTextPrinterAndCreateWindowOnHealthbox(gDisplayedStringBattle, 0, 3, 2, &windowId);
         break;
     case MON_MALE:
-        StringCopy(ptr, gText_DynColor2Male);
+        StringCopy(ptr, gText_HealthboxGender_Male);
         windowTileData = AddTextPrinterAndCreateWindowOnHealthbox(gDisplayedStringBattle, 0, 3, 2, &windowId);
         break;
     case MON_FEMALE:
-        StringCopy(ptr, gText_DynColor1Female);
+        StringCopy(ptr, gText_HealthboxGender_Female);
         windowTileData = AddTextPrinterAndCreateWindowOnHealthbox(gDisplayedStringBattle, 0, 3, 2, &windowId);
         break;
     }
@@ -2096,7 +2178,7 @@ static void TryAddPokeballIconToHealthbox(u8 healthboxSpriteId, bool8 noStatus)
     healthBarSpriteId = gSprites[healthboxSpriteId].hMain_HealthBarSpriteId;
 
     if (noStatus)
-        CpuCopy32(GetHealthboxElementGfxPtr(HEALTHBOX_GFX_70), (void*)(OBJ_VRAM0 + (gSprites[healthBarSpriteId].oam.tileNum + 8) * TILE_SIZE_4BPP), 32);
+        CpuCopy32(GetHealthboxElementGfxPtr(HEALTHBOX_GFX_STATUS_BALL_CAUGHT), (void*)(OBJ_VRAM0 + (gSprites[healthBarSpriteId].oam.tileNum + 8) * TILE_SIZE_4BPP), 32);
     else
         CpuFill32(0, (void*)(OBJ_VRAM0 + (gSprites[healthBarSpriteId].oam.tileNum + 8) * TILE_SIZE_4BPP), 32);
 }
@@ -2264,7 +2346,7 @@ static void UpdateLeftNoOfBallsTextOnHealthbox(u8 healthboxSpriteId)
     txtPtr = StringCopy(text, gText_SafariBallLeft);
     ConvertIntToDecimalStringN(txtPtr, gNumSafariBalls, STR_CONV_MODE_LEFT_ALIGN, 2);
 
-    windowTileData = AddTextPrinterAndCreateWindowOnHealthbox(text, GetStringRightAlignXOffset(0, text, 0x2F), 3, 2, &windowId);
+    windowTileData = AddTextPrinterAndCreateWindowOnHealthbox(text, GetStringRightAlignXOffset(FONT_SMALL, text, 0x2F), 3, 2, &windowId);
     spriteTileNum = gSprites[healthboxSpriteId].oam.tileNum * TILE_SIZE_4BPP;
     SafariTextIntoHealthboxObject((void*)(OBJ_VRAM0 + 0x2C0) + spriteTileNum, windowTileData, 2);
     SafariTextIntoHealthboxObject((void*)(OBJ_VRAM0 + 0xA00) + spriteTileNum, windowTileData + 0x40, 4);
@@ -2357,7 +2439,11 @@ s32 MoveBattleBar(u8 battlerId, u8 healthboxSpriteId, u8 whichBar, u8 unused)
                     gBattleSpritesDataPtr->battleBars[battlerId].oldValue,
                     gBattleSpritesDataPtr->battleBars[battlerId].receivedValue,
                     &gBattleSpritesDataPtr->battleBars[battlerId].currValue,
+                #if B_FAST_HP_DRAIN == TRUE
+                    B_HEALTHBAR_PIXELS / 8, max(gBattleSpritesDataPtr->battleBars[battlerId].maxValue / B_HEALTHBAR_PIXELS, 1));
+                #else
                     B_HEALTHBAR_PIXELS / 8, 1);
+                #endif
     }
     else // exp bar
     {
@@ -2637,7 +2723,7 @@ static u8* AddTextPrinterAndCreateWindowOnHealthbox(const u8 *str, u32 x, u32 y,
     color[1] = 1;
     color[2] = 3;
 
-    AddTextPrinterParameterized4(winId, 0, x, y, 0, 0, color, -1, str);
+    AddTextPrinterParameterized4(winId, FONT_SMALL, x, y, 0, 0, color, TEXT_SKIP_DRAW, str);
 
     *windowId = winId;
     return (u8*)(GetWindowAttribute(winId, WINDOW_TILE_DATA));
@@ -2772,15 +2858,15 @@ static const struct SpriteTemplate sSpriteTemplate_AbilityPopUp2 =
 static const s16 sAbilityPopUpCoordsDoubles[MAX_BATTLERS_COUNT][2] =
 {
     {29, 80}, // player left
-    {204, 19}, // opponent left
+    {186, 19}, // opponent left
     {29, 97}, // player right
-    {204, 36}, // opponent right
+    {186, 36}, // opponent right
 };
 
 static const s16 sAbilityPopUpCoordsSingles[MAX_BATTLERS_COUNT][2] =
 {
-    {29, 93}, // player
-    {204, 23}, // opponent
+    {29, 97}, // player
+    {186, 57}, // opponent
 };
 
 static u8* AddTextPrinterAndCreateWindowOnAbilityPopUp(const u8 *str, u32 x, u32 y, u32 color1, u32 color2, u32 color3, u32 *windowId)
@@ -2791,7 +2877,7 @@ static u8* AddTextPrinterAndCreateWindowOnAbilityPopUp(const u8 *str, u32 x, u32
     winTemplate.height = 2;
 
     *windowId = AddWindow(&winTemplate);
-    FillWindowPixelBuffer(*windowId, (color1 << 4) | (color1));
+    FillWindowPixelBuffer(*windowId, PIXEL_FILL(color1));
 
     AddTextPrinterParameterized4(*windowId, 0, x, y, 0, 0, color, -1, str);
     return (u8*)(GetWindowAttribute(*windowId, WINDOW_TILE_DATA));
@@ -2820,10 +2906,10 @@ static void PrintOnAbilityPopUp(const u8 *str, u8 *spriteTileData1, u8 *spriteTi
 {
     u32 windowId, i;
     u8 *windowTileData;
-    u8 text1[MAX_CHARS_PRINTED + 2];
-    u8 text2[MAX_CHARS_PRINTED + 2];
+    u8 text1[MAX_CHARS_PRINTED];
+    u8 text2[MAX_CHARS_PRINTED];
 
-    for (i = 0; i < MAX_CHARS_PRINTED + 1; i++)
+    for (i = 0; i < MAX_CHARS_PRINTED; i++)
     {
         text1[i] = str[i];
         if (text1[i] == EOS)
@@ -2835,7 +2921,7 @@ static void PrintOnAbilityPopUp(const u8 *str, u8 *spriteTileData1, u8 *spriteTi
     TextIntoAbilityPopUp(spriteTileData1, windowTileData, 8, (y == 0));
     RemoveWindow(windowId);
 
-    if (i == MAX_CHARS_PRINTED + 1)
+    if (i == MAX_CHARS_PRINTED)
     {
         for (i = 0; i < MAX_CHARS_PRINTED; i++)
         {
@@ -2846,9 +2932,20 @@ static void PrintOnAbilityPopUp(const u8 *str, u8 *spriteTileData1, u8 *spriteTi
         text2[i] = EOS;
 
         windowTileData = AddTextPrinterAndCreateWindowOnAbilityPopUp(text2, x2, y, color1, color2, color3, &windowId);
-        TextIntoAbilityPopUp(spriteTileData2, windowTileData, 1, (y == 0));
+        TextIntoAbilityPopUp(spriteTileData2, windowTileData, 3, (y == 0));
         RemoveWindow(windowId);
     }
+}
+
+static const u8 sText_Space16[]= _("                ");
+static void ClearAbilityName(u8 spriteId1, u8 spriteId2)
+{
+    PrintOnAbilityPopUp(sText_Space16,
+                        (void*)(OBJ_VRAM0) + (gSprites[spriteId1].oam.tileNum * 32) + 256,
+                        (void*)(OBJ_VRAM0) + (gSprites[spriteId2].oam.tileNum * 32) + 256,
+                        6, 1,
+                        4,
+                        7, 9, 1);
 }
 
 static void PrintBattlerOnAbilityPopUp(u8 battlerId, u8 spriteId1, u8 spriteId2)
@@ -2871,7 +2968,7 @@ static void PrintBattlerOnAbilityPopUp(u8 battlerId, u8 spriteId1, u8 spriteId2)
         name--;
 
     lastChar = *(name - 1);
-    name[0] = CHAR_SGL_QUOT_RIGHT; // apostraphe
+    name[0] = CHAR_SGL_QUOTE_RIGHT; // apostraphe
     name++;
     if (lastChar != CHAR_S && lastChar != CHAR_s)
     {
@@ -2893,7 +2990,7 @@ static void PrintAbilityOnAbilityPopUp(u32 ability, u8 spriteId1, u8 spriteId2)
     PrintOnAbilityPopUp(gAbilityNames[ability],
                         (void*)(OBJ_VRAM0) + (gSprites[spriteId1].oam.tileNum * 32) + 256,
                         (void*)(OBJ_VRAM0) + (gSprites[spriteId2].oam.tileNum * 32) + 256,
-                        7, 1,
+                        6, 1,
                         4,
                         7, 9, 1);
 }
@@ -2954,6 +3051,20 @@ static const u16 sOverwrittenPixelsTable[][2] =
     {PIXEL_COORDS_TO_OFFSET(0, 24), 3},
     {PIXEL_COORDS_TO_OFFSET(0, 25), 3},
     {PIXEL_COORDS_TO_OFFSET(0, 26), 3},
+
+//Second Row Of Image
+    {PIXEL_COORDS_TO_OFFSET(0, 45), 8},
+    {PIXEL_COORDS_TO_OFFSET(0, 46), 8},
+    {PIXEL_COORDS_TO_OFFSET(0, 47), 8},
+    //{PIXEL_COORDS_TO_OFFSET(0, 48), 8},   // cuts off the top of the 'G' in Neutralizing Gas
+    {PIXEL_COORDS_TO_OFFSET(8, 45), 8},
+    {PIXEL_COORDS_TO_OFFSET(8, 46), 8},
+    {PIXEL_COORDS_TO_OFFSET(8, 47), 8},
+    {PIXEL_COORDS_TO_OFFSET(8, 48), 8},
+    {PIXEL_COORDS_TO_OFFSET(16, 45), 8},
+    {PIXEL_COORDS_TO_OFFSET(16, 46), 8},
+    {PIXEL_COORDS_TO_OFFSET(16, 47), 8},
+    {PIXEL_COORDS_TO_OFFSET(16, 48), 8},
 };
 
 static inline void CopyPixels(u8 *dest, const u8 *src, u32 pixelCount)
@@ -3055,8 +3166,8 @@ void CreateAbilityPopUp(u8 battlerId, u32 ability, bool32 isDoubleBattle)
         gSprites[spriteId2].tRightToLeft = FALSE;
     }
 
-    gBattleStruct->abilityPopUpSpriteIds[gBattleAnimAttacker][0] = spriteId1;
-    gBattleStruct->abilityPopUpSpriteIds[gBattleAnimAttacker][1] = spriteId2;
+    gBattleStruct->abilityPopUpSpriteIds[battlerId][0] = spriteId1;
+    gBattleStruct->abilityPopUpSpriteIds[battlerId][1] = spriteId2;
 
     taskId = CreateTask(Task_FreeAbilityPopUpGfx, 5);
     gTasks[taskId].tSpriteId1 = spriteId1;
@@ -3074,6 +3185,17 @@ void CreateAbilityPopUp(u8 battlerId, u32 ability, bool32 isDoubleBattle)
     RestoreOverwrittenPixels((void*)(OBJ_VRAM0) + (gSprites[spriteId1].oam.tileNum * 32));
 }
 
+void UpdateAbilityPopup(u8 battlerId)
+{
+    u8 spriteId1 = gBattleStruct->abilityPopUpSpriteIds[battlerId][0];
+    u8 spriteId2 = gBattleStruct->abilityPopUpSpriteIds[battlerId][1];
+    u16 ability = (gBattleScripting.abilityPopupOverwrite != 0) ? gBattleScripting.abilityPopupOverwrite : gBattleMons[battlerId].ability;
+    
+    ClearAbilityName(spriteId1, spriteId2);
+    PrintAbilityOnAbilityPopUp(ability, spriteId1, spriteId2);
+    RestoreOverwrittenPixels((void*)(OBJ_VRAM0) + (gSprites[spriteId1].oam.tileNum * 32));
+}
+
 #define FRAMES_TO_WAIT 48
 
 static void SpriteCb_AbilityPopUp(struct Sprite *sprite)
@@ -3082,11 +3204,11 @@ static void SpriteCb_AbilityPopUp(struct Sprite *sprite)
     {
         if (sprite->tIsMain && ++sprite->tFrames == 4)
             PlaySE(SE_BALL_TRAY_ENTER);
-        if ((!sprite->tRightToLeft && (sprite->pos1.x -= 4) <= sprite->tOriginalX)
-            || (sprite->tRightToLeft && (sprite->pos1.x += 4) >= sprite->tOriginalX)
+        if ((!sprite->tRightToLeft && (sprite->x -= 4) <= sprite->tOriginalX)
+            || (sprite->tRightToLeft && (sprite->x += 4) >= sprite->tOriginalX)
            )
         {
-            sprite->pos1.x = sprite->tOriginalX;
+            sprite->x = sprite->tOriginalX;
             sprite->tHide = TRUE;
             sprite->tFrames = FRAMES_TO_WAIT;
         }
@@ -3095,8 +3217,8 @@ static void SpriteCb_AbilityPopUp(struct Sprite *sprite)
     {
         if (sprite->tFrames == 0)
         {
-            if ((!sprite->tRightToLeft && (sprite->pos1.x += 4) >= sprite->tOriginalX + ABILITY_POP_UP_POS_X_SLIDE)
-                ||(sprite->tRightToLeft && (sprite->pos1.x -= 4) <= sprite->tOriginalX - ABILITY_POP_UP_POS_X_SLIDE)
+            if ((!sprite->tRightToLeft && (sprite->x += 4) >= sprite->tOriginalX + ABILITY_POP_UP_POS_X_SLIDE)
+                ||(sprite->tRightToLeft && (sprite->x -= 4) <= sprite->tOriginalX - ABILITY_POP_UP_POS_X_SLIDE)
                )
             {
                 gBattleStruct->activeAbilityPopUps &= ~(gBitTable[sprite->tBattlerId]);
@@ -3128,4 +3250,202 @@ static void Task_FreeAbilityPopUpGfx(u8 taskId)
         FreeSpritePaletteByTag(ABILITY_POP_UP_TAG);
         DestroyTask(taskId);
     }
+}
+
+// last used ball
+#define LAST_BALL_WINDOW_TAG 0xD721
+
+static const struct OamData sOamData_LastUsedBall =
+{
+    .y = 0,
+    .affineMode = 0,
+    .objMode = 0,
+    .mosaic = 0,
+    .bpp = 0,
+    .shape = SPRITE_SHAPE(32x32),
+    .x = 0,
+    .matrixNum = 0,
+    .size = SPRITE_SIZE(32x32),
+    .tileNum = 0,
+    .priority = 1,
+    .paletteNum = 0,
+    .affineParam = 0,
+};
+
+static const struct SpriteTemplate sSpriteTemplate_LastUsedBallWindow =
+{
+    .tileTag = LAST_BALL_WINDOW_TAG,
+    .paletteTag = ABILITY_POP_UP_TAG,
+    .oam = &sOamData_LastUsedBall,
+    .anims = gDummySpriteAnimTable,
+    .images = NULL,
+    .affineAnims = gDummySpriteAffineAnimTable,
+    .callback = SpriteCB_LastUsedBallWin
+};
+
+#if B_LAST_USED_BALL_BUTTON == R_BUTTON
+    static const u8 sLastUsedBallWindowGfx[] = INCBIN_U8("graphics/battle_interface/last_used_ball_r.4bpp");
+#else
+    static const u8 sLastUsedBallWindowGfx[] = INCBIN_U8("graphics/battle_interface/last_used_ball_l.4bpp");
+#endif
+static const struct SpriteSheet sSpriteSheet_LastUsedBallWindow =
+{
+    sLastUsedBallWindowGfx, sizeof(sLastUsedBallWindowGfx), LAST_BALL_WINDOW_TAG
+};
+
+#define LAST_USED_BALL_X_F    15
+#define LAST_USED_BALL_X_0    -15
+#define LAST_USED_BALL_Y      ((IsDoubleBattle()) ? 78 : 68)
+
+#define LAST_BALL_WIN_X_F       (LAST_USED_BALL_X_F - 1)
+#define LAST_BALL_WIN_X_0       (LAST_USED_BALL_X_0 - 0)
+#define LAST_USED_WIN_Y         (LAST_USED_BALL_Y - 8)
+
+#define sHide  data[0]
+
+bool32 CanThrowLastUsedBall(void)
+{
+#if B_LAST_USED_BALL == FALSE
+    return FALSE;
+#else
+    if (!CanThrowBall())
+        return FALSE;
+    if (gBattleTypeFlags & BATTLE_TYPE_TRAINER)
+        return FALSE;
+    if (!CheckBagHasItem(gLastThrownBall, 1))
+        return FALSE;
+
+    return TRUE;
+#endif
+}
+
+void TryAddLastUsedBallItemSprites(void)
+{
+#if B_LAST_USED_BALL == TRUE
+    if (gLastThrownBall == 0
+      || (gLastThrownBall != 0 && !CheckBagHasItem(gLastThrownBall, 1)))
+    {
+        // we're out of the last used ball, so just set it to the first ball in the bag
+        // we have to compact the bag first bc it is typically only compacted when you open it
+        CompactItemsInBagPocket(&gBagPockets[BALLS_POCKET]);
+        gLastThrownBall = gBagPockets[BALLS_POCKET].itemSlots[0].itemId;
+    }
+
+    if (!CanThrowLastUsedBall())
+        return;
+
+    // ball
+    if (gBattleStruct->ballSpriteIds[0] == MAX_SPRITES)
+    {
+        gBattleStruct->ballSpriteIds[0] = AddItemIconSprite(102, 102, gLastThrownBall);
+        gSprites[gBattleStruct->ballSpriteIds[0]].x = LAST_USED_BALL_X_0;
+        gSprites[gBattleStruct->ballSpriteIds[0]].y = LAST_USED_BALL_Y;
+        gSprites[gBattleStruct->ballSpriteIds[0]].sHide = FALSE;   // restore
+        gSprites[gBattleStruct->ballSpriteIds[0]].callback = SpriteCB_LastUsedBall;
+    }
+
+    // window
+    LoadSpritePalette(&sSpritePalette_AbilityPopUp);
+    if (GetSpriteTileStartByTag(LAST_BALL_WINDOW_TAG) == 0xFFFF)
+        LoadSpriteSheet(&sSpriteSheet_LastUsedBallWindow);
+
+    if (gBattleStruct->ballSpriteIds[1] == MAX_SPRITES)
+    {
+        gBattleStruct->ballSpriteIds[1] = CreateSprite(&sSpriteTemplate_LastUsedBallWindow,
+                                                       LAST_BALL_WIN_X_0,
+                                                       LAST_USED_WIN_Y, 5);
+        gSprites[gBattleStruct->ballSpriteIds[0]].sHide = FALSE;   // restore
+    }
+#endif
+}
+
+static void DestroyLastUsedBallWinGfx(struct Sprite *sprite)
+{
+    FreeSpriteTilesByTag(LAST_BALL_WINDOW_TAG);
+    FreeSpritePaletteByTag(ABILITY_POP_UP_TAG);
+    DestroySprite(sprite);
+    gBattleStruct->ballSpriteIds[1] = MAX_SPRITES;
+}
+
+static void DestroyLastUsedBallGfx(struct Sprite *sprite)
+{
+    FreeSpriteTilesByTag(102);
+    FreeSpritePaletteByTag(102);
+    DestroySprite(sprite);
+    gBattleStruct->ballSpriteIds[0] = MAX_SPRITES;
+}
+
+static void SpriteCB_LastUsedBallWin(struct Sprite *sprite)
+{    
+    if (sprite->sHide)
+    {
+        if (sprite->x != LAST_BALL_WIN_X_0)
+            sprite->x--;
+
+        if (sprite->x == LAST_BALL_WIN_X_0)
+            DestroyLastUsedBallWinGfx(sprite);
+    }
+    else
+    {
+        if (sprite->x != LAST_BALL_WIN_X_F)
+            sprite->x++;
+    }
+}
+
+static void SpriteCB_LastUsedBall(struct Sprite *sprite)
+{    
+    if (sprite->sHide)
+    {
+        if (sprite->x != LAST_USED_BALL_X_0)
+            sprite->x--;
+
+        if (sprite->x == LAST_USED_BALL_X_0)
+            DestroyLastUsedBallGfx(sprite);
+    }
+    else
+    {
+        if (sprite->x != LAST_USED_BALL_X_F)
+            sprite->x++;
+    }
+}
+
+static void TryHideOrRestoreLastUsedBall(u8 caseId)
+{
+#if B_LAST_USED_BALL == TRUE
+    if (gBattleStruct->ballSpriteIds[0] == MAX_SPRITES)
+        return;
+
+    switch (caseId)
+    {
+    case 0: // hide
+        if (gBattleStruct->ballSpriteIds[0] != MAX_SPRITES)
+            gSprites[gBattleStruct->ballSpriteIds[0]].sHide = TRUE;   // hide
+        if (gBattleStruct->ballSpriteIds[1] != MAX_SPRITES)
+            gSprites[gBattleStruct->ballSpriteIds[1]].sHide = TRUE;   // hide
+        break;
+    case 1: // restore
+        if (gBattleStruct->ballSpriteIds[0] != MAX_SPRITES)
+            gSprites[gBattleStruct->ballSpriteIds[0]].sHide = FALSE;   // restore
+        if (gBattleStruct->ballSpriteIds[1] != MAX_SPRITES)
+            gSprites[gBattleStruct->ballSpriteIds[1]].sHide = FALSE;   // restore
+        break;
+    }
+#endif
+}
+
+void TryHideLastUsedBall(void)
+{
+#if B_LAST_USED_BALL == TRUE
+    TryHideOrRestoreLastUsedBall(0);
+#endif
+}
+
+void TryRestoreLastUsedBall(void)
+{
+#if B_LAST_USED_BALL == TRUE
+    if (gBattleStruct->ballSpriteIds[0] != MAX_SPRITES)
+        TryHideOrRestoreLastUsedBall(1);
+    else
+        TryAddLastUsedBallItemSprites();
+#endif
 }

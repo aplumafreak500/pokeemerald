@@ -28,6 +28,8 @@ SECTIONS {
     . = 0x8000000;
 
     .text : ALIGN(4) {
+        src/rom_header.o(.text);
+        src/rom_header_gf.o(.text.*);
         src/crt0.o(.text);
         src/main.o(.text);
         gflib/*(SORT(.text));
@@ -37,7 +39,6 @@ SECTIONS {
     script_data : ALIGN(4) {
         *(SORT(script_data));
     }=0
-
     .rodata : ALIGN(4) {
         src/main.o(.rodata);
         gflib/*(SORT(.rodata));

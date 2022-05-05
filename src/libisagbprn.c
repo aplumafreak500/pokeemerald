@@ -41,7 +41,7 @@ static EWRAM_DATA char bufPrint[1024] = {0};
 void AGBPrintInit()
 {
     volatile struct AGBPrintStruct *pPrint = (struct AGBPrintStruct *)AGB_PRINT_STRUCT_ADDR;
-    u16 *pWSCNT = (u16 *)REG_ADDR_WAITCNT;
+    vu16 *pWSCNT = &REG_WAITCNT;
     u16 *pProtect = (u16 *)AGB_PRINT_PROTECT_ADDR;
     u16 nOldWSCNT = *pWSCNT;
     *pWSCNT = WSCNT_DATA;
@@ -70,7 +70,7 @@ static void AGBPutcInternal(const char cChr)
 
 void AGBPutc(const char cChr)
 {
-    u16 *pWSCNT = (u16 *)REG_ADDR_WAITCNT;
+    vu16 *pWSCNT = &REG_WAITCNT;
     u16 nOldWSCNT = *pWSCNT;
     volatile struct AGBPrintStruct *pPrint;
     *pWSCNT = WSCNT_DATA;
@@ -84,7 +84,7 @@ void AGBPutc(const char cChr)
 void AGBPrint(const char *pBuf)
 {
     volatile struct AGBPrintStruct *pPrint = (struct AGBPrintStruct *)AGB_PRINT_STRUCT_ADDR;
-    u16 *pWSCNT = (u16 *)REG_ADDR_WAITCNT;
+    vu16 *pWSCNT = &REG_WAITCNT;
     u16 nOldWSCNT = *pWSCNT;
     *pWSCNT = WSCNT_DATA;
     while (*pBuf)
@@ -113,9 +113,9 @@ void AGBPrintf(const char *pBuf, ...)
 static void AGBPrintTransferDataInternal(u32 bAllData)
 {
     LPFN_PRINT_FLUSH lpfnFuncFlush;
-    u16 *pIME;
+    vu16 *pIME;
     u16 nIME;
-    u16 *pWSCNT;
+    vu16 *pWSCNT;
     u16 nOldWSCNT;
     u16 *pProtect;
     volatile struct AGBPrintStruct *pPrint;
@@ -123,9 +123,9 @@ static void AGBPrintTransferDataInternal(u32 bAllData)
     pProtect = (u16 *)AGB_PRINT_PROTECT_ADDR;
     pPrint = (struct AGBPrintStruct *)AGB_PRINT_STRUCT_ADDR;
     lpfnFuncFlush = (LPFN_PRINT_FLUSH)AGB_PRINT_FLUSH_ADDR;
-    pIME = (u16 *)REG_ADDR_IME;
+    pIME = &REG_IME;
     nIME = *pIME;
-    pWSCNT = (u16 *)REG_ADDR_WAITCNT;
+    pWSCNT = &REG_WAITCNT;
     nOldWSCNT = *pWSCNT;
     *pIME = nIME & ~1;
     *pWSCNT = WSCNT_DATA;
