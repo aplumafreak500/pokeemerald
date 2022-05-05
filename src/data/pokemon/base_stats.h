@@ -2349,7 +2349,11 @@ const struct BaseStats gBaseStats[] =
         .catchRate = 45,
         .expYield = 132,
         .evYield_Attack    = 1,
+		#ifdef ITEM_EXPANSION
+        .item2 = ITEM_LEEK,
+		#else
         .item2 = ITEM_STICK,
+		#endif
         .genderRatio = PERCENT_FEMALE(50),
         .eggCycles = 20,
         .friendship = 70,
