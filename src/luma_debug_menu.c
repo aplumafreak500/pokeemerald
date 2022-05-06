@@ -810,7 +810,7 @@ static const struct EditPokemonStruct LumaDebugMenu_EditPKMN_Options[] = {
 	{Str_Friendship, LUMA_EDIT_NORMAL, 0, 255, 0, MON_DATA_FRIENDSHIP, 3},
 	{Str_MetLevel, LUMA_EDIT_NORMAL, 0, 100, 10, MON_DATA_MET_LEVEL, 3}, // 0 instead of 1 because 0 means hatched from an Egg
 	{Str_MetLocation, LUMA_EDIT_NORMAL, 0, 65535, MAPSEC_LITTLEROOT_TOWN, MON_DATA_MET_LOCATION, 5},
-	{Str_Ball, LUMA_EDIT_NORMAL, ITEM_MASTER_BALL, LAST_BALL, ITEM_POKE_BALL, MON_DATA_POKEBALL, 2},
+	{Str_Ball, LUMA_EDIT_NORMAL, FIRST_BALL, LAST_BALL, ITEM_POKE_BALL, MON_DATA_POKEBALL, 2},
 	{Str_PKrus, LUMA_EDIT_NORMAL, 0, 3, 0, MON_DATA_POKERUS, 1}, // 4 different "strains"
 	{Str_PKrus, LUMA_EDIT_NORMAL, 1, 4, 1, MON_DATA_POKERUS, 1}, // "default" days until cured
 	{Str_PKrus, LUMA_EDIT_NORMAL, 0, 7, 0, MON_DATA_POKERUS, 1}, // Days until cured
