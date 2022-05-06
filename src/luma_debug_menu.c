@@ -130,7 +130,7 @@ static const u8 Str_DebugRNG[] = _("RNG");
 static const u8 Str_DebugXaman[] = _("Xaman Debug Menu");
 
 // Pokedex
-static const u8 Str_NationalDex[] = _("National Dex: ");
+static const u8 Str_NationalDex[] = _("National Dex");
 static const u8 Str_NationalDexAllSeen[] = _("All seen (National)");
 static const u8 Str_NationalDexAllCaught[] = _("All caught (National)");
 static const u8 Str_RegionalDexAllSeen[] = _("All seen (Regional)");
@@ -208,6 +208,7 @@ static void LumaDebugMenu_Music(u8);
 static void LumaDebugMenu_TrainerEncounters(u8);
 static void LumaDebugMenu_Nameplates(u8);
 static void LumaDebugMenu_BGMTransitions(u8);
+static void LumaDebugMenu_NationalDex(u8);
 static void LumaDebugMenu_FieldMusic(u8);
 static void LumaDebugMenu_RepelSteps(u8);
 static void LumaDebugMenu_SaveStatus(u8);
@@ -336,7 +337,7 @@ static const struct ListMenuItem LumaDebugMenu_Items[] = {
 	{Str_OverworldGFX, 0},
 	{Str_FontGFX, 0},
 	{Str_DexGroup, LIST_HEADER},
-	{Str_NationalDex, 0},
+	{Str_NationalDex, 26},
 	{Str_NationalDexAllSeen, 0},
 	{Str_NationalDexClearSeen, 0},
 	{Str_RegionalDexAllSeen, 0},
@@ -375,7 +376,8 @@ static void(*const LumaDebugMenu_Actions[])(u8) = {
 	LumaDebugMenu_SaveStatus,
 	LumaDebugMenu_MirageIsland,
 	LumaDebugMenu_Lottery,
-	LumaDebugMenu_FieldWeather
+	LumaDebugMenu_FieldWeather,
+	LumaDebugMenu_NationalDex,
 };
 
 static const struct ListMenuTemplate LumaDebugMenu_ListTemplate = {
@@ -557,7 +559,7 @@ static void LumaDebugMenu_FillStorage(u8 taskid) {
 	u32 data;
 	for (i = 0; i < TOTAL_BOXES_COUNT * IN_BOX_COUNT; i++) {
 		mon = &gPokemonStoragePtr->boxes[0][i];
-		CreateBoxMon(mon, NationalPokedexNumToSpecies(Random() % NATIONAL_DEX_COUNT), (Random() % 100) + 1, 32, FALSE, 0, OT_ID_PLAYER_ID, 0);
+		CreateBoxMon(mon, (Random() % NUM_SPECIES) + 1, (Random() % 100) + 1, 32, FALSE, 0, OT_ID_PLAYER_ID, 0);
 		data = Random() % NUM_LANGUAGES;
 		SetBoxMonData(mon, MON_DATA_LANGUAGE, &data);
 		data = Random() % 256;
@@ -622,6 +624,7 @@ enum {
 	LUMA_FLAG_TRAINER_ENCOUNTERS,
 	LUMA_FLAG_NAMEPLATES,
 	LUMA_FLAG_BGM,
+	LUMA_FLAG_NATIONAL_DEX,
 };
 
 enum {
@@ -630,7 +633,7 @@ enum {
 	LUMA_VAR_SAVE_STATUS,
 	LUMA_VAR_MIRAGE,
 	LUMA_VAR_LOTTERY,
-	LUMA_VAR_WEATHER
+	LUMA_VAR_WEATHER,
 };
 
 static void LumaDebugMenu_WeatherFlag(u8 taskid) {
@@ -655,6 +658,10 @@ static void LumaDebugMenu_Nameplates(u8 taskid) {
 
 static void LumaDebugMenu_BGMTransitions(u8 taskid) {
 	LumaDebugMenu_EditSingleFlag(LUMA_FLAG_BGM, taskid);
+}
+
+static void LumaDebugMenu_NationalDex(u8 taskid) {
+	LumaDebugMenu_EditSingleFlag(LUMA_FLAG_NATIONAL_DEX, taskid);
 }
 
 static void LumaDebugMenu_FieldMusic(u8 taskid) {
@@ -2533,6 +2540,9 @@ static void LumaDebugMenu_EditSingleFlag(u8 flag, u8 taskid) {
 	case LUMA_FLAG_BGM:
 		flagSet = ~FlagGet(FLAG_DONT_TRANSITION_MUSIC);
 		break;
+	case LUMA_FLAG_NATIONAL_DEX:
+		flagSet = IsNationalPokedexEnabled();
+		break;
 	}
 
 	winId = AddWindow(&LumaDebugMenu_EditSingleFlagWindowTemplate);
@@ -2588,6 +2598,12 @@ static void LumaDebugMenu_EditSingleFlag_ProcessInput(u8 taskid) {
 		case LUMA_FLAG_BGM:
 			FlagToggle(FLAG_DONT_TRANSITION_MUSIC);
 			flagSet = ~FlagGet(FLAG_DONT_TRANSITION_MUSIC);
+			break;
+		case LUMA_FLAG_NATIONAL_DEX:
+			flagSet = IsNationalPokedexEnabled();
+			if (flagSet) DisableNationalPokedex();
+			else EnableNationalPokedex();
+			flagSet = ~flagSet;
 			break;
 		}
 		FillWindowPixelRect(winId, 0x11, 0, 0, 16, 16);
