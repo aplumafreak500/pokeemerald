@@ -774,7 +774,7 @@ static void Task_ShowAiPoints(u8 taskId)
             #ifndef POKEMON_EXPANSION
                 data->aiIconSpriteIds[i] = CreateMonIcon(gBattleMons[i].species,
                                                          SpriteCallbackDummy,
-                                                         95 + (count * 60), 17, 0, 0);
+                                                         95 + (count * 60), 17, 0, 0, FALSE);
             #else
                 data->aiIconSpriteIds[i] = CreateMonIcon(gBattleMons[i].species,
                                                          SpriteCallbackDummy,
@@ -789,7 +789,7 @@ static void Task_ShowAiPoints(u8 taskId)
             }
         }
         #ifndef POKEMON_EXPANSION
-        data->aiMonSpriteId = CreateMonPicSprite(gBattleMons[data->aiBattlerId].species,
+        data->aiMonSpriteId = CreateMonPicSprite_HandleDeoxys(gBattleMons[data->aiBattlerId].species,
                                                  gBattleMons[data->aiBattlerId].otId,
                                                  gBattleMons[data->aiBattlerId].personality,
                                                  TRUE,
