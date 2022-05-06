@@ -2206,6 +2206,6 @@ u8* GetMapName_HandleVersion(u8* dest, u16 mapsec, u8 version) {
 		}
 	case 46 ... 49: // BD/SP/LA/Pt-Sw
 		// TODO: Fill this in when the games release
-		return StringCopy(dest, gLocationNames_Gen6_3xxxx[5]); // Sinnoh		
+		return StringCopy(dest, gLocationNames_Gen6_3xxxx[5]); // Sinnoh
 	}
 }
