@@ -41,6 +41,15 @@ ifeq (modern,$(MAKECMDGOALS))
   MODERN := 1
 endif
 
+ifeq (debug,$(MAKECMDGOALS))
+  DEBUG := 1
+endif
+
+ifeq (modern_debug,$(MAKECMDGOALS))
+  MODERN := 1
+  DEBUG := 1
+endif
+
 # use arm-none-eabi-cpp for macOS
 # as macOS's default compiler is clang
 # and clang's preprocessor will warn on \u
@@ -58,21 +67,25 @@ else
   CPP := $(PREFIX)cpp
 endif
 
-ROM_NAME := pokeemerald-edit.gba
-ELF_NAME := $(ROM_NAME:.gba=.elf)
-MAP_NAME := $(ROM_NAME:.gba=.map)
-OBJ_DIR_NAME := build/emerald
+BUILD_NAME := emerald
 
-MODERN_ROM_NAME := pokeemerald_modern-edit.gba
-MODERN_ELF_NAME := $(MODERN_ROM_NAME:.gba=.elf)
-MODERN_MAP_NAME := $(MODERN_ROM_NAME:.gba=.map)
-MODERN_OBJ_DIR_NAME := build/modern
+ifeq ($(MODERN),1)
+	BUILD_NAME := $(BUILD_NAME)_modern
+endif
 
-SHELL := /bin/bash -o pipefail
+ifeq ($(DEBUG),1)
+	BUILD_NAME := $(BUILD_NAME)_debug
+endif
 
+ALL_BUILDS := emerald emerald_modern emerald_debug emerald_modern_debug
+
+ROM := poke$(BUILD_NAME)-edit.gba
 ELF = $(ROM:.gba=.elf)
 MAP = $(ROM:.gba=.map)
 SYM = $(ROM:.gba=.sym)
+OBJ_DIR := build/$(BUILD_NAME)
+
+SHELL := /bin/bash -o pipefail
 
 C_SUBDIR = src
 GFLIB_SUBDIR = gflib
@@ -96,18 +109,15 @@ ASFLAGS := -mcpu=arm7tdmi
 ifeq ($(MODERN),0)
 CC1             := tools/agbcc/bin/agbcc$(EXE)
 override CFLAGS += -mthumb-interwork -Wimplicit -Wparentheses -Werror -O2 -fhex-asm
-ROM := $(ROM_NAME)
-OBJ_DIR := $(OBJ_DIR_NAME)
 LIBPATH := -L ../../tools/agbcc/lib
 LIB := $(LIBPATH) -lgcc -lc -L../../libagbsyscall -lagbsyscall
 else
 CC1              = $(shell $(PATH_MODERNCC) --print-prog-name=cc1) -quiet
 override CFLAGS += -mthumb -mthumb-interwork -O2 -mabi=apcs-gnu -mtune=arm7tdmi -march=armv4t -fno-toplevel-reorder -Wno-pointer-to-int-cast -fno-builtin
-ROM := $(MODERN_ROM_NAME)
-OBJ_DIR := $(MODERN_OBJ_DIR_NAME)
 LIBPATH := -L "$(dir $(shell $(PATH_MODERNCC) -mthumb -print-file-name=libgcc.a))" -L "$(dir $(shell $(PATH_MODERNCC) -mthumb -print-file-name=libnosys.a))" -L "$(dir $(shell $(PATH_MODERNCC) -mthumb -print-file-name=libc.a))"
 LIB := $(LIBPATH) -lc -lnosys -lgcc -L../../libagbsyscall -lagbsyscall
 endif
+
 CPPFLAGS := -iquote include -iquote $(GFLIB_SUBDIR) -Wno-trigraphs -DMODERN=$(MODERN)
 ifneq ($(MODERN),1)
 CPPFLAGS += -I tools/agbcc/include -I tools/agbcc -nostdinc -undef
@@ -144,7 +154,7 @@ MAKEFLAGS += --no-print-directory
 # Secondary expansion is required for dependency variables in object rules.
 .SECONDEXPANSION:
 
-.PHONY: all rom clean tidy tools mostlyclean clean-tools $(TOOLDIRS) libagbsyscall modern tidymodern tidynonmodern date git_hash
+.PHONY: all rom clean tidy tools mostlyclean clean-tools $(TOOLDIRS) libagbsyscall modern debug modern_debug date git_hash
 
 infoshell = $(foreach line, $(shell $1 | sed "s/ /__SPACE__/g"), $(info $(subst __SPACE__, ,$(line))))
 
@@ -152,7 +162,7 @@ infoshell = $(foreach line, $(shell $1 | sed "s/ /__SPACE__/g"), $(info $(subst 
 # Disable dependency scanning for clean/tidy/tools
 # Use a separate minimal makefile for speed
 # Since we don't need to reload most of this makefile
-ifeq (,$(filter-out all rom modern libagbsyscall syms,$(MAKECMDGOALS)))
+ifeq (,$(filter-out all rom modern debug modern_debug libagbsyscall syms,$(MAKECMDGOALS)))
 $(call infoshell, $(MAKE) -f make_tools.mk)
 else
 NODEP ?= 1
@@ -164,7 +174,7 @@ ifeq (,$(MAKECMDGOALS))
 else
   # clean, tidy, tools, mostlyclean, clean-tools, $(TOOLDIRS), tidymodern, tidynonmodern don't even build the ROM
   # libagbsyscall does its own thing
-  ifeq (,$(filter-out clean tidy tools mostlyclean clean-tools $(TOOLDIRS) tidymodern tidynonmodern libagbsyscall,$(MAKECMDGOALS)))
+  ifeq (,$(filter-out clean tidy tools mostlyclean clean-tools $(TOOLDIRS) libagbsyscall,$(MAKECMDGOALS)))
     SCAN_DEPS ?= 0
   else
     SCAN_DEPS ?= 1
@@ -223,7 +233,7 @@ clean-tools:
 	@echo clean-tools
 	@$(foreach tooldir,$(TOOLDIRS),$(MAKE) clean -C $(tooldir);)
 
-mostlyclean: tidynonmodern tidymodern
+mostlyclean: tidy
 	@echo mostlyclean
 	@rm -f src/data/date.h
 	@rm -f $(SAMPLE_SUBDIR)/*.bin
@@ -236,17 +246,10 @@ mostlyclean: tidynonmodern tidymodern
 	@rm -f $(AUTO_GEN_TARGETS)
 	@$(MAKE) clean -C libagbsyscall
 
-tidy: tidynonmodern tidymodern
-
-tidynonmodern:
+tidy:
 	@echo tidy
-	@rm -f $(ROM_NAME) $(ELF_NAME) $(MAP_NAME)
-	@rm -rf $(OBJ_DIR_NAME)
-
-tidymodern:
-	@echo tidymodern
-	@rm -f $(MODERN_ROM_NAME) $(MODERN_ELF_NAME) $(MODERN_MAP_NAME)
-	@rm -rf $(MODERN_OBJ_DIR_NAME)
+	@rm -f $(ALL_BUILDS:%=poke%{.gba,.elf,.map})
+	@rm -rf build
 
 ifneq ($(MODERN),0)
 $(C_BUILDDIR)/berry_crush.o: override CFLAGS += -Wno-address-of-packed-member
@@ -447,6 +450,8 @@ $(ROM): $(ELF)
 	$(OBJCOPY) -O binary $< $@
 
 modern: all
+debug: all
+modern_debug: all
 
 libagbsyscall:
 	@echo libagbsyscall
