@@ -3342,7 +3342,7 @@ static void WaitForDebug(void)
 
 static void PlayerHandleBattleDebug(void)
 {
-#if USE_BATTLE_DEBUG
+#ifdef DEBUG
     BeginNormalPaletteFade(-1, 0, 0, 0x10, 0);
     SetMainCallback2(CB2_BattleDebugMenu);
     gBattlerControllerFuncs[gActiveBattler] = WaitForDebug;
