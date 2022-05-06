@@ -2698,7 +2698,7 @@ static void Task_WaitFadeAccessPC(u8 taskId)
     if (!gPaletteFade.active)
     {
         DestroyTask(taskId);
-//        FlagSet(FLAG_SYS_PC_FROM_DEBUG_MENU);
+        FlagSet(FLAG_SYS_PC_FROM_DEBUG_MENU);
         EnterPokeStorage(2);
     }
 }
