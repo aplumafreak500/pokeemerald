@@ -2005,6 +2005,7 @@
 	.endm
 	.macro totemboost_evas2 battler:req
 	settotemboost \battler, 0, 0, 0, 0, 0, 0, 2
+	.endm
 
 	@ Attempts to trigger a special evolution method in the overworld.
 	@ There may be other conditions required which are coded for in GetEvolutionTargetSpecies.
