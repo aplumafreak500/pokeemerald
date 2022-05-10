@@ -469,7 +469,6 @@ struct MegaEvolutionData
     bool8 playerSelect;
     u8 triggerSpriteId;
     bool8 isWishMegaEvo;
-    bool8 isPrimalReversion;
 };
 
 struct Illusion
@@ -932,5 +931,6 @@ extern bool8 gHasFetchedBall;
 extern u8 gLastUsedBall;
 extern u16 gLastThrownBall;
 extern bool8 gSwapDamageCategory; // Photon Geyser, Shell Side Arm, Light That Burns the Sky
+extern u8 gPartyCriticalHits[PARTY_SIZE];
 
 #endif // GUARD_BATTLE_H
