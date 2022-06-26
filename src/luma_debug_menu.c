@@ -30,6 +30,7 @@ void PlayerPC(); // was not defined in player_pc.h
 #include "constants/rgb.h"
 #include "constants/songs.h"
 #include "constants/species.h"
+#include "constants/abilities.h"
 #include "constants/moves.h"
 #include "constants/items.h"
 #include "constants/battle.h"
@@ -130,7 +131,7 @@ static const u8 Str_DebugHM[] = _("Use HM");
 static const u8 Str_DebugRNG[] = _("RNG");
 static const u8 Str_DebugXaman[] = _("Xaman Debug Menu");
 
-// Pokedex
+// Pokédex
 static const u8 Str_NationalDex[] = _("National Dex");
 static const u8 Str_NationalDexAllSeen[] = _("All seen (National)");
 static const u8 Str_NationalDexAllCaught[] = _("All caught (National)");
@@ -217,6 +218,7 @@ static void LumaDebugMenu_SaveStatus(u8);
 static void LumaDebugMenu_MirageIsland(u8);
 static void LumaDebugMenu_Lottery(u8);
 static void LumaDebugMenu_FieldWeather(u8);
+static void LumaDebugMenu_RNG(u8);
 static void LumaDebugMenu_AddEditPKMN_Init(u8);
 static void LumaDebugMenu_EditPKMN_SetDefaults();
 static void LumaDebugMenu_EditPKMN_PopulateData();
@@ -235,6 +237,9 @@ static void LumaDebugMenu_EditSingleFlag(u8, u8);
 static void LumaDebugMenu_EditSingleFlag_ProcessInput(u8);
 static void LumaDebugMenu_EditSingleVar(u8, u8);
 static void LumaDebugMenu_EditSingleVar_ProcessInput(u8);
+static void LumaDebugMenu_OpenRNG();
+static void LumaDebugMenu_RNG_ProcessInput(u8);
+static void LumaDebugMenu_RNG_Redraw(u8);
 
 enum {
 	LUMA_ACTION_NONE = 0,
@@ -262,6 +267,7 @@ enum {
 	LUMA_ACTION_MIRAGE_ISLAND,
 	LUMA_ACTION_LOTTERY,
 	LUMA_ACTION_NATIONAL_DEX,
+	LUMA_ACTION_RNG,
 	LUMA_ACTION_XAMAN,
 	LUMA_ACTION_TOWN_MAP,
 	LUMA_ACTION_CREDITS,
@@ -353,7 +359,7 @@ static const struct ListMenuItem LumaDebugMenu_Items[] = {
 	{Str_RemoveItems, LUMA_ACTION_REMOVE_ITEMS},
 	{Str_DebugEgg, 0},
 	{Str_DebugHM, 0},
-	{Str_DebugRNG, 0},
+	{Str_DebugRNG, 0/*LUMA_ACTION_RNG*/},
 	{Str_DataGroup, LIST_HEADER},
 	{Str_MonData, 0},
 	{Str_TrainerData, 0},
@@ -410,6 +416,7 @@ static void(*const LumaDebugMenu_Actions[])(u8) = {
 	[LUMA_ACTION_MIRAGE_ISLAND] = LumaDebugMenu_MirageIsland,
 	[LUMA_ACTION_LOTTERY] = LumaDebugMenu_Lottery,
 	[LUMA_ACTION_NATIONAL_DEX] = LumaDebugMenu_NationalDex,
+	[LUMA_ACTION_RNG] = LumaDebugMenu_RNG,
 	[LUMA_ACTION_XAMAN] = LumaDebugMenu_OpenXaman,
 	[LUMA_ACTION_TOWN_MAP] = LumaDebugMenu_ViewTownMap,
 	[LUMA_ACTION_CREDITS] = LumaDebugMenu_JumpToCredits,
@@ -733,6 +740,11 @@ static void LumaDebugMenu_FieldWeather(u8 taskid) {
 	LumaDebugMenu_EditSingleVar(LUMA_VAR_WEATHER, taskid);
 }
 
+static void LumaDebugMenu_RNG(u8 taskid) {
+	LumaDebugMenu_Close(taskid);
+	LumaDebugMenu_OpenRNG();
+}
+
 static const u8 Str_Species[] = _("Species");
 static const u8 Str_Personality[] = _("PID");
 static const u8 Str_TrainerID[] = _("TID");
@@ -969,7 +981,7 @@ static const u8 Str_DefaultOTName[8] = _("Debug-E");
 static u8 LumaDebugMenu_EditPKMN_headerWindowId;
 static u8 LumaDebugMenu_EditPKMN_menuWindowId;
 
-// Port of Watanabe Debug Menu -> Create Pokemon Menu
+// Port of Watanabe Debug Menu -> Create Pokémon Menu
 /* TODO Known Bugs and Todo List:
 	* None as of right now
 Things that are not implemented yet, or bugs that are caused by unimplemented features:
@@ -978,11 +990,11 @@ Things that are not implemented yet, or bugs that are caused by unimplemented fe
 	* Alternate values aren't drawn until you scroll over to them in edit mode.
 	* Only one of the sleep and toxic counter should be visible and editable at one time, but only if the status is sleep or toxic respectively. (This does not take the separate indexes for these two values into consideration.)
 	* Language, Origin Game, Met Location, Ball, and Nature (the unused separate index) should be drawn with their names next to them.
-	* If the Pokerus Strain is 0, the Days indexes should not be accessible.
+	* If the Pokérus Strain is 0, the Days indexes should not be accessible.
 	* Setting "Egg" from Off to On should also update "Egg2", but setting "Egg2" to Off should NOT update "Egg". Also, setting "Egg" to Off should NOT update "Egg2".
 	* Add a "Bad Egg" index as an alternate value for "Present".
 	* In edit mode, pressing Select should reset that value; in mode 0, to default; else to that of the mon being edited.
-	* While not in edit mode, pressing Select when the cursor is selecting the PID or IVs, re-randomize them both according to "Method 1". When selecting Species, toggle that species' Pokedex flags, else copy to gEnemyParty then open up the Summary Screen. Set the PSS callback back to this menu.
+	* While not in edit mode, pressing Select when the cursor is selecting the PID or IVs, re-randomize them both according to "Method 1". When selecting Species, toggle that species' Pokédex flags, else copy to gEnemyParty then open up the Summary Screen. Set the PSS callback back to this menu.
 	* If the mon being created would be Shiny, draw a star next to the nickname.
 	* Dynamic max values:
 		* PP (With max PP for that move including PP Up boosts)
@@ -1089,7 +1101,7 @@ static void LumaDebugMenu_EditPKMN_SetNewMonData(bool8 setMoves) {
 		case 0 ... 4: // PID, TID, OT
 		case 6 ... 8: // Nickname, gender, nature
 		case 15: // Level
-		case 22 ... 24: // Pokerus
+		case 22 ... 24: // Pokérus
 		case 26 ... 31: // Current stats
 		case 74 ... 76: // PP Up counts
 			break;
@@ -1204,7 +1216,7 @@ static void LumaDebugMenu_EditPKMN_SetMonData() {
 		case 0 ... 4: // PID and TID, leave alone. 0 is species, which we handle in a different function
 		case 6 ... 8: // Nickname (4) and OT name, set by the actual editor; 7-8 are gender and nature (readonly)
 		case 15: // Level (set by CalculateMonStats)
-		case 22 ... 24: // Pokerus (set above)
+		case 22 ... 24: // Pokérus (set above)
 		case 26 ... 30: // Current stats (readonly). 31 calls CalculateMonStats
 		case 74 ... 76: // PP Up counts (77 sets all at once)
 			break;
@@ -1325,19 +1337,19 @@ static void LumaDebugMenu_EditPKMN_PopulateData() {
 		case 8: // Nature
 			LumaDebugMenu_EditPKMN_Data.data[i] = GetNature(mons);
 			break;
-		case 22: // Pokerus strain
+		case 22: // Pokérus strain
 			data = GetMonData(mons, LumaDebugMenu_EditPKMN_Options[i].SetMonDataParam, NULL);
 			data &= 0x30;
 			data >>= 4;
 			LumaDebugMenu_EditPKMN_Data.data[i] = data;
 			break;
-		case 23: // Pokerus days when spread
+		case 23: // Pokérus days when spread
 			data = GetMonData(mons, LumaDebugMenu_EditPKMN_Options[i].SetMonDataParam, NULL);
 			data &= 0xc0;
 			data >>= 6;
 			LumaDebugMenu_EditPKMN_Data.data[i] = data + 1;
 			break;
-		case 24: // Pokerus days left
+		case 24: // Pokérus days left
 			data = GetMonData(mons, LumaDebugMenu_EditPKMN_Options[i].SetMonDataParam, NULL);
 			data &= 0xf;
 			LumaDebugMenu_EditPKMN_Data.data[i] = data;
@@ -1565,7 +1577,7 @@ static void LumaDebugMenu_EditPKMN_Redraw() {
 				break;
 			case LUMA_EDIT_STRING:
 				StringCopyN(gStringVar1, (u8*) LumaDebugMenu_EditPKMN_Data.data[index], data->digitCount);
-				// Pokemon names can sometimes be unterminated, so add an extra terminator here
+				// Pokémon names can sometimes be unterminated, so add an extra terminator here
 				gStringVar1[data->digitCount] = EOS;
 				break;
 			}
@@ -1724,7 +1736,7 @@ static void LumaDebugMenu_EditPKMN_Redraw() {
 			* TID (SID)
 			* PID (Nature, is shiny)
 			* Status (status name, sleep/toxic counter)
-			* Pokerus (counters)
+			* Pokérus (counters)
 			* IVs (label override, EVs, current, current HP)
 			* EVs (label override, IVs, current, current HP)
 			* Stats (label override, current HP, IVs, EVs)
@@ -2343,7 +2355,7 @@ static void LumaDebugMenu_EditPKMN_EditModeRedraw(u32 digit, u8 editIndex) {
 		* TID (SID)
 		* PID (Gender, nature, is shiny)
 		* Status (sleep/toxic counter)
-		* Pokerus (counters)
+		* Pokérus (counters)
 		* Moves (move name, PP, PP Up)
 		* Held item (item name)
 		* Ability (ability name)
@@ -2799,6 +2811,463 @@ static void LumaDebugMenu_EditSingleVar_ProcessInput(u8 taskid) {
 		PlaySE(SE_SELECT);
 		return;
 	}*/
+}
+
+// RNG Core Types
+
+enum {
+	LUMA_RNG_LCRNG = 0, // main LCRNG
+	LUMA_RNG_ARNG,      // alt LCRNG
+	LUMA_RNG_ARNG2,      // alt LCRNG #2
+	LUMA_RNG_GC,        // Colo/XD LCRNG
+	// LUMA_RNG_MT         // Mersenne Twister
+	LUMA_RNG_COUNT,
+};
+
+static u32 RngValues[LUMA_RNG_COUNT];
+// static u64 RngValues64[LUMA_RNG_COUNT];
+
+static void LumaDebugMenu_SeedRNG(u8 index, u16 seed) {
+	RngValues[index % LUMA_RNG_COUNT] = seed;
+}
+
+#define ISO_RANDOMIZE3(val)(1812433253 * (val) + 1) // ARNG
+#define ISO_RANDOMIZE4(val)(214013 * (val) + 2531011) // CXD
+
+static u16 LumaDebugMenu_Random(u8 index) {
+	switch (index % LUMA_RNG_COUNT) {
+	case LUMA_RNG_LCRNG:
+	default:
+		RngValues[LUMA_RNG_LCRNG] = ISO_RANDOMIZE1(RngValues[LUMA_RNG_LCRNG]);
+		return RngValues[LUMA_RNG_LCRNG] >> 16;
+	case LUMA_RNG_ARNG:
+		RngValues[LUMA_RNG_ARNG] = ISO_RANDOMIZE3(RngValues[LUMA_RNG_ARNG]);
+		return RngValues[LUMA_RNG_ARNG] >> 16;
+	case LUMA_RNG_ARNG2:
+		RngValues[LUMA_RNG_ARNG2] = ISO_RANDOMIZE2(RngValues[LUMA_RNG_ARNG2]);
+		return RngValues[LUMA_RNG_ARNG2] >> 16;
+	case LUMA_RNG_GC:
+		RngValues[LUMA_RNG_GC] = ISO_RANDOMIZE4(RngValues[LUMA_RNG_GC]);
+		return RngValues[LUMA_RNG_GC] >> 16;
+	/*
+	case LUMA_RNG_MT:
+		// TODO
+	*/
+	}
+}
+
+#define LumaDebugMenu_Random32(x) (LumaDebugMenu_Random(x) | (LumaDebugMenu_Random(x) << 16))
+
+// RNG Modes
+
+enum {
+	LUMA_RNG_DEFAULT = 0,
+	LUMA_RNG_ABCD,    // Method 1
+	LUMA_RNG_ABDE,    // Method 2
+	LUMA_RNG_ACDE,    // Method 3
+	LUMA_RNG_ABCE,    // Method 4
+	LUMA_RNG_CHARM,   // Cute Charm
+	LUMA_RNG_CHAIN,   // Shiny Chain
+	LUMA_RNG_DEAB,    // Colo/XD
+	LUMA_RNG_CHAN,    // Channel Jirachi
+	LUMA_RNG_WALKER,  // Pokéwalker
+	LUMA_RNG_G5MG,    // Gen 5 Mystery Gift Shiny
+};
+
+// RNG Restrictions
+
+enum {
+	LUMA_RNG_SHINY = 0,    // Shiny
+	LUMA_RNG_ANTI,         // Antishiny
+	LUMA_RNG_GENDER,       // Cute Charm
+	LUMA_RNG_SYNC,         // Synchronize (or Gen 3 Safari Zone)
+	LUMA_RNG_ROAMER,       // Roamer (drop IV bits)
+	LUMA_RNG_REVERSE,      // Reversed PID (Unown)
+	LUMA_RNG_COLO_UMBREON, // Colo Umbreon (also XD Eevee)
+	LUMA_RNG_COLO_ESPEON,  // Colo Espeon
+	LUMA_RNG_G3MG,         // Gen 3 Event (affects {anti,}shiny)
+	LUMA_RNG_G3MG_AX,      // Gen 3 Event Antishiny
+	LUMA_RNG_ABILITY,      // Ability
+	LUMA_RNG_R8,           // 8-bit seed
+	LUMA_RNG_R16           // 16-bit seed
+};
+
+static bool8 LumaDebugMenu_PIDIV_HasShinyParam(u8 type, u32 pid, u32 tid) {
+	bool8 IsShiny;
+	if (type % 3 == 0) return TRUE;
+	IsShiny = IsShinyOtIdPersonality(tid, pid);
+	if (type % 1 == 1) return IsShiny;
+	else return !IsShiny;
+}
+
+static bool8 LumaDebugMenu_PIDIV_HasGenderParam(u8 type, u32 pid, u16 species) {
+	if (type % 3 == 0) return TRUE;
+	u8 gender = GetGenderFromSpeciesAndPersonality(species, pid);
+	switch(gender) {
+	case MON_GENDERLESS:
+		return TRUE;
+	case MON_MALE:
+		return type % 3 == 1;
+	case MON_FEMALE:
+		return type % 3 == 2;
+	default:
+		return FALSE;
+	}
+}
+
+static u32 LumaDebugMenu_PIDIV(u32* _pid, u32* _ivs, u8 type, u8 method, u8 rflags, u32 tid, u8 gender, u8 nature, u8 ability, u16 species) {
+	u32 pids = 0;
+	u32 pid, ivs;
+	u16 a, b, c, d, e;
+	u32 x;
+	u8 ShinyParam = 0;
+	if (rflags & (1 << LUMA_RNG_SHINY)) {
+		ShinyParam = 1;
+	}
+	else if (rflags & (1 << LUMA_RNG_ANTI)) {
+		ShinyParam = 2;
+	}
+	if (rflags & (1 << LUMA_RNG_GENDER)) {
+		gender = (gender & 1) + 1;
+	}
+	else {
+		gender = 0;
+	}
+	do {
+		do {
+			do {
+				do {
+					switch (method) {
+					case LUMA_RNG_DEFAULT:
+					default:
+						pid = Random32();
+						ivs = Random32();
+						break;
+					case LUMA_RNG_DEAB:
+						if (rflags & (1 << LUMA_RNG_COLO_UMBREON)) {
+							tid = LumaDebugMenu_Random32(type);
+							LumaDebugMenu_Random(type); // ???
+							LumaDebugMenu_Random(type);
+						}
+						else if (rflags & (1 << LUMA_RNG_COLO_ESPEON)) {
+							tid = LumaDebugMenu_Random32(type);
+							for (a = 0; a < 9; a++) {
+								LumaDebugMenu_Random(type); // skip Umbre, plus extra calls???
+							}
+						}
+						ivs = LumaDebugMenu_Random32(type);
+						LumaDebugMenu_Random(type); // ???
+						pid = LumaDebugMenu_Random(type);
+						break;
+					case LUMA_RNG_CHAN:
+						tid = (LumaDebugMenu_Random(type) << 16) | 40122;
+						pid = LumaDebugMenu_Random32(type);
+						LumaDebugMenu_Random(type); // Item
+						LumaDebugMenu_Random(type); // Version
+						LumaDebugMenu_Random(type); // OT Gender
+						// TODO: Unsure if this is the correct way IVs are genned.
+
+						ivs = LumaDebugMenu_Random32(type);
+						break;
+					case LUMA_RNG_ABCD ... LUMA_RNG_ABCE:
+						if (rflags & (1 << LUMA_RNG_R16)) {
+							RngValues[type] &= 0xffff;
+						}
+						else if (rflags & (1 << LUMA_RNG_R8)) {
+							RngValues[type] &= 0xff;
+						}
+						a = LumaDebugMenu_Random(type);
+						b = LumaDebugMenu_Random(type);
+						c = LumaDebugMenu_Random(type);
+						d = LumaDebugMenu_Random(type);
+						e = LumaDebugMenu_Random(type);
+						switch (method) {
+						case LUMA_RNG_ABCD:
+						default:
+							pid = a | b << 16;
+							ivs = c | d << 16;
+							break;
+						case LUMA_RNG_ACDE:
+							pid = a | c << 16;
+							ivs = d | e << 16;
+							break;
+						case LUMA_RNG_ABDE:
+							pid = a | b << 16;
+							ivs = d | e << 16;
+							break;
+						case LUMA_RNG_ABCE:
+							pid = a | b << 16;
+							ivs = c | e << 16;
+							break;
+						}
+						if (rflags & ((1 << LUMA_RNG_G3MG) | (1 << LUMA_RNG_SHINY))) {
+							a = pid;
+							b = pid >> 16;
+							a ^= (tid & 0xff) ^ (tid >> 16);
+							pid = a | (a << 16);
+							pid &= 0xfffffff8;
+							pid |= b & 0x7;
+						}
+						else if (rflags & ((1 << LUMA_RNG_G3MG) | (1 << LUMA_RNG_G3MG_AX))) {
+							a = pid;
+							b = pid >> 16;
+							a ^= (tid & 0xff) ^ (tid >> 16) ^ b;
+							pid = a | (b << 16);
+						}
+						else if (rflags & ((1 << LUMA_RNG_G3MG) | (1 << LUMA_RNG_ANTI))) {
+							while(IsShinyOtIdPersonality(tid, pid)) {
+								pid++;
+							}
+						}
+						if (rflags & (1 << LUMA_RNG_REVERSE)) {
+							pid = (pid << 16) | (pid >> 16);
+						}
+						if (rflags & (1 << LUMA_RNG_ROAMER)) {
+							ivs &= 0xff;
+						}
+						break;
+					case LUMA_RNG_CHAIN:
+						a = LumaDebugMenu_Random(type) & 7;
+						b = LumaDebugMenu_Random(type) & 7;
+						for (e = 0; e < 13; e++) {
+							a |= (LumaDebugMenu_Random(type) & 1) << (3 + e);
+						}
+						b = ((a ^ (tid & 0xffff) ^ (tid >> 16)) & 0xfff8) | b;
+						pid = a | b << 16;
+						ivs = LumaDebugMenu_Random32(type);
+						break;
+					case LUMA_RNG_WALKER:
+						a = tid & 0xffff;
+						b = tid >> 16;
+						pid = (((a ^ b) >> 8) ^ 0xff) << 24;
+						if (rflags & (1 << LUMA_RNG_SYNC)) {
+							pid += nature - (pid % NUM_NATURES);
+						}
+						if (rflags & (1 << LUMA_RNG_GENDER)) {
+							if (LumaDebugMenu_PIDIV_HasGenderParam(gender, pid, species)) {
+								ivs = Random32();
+								break;
+							}
+							c = gBaseStats[species].genderRatio;
+							if (rflags & (1 << LUMA_RNG_SYNC)) {
+								if (gender == 1) {
+									pid += (((c - (pid & 0xff)) / NUM_NATURES) + 1) * NUM_NATURES;
+									if (rflags & (1 << LUMA_RNG_ABILITY)) {
+										if ((nature & 1) != (pid & 1)) {
+											pid += 25;
+										}
+									}
+								}
+								else {
+									pid -= ((((pid & 0xff) - c) / NUM_NATURES) + 1) * NUM_NATURES;
+									if (rflags & (1 << LUMA_RNG_ABILITY)) {
+										if ((nature & 1) != (pid & 1)) {
+											pid -= 25;
+										}
+									}
+								}
+							}
+							else {
+								if (gender == 1) {
+									pid += c - (pid & 0xff);
+									if (rflags & (1 << LUMA_RNG_ABILITY)) {
+										if ((nature & 1) != (pid & 1)) {
+											pid += 25;
+										}
+									}
+								}
+								else {
+									pid -= (pid & 0xff) - c;
+									if (rflags & (1 << LUMA_RNG_ABILITY)) {
+										if ((nature & 1) != (pid & 1)) {
+											pid -= 25;
+										}
+									}
+								}
+							}
+							ivs = Random32();
+							break;
+						case LUMA_RNG_G5MG:
+							a = tid << 16;
+							b = tid & 0xffff;
+							ivs = Random32();
+							c = ivs >> 24;
+							d = ivs & 1;
+							e = a ^ b ^ c;
+							pid = e << 16 | c;
+							if ((pid & (1 << 16)) != (u32)(d << 16)) {
+								pid ^= (1 << 16);
+							}
+							ivs = Random32();
+							break;
+						}
+					}
+					pids++;
+					if ((ability % 3) == 2) break;
+					if (!(rflags & (1 << LUMA_RNG_ABILITY))) break;
+					if (gBaseStats[species].abilities[1] == ABILITY_NONE) break;
+				} while((pid & 1) == (ability % 3));
+			} while(LumaDebugMenu_PIDIV_HasGenderParam(gender, pid, species));
+		if (!(rflags & (1 << LUMA_RNG_SYNC))) break;
+		} while(GetNatureFromPersonality(pid) == (nature % NUM_NATURES));
+	} while(LumaDebugMenu_PIDIV_HasShinyParam(ShinyParam, pid, tid));
+	*_pid = pid;
+	*_ivs = ivs;
+	return pids;
+}
+
+static const struct WindowTemplate LumaDebugMenu_RNGWindowTemplate = {
+	.bg = 0,
+	.tilemapLeft = 1,
+	.tilemapTop = 1,
+	.width = 16,
+	.height = 6,
+	.baseBlock = 1,
+	.paletteNum = 15
+};
+
+static const u8 Str_LCRNG[] = _("LCRNG");
+static const u8 Str_ARNG[] = _("ARNG");
+static const u8 Str_ARNG2[] = _("LCRNG 2");
+static const u8 Str_XD[] = _("XD / Colosseum");
+static const u8 Str_MT[] = _("Mersenne Twister");
+
+static const u8 Str_Disabled[] = _("Disabled");
+static const u8 Str_Method1[] = _("Method 1 (ABCD)");
+static const u8 Str_Method2[] = _("Method 2 (ABDE)");
+static const u8 Str_Method3[] = _("Method 3 (ACDE)");
+static const u8 Str_Method4[] = _("Method 4 (ABCE)");
+static const u8 Str_Channel[] = _("Channel");
+static const u8 Str_XD_Spot[] = _("XD PokéSpot");
+static const u8 Str_Charm[] = _("Cute Charm");
+static const u8 Str_Chain[] = _("Shiny Chain");
+static const u8 Str_G5MG[] = _("Gen 5 Mystery Gift");
+
+static const u8 Str_Shiny[] = _("Shiny");
+static const u8 Str_Antishiny[] = _("Antishiny");
+static const u8 Str_Roamer[] = _("Roamer");
+static const u8 Str_Reverse[] = _("Reversed PID");
+static const u8 Str_R8[] = _("8-bit Seed");
+static const u8 Str_R16[] = _("16-bit Seed");
+
+static const u8* RNGTypes[] = {
+	Str_LCRNG,
+	Str_ARNG,
+	Str_ARNG2,
+	Str_XD,
+	Str_MT
+};
+
+static const u8* RNGMethods[] = {
+	Str_Disabled,
+	Str_Method1,
+	Str_Method2,
+	Str_Method3,
+	Str_Method4,
+	Str_Channel,
+	Str_XD_Spot,
+	Str_Charm,
+	Str_Chain,
+	Str_G5MG
+};
+
+static const u8* RNGParams[] = {
+	Str_Shiny,
+	Str_Antishiny,
+	Str_Roamer,
+	Str_Reverse,
+	Str_R8,
+	Str_R16,
+};
+
+static const u8 Str_Type[] = _("RNG Type");
+static const u8 Str_Method[] = _("RNG Method");
+static const u8 Str_Restrict[] = _("RNG Restrictions");
+static const u8 Str_RestrictOff[] = _("{STR_VAR_1}");
+static const u8 Str_RestrictOn[] = _("{COLOR BLUE}{STR_VAR_1}");
+static const u8 Str_Seed[] = _("Seed");
+static const u8 Str_Div[] = _("Div");
+static const u8 Str_Mod[] = _("Mod");
+
+static u8 HasSeededRNG;
+static u32 sPID;
+static u32 sIVs;
+
+static void LumaDebugMenu_OpenRNG() {
+	u8 taskId;
+	u32 tid = *(u32*) &gSaveBlock2Ptr->playerTrainerId;
+	u8 winId = AddWindow(&LumaDebugMenu_RNGWindowTemplate);
+	DrawStdWindowFrame(winId, FALSE);
+	CopyWindowToVram(winId, 3);
+	taskId = CreateTask(LumaDebugMenu_RNG_ProcessInput, 10);
+	if (!HasSeededRNG) {
+		LumaDebugMenu_SeedRNG(LUMA_RNG_LCRNG, 0);
+		HasSeededRNG = 1;
+	}
+	sPID = LumaDebugMenu_Random32(LUMA_RNG_LCRNG);
+	sIVs = LumaDebugMenu_Random32(LUMA_RNG_LCRNG);
+	gTasks[taskId].data[0] = (LUMA_RNG_DEFAULT << 8) | LUMA_RNG_LCRNG;
+	gTasks[taskId].data[1] = MON_MALE << 8; // No restrict flags
+	gTasks[taskId].data[2] = (winId << 8) | NATURE_HARDY;
+	gTasks[taskId].data[3] = tid;
+	gTasks[taskId].data[4] = tid >> 16;
+	gTasks[taskId].data[5] = SPECIES_BULBASAUR;
+	gTasks[taskId].data[6] = 0; // Ability slot 0 / Cursor position
+	LumaDebugMenu_RNG_Redraw(taskId);
+}
+
+static void LumaDebugMenu_RNG_ProcessInput(u8 taskid) {
+	u16 keys = gMain.newKeys;
+	u16 heldKeys = gMain.newAndRepeatedKeys;
+	struct Task* task = &gTasks[taskid];
+	u8 type = task->data[0];
+	u8 method = task->data[0] >> 8;
+	u8 restrictFlags = task->data[1];
+	u8 gender = task->data[1] >> 8;
+	u8 nature = task->data[2];
+	u8 winId = task->data[2] >> 8;
+	u32 tid = (task->data[4] << 16) | task->data[3];
+	u16 species = task->data[5];
+	u8 ability = task->data[6];
+	u8 cursorPos = task->data[6] >> 8;
+	if (keys & (B_BUTTON | START_BUTTON)) {
+		ClearStdWindowAndFrame(winId, TRUE);
+		RemoveWindow(winId);
+		DestroyTask(taskid);
+		EnableBothScriptContexts();
+		PlaySE(SE_SELECT);
+		return;
+	}
+	if (keys & SELECT_BUTTON) {
+		LumaDebugMenu_SeedRNG(type, 0);
+		LumaDebugMenu_PIDIV(&sPID, &sIVs, type, method, restrictFlags, tid, gender, nature, ability, species);
+		LumaDebugMenu_RNG_Redraw(taskid);
+		PlaySE(SE_SELECT);
+		return;
+	}
+	if (keys & A_BUTTON) {
+		LumaDebugMenu_PIDIV(&sPID, &sIVs, type, method, restrictFlags, tid, gender, nature, ability, species);
+		LumaDebugMenu_RNG_Redraw(taskid);
+		PlaySE(SE_SELECT);
+		return;
+	}
+}
+
+static void LumaDebugMenu_RNG_Redraw(u8 taskid) {
+	struct Task* task = &gTasks[taskid];
+	u32 pid = sPID;
+	u32 ivs = sIVs;
+	u8 type = task->data[0];
+	u8 method = task->data[0] >> 8;
+	u8 restrictFlags = task->data[1];
+	u8 gender = task->data[1] >> 8;
+	u8 nature = task->data[2];
+	u8 winId = task->data[2] >> 8;
+	u32 tid = (task->data[4] << 16) | task->data[3];
+	u16 species = task->data[5];
+	u8 ability = task->data[6];
+	u8 cursorPos = task->data[6] >> 8;
+	u32 seed = RngValues[type % LUMA_RNG_COUNT];
 }
 
 void FillScreen(u16 color) {
