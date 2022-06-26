@@ -326,8 +326,10 @@ $(C_BUILDDIR)/librfu_intr.o: CFLAGS := -mthumb-interwork -O2 -mabi=apcs-gnu -mtu
 endif
 
 $(C_BUILDDIR)/luma_debug_menu.o: CFLAGS +=-Wall -Wunused
+$(C_BUILDDIR)/luma_pokemon_debug.o: CFLAGS +=-Wall -Wunused
 ifeq ($(MODERN), 1)
 $(C_BUILDDIR)/luma_debug_menu.o: CFLAGS +=-Wextra -Wshadow=local
+$(C_BUILDDIR)/luma_pokemon_debug.o: CFLAGS +=-Wextra -Wshadow=local
 endif
 
 ifeq ($(DINFO),1)
