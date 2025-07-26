@@ -9,8 +9,6 @@ KEEP_TEMPS  ?= 0
 FILE_NAME := pokeemerald
 BUILD_DIR := build
 
-# Compares the ROM to a checksum of the original - only makes sense using when non-modern
-COMPARE     ?= 0
 # Executes the Test Runner System that checks that all mechanics work as expected
 TEST         ?= 0
 # Enables -fanalyzer C flag to analyze in depth potential UBs
@@ -20,9 +18,6 @@ UNUSED_ERROR ?= 0
 # Adds -Og and -g flags, which optimize the build for debugging and include debug info respectively
 DEBUG        ?= 0
 
-ifeq (compare,$(MAKECMDGOALS))
-  COMPARE := 1
-endif
 ifeq (check,$(MAKECMDGOALS))
   TEST := 1
 endif
@@ -61,9 +56,9 @@ endif
 CPP := $(PREFIX)cpp
 
 ROM_NAME := $(FILE_NAME).gba
-OBJ_DIR_NAME := $(BUILD_DIR)/modern
-OBJ_DIR_NAME_TEST := $(BUILD_DIR)/modern-test
-OBJ_DIR_NAME_DEBUG := $(BUILD_DIR)/modern-debug
+OBJ_DIR_NAME := $(BUILD_DIR)/release
+OBJ_DIR_NAME_TEST := $(BUILD_DIR)/test
+OBJ_DIR_NAME_DEBUG := $(BUILD_DIR)/debug
 
 ELF_NAME := $(ROM_NAME:.gba=.elf)
 MAP_NAME := $(ROM_NAME:.gba=.map)
@@ -200,8 +195,8 @@ MAKEFLAGS += --no-print-directory
 # Delete files that weren't built properly
 .DELETE_ON_ERROR:
 
-RULES_NO_SCAN += libagbsyscall clean clean-assets tidy tidymodern tidycheck generated clean-generated
-.PHONY: all rom agbcc modern compare check debug
+RULES_NO_SCAN += libagbsyscall clean clean-assets tidy tidycheck generated clean-generated
+.PHONY: all rom check debug
 .PHONY: $(RULES_NO_SCAN)
 
 infoshell = $(foreach line, $(shell $1 | sed "s/ /__SPACE__/g"), $(info $(subst __SPACE__, ,$(line))))
@@ -268,16 +263,7 @@ OBJS_REL := $(patsubst $(OBJ_DIR)/%,%,$(OBJS))
 SUBDIRS  := $(sort $(dir $(OBJS) $(dir $(TEST_OBJS))))
 $(shell mkdir -p $(SUBDIRS))
 
-# Pretend rules that are actually flags defer to `make all`
-modern: all
-compare: all
 debug: all
-# Uncomment the next line, and then comment the 4 lines after it to reenable agbcc.
-#agbcc: all
-agbcc:
-	@echo "'make agbcc' is deprecated as of pokeemerald-expansion 1.9 and will be removed in 1.10."
-	@echo "Search for 'agbcc: all' in Makefile to reenable agbcc."
-	@exit 1
 
 LD_SCRIPT_TEST := ld_script_test.ld
 
@@ -303,9 +289,6 @@ check: $(TESTELF)
 
 # Other rules
 rom: $(ROM)
-ifeq ($(COMPARE),1)
-	@$(SHA1) rom.sha1
-endif
 
 syms: $(SYM)
 
@@ -320,9 +303,7 @@ clean-assets:
 	find . \( -iname '*.1bpp' -o -iname '*.4bpp' -o -iname '*.8bpp' -o -iname '*.gbapal' -o -iname '*.lz' -o -iname '*.rl' -o -iname '*.latfont' -o -iname '*.hwjpnfont' -o -iname '*.fwjpnfont' \) -exec rm {} +
 	find $(DATA_ASM_SUBDIR)/maps \( -iname 'connections.inc' -o -iname 'events.inc' -o -iname 'header.inc' \) -exec rm {} +
 
-tidy: tidymodern tidycheck tidydebug
-
-tidymodern:
+tidy: tidycheck tidydebug
 	rm -f $(ROM_NAME) $(ELF_NAME) $(MAP_NAME)
 	rm -rf $(OBJ_DIR_NAME)
 
@@ -470,7 +451,7 @@ $(DATA_SRC_SUBDIR)/pokemon/teachable_learnsets.h: $(TEACHABLE_DEPS)
 	python3 $(LEARNSET_HELPERS_DIR)/make_teachables.py $<
 
 # Linker script
-LD_SCRIPT := ld_script_modern.ld
+LD_SCRIPT := ld_script.ld
 LD_SCRIPT_DEPS :=
 
 # Final rules
