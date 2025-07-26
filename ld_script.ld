@@ -24,7 +24,7 @@ SECTIONS {
 
 	.iwram ORIGIN(IWRAM) : AT (__iwram_lma) ALIGN(4) {
 		__iwram_start = .;
-		*(SORT(iwram*));
+		*(SORT(.iwram*));
 		. = ALIGN(4);
 		__iwram_end = .;
 	} > IWRAM
